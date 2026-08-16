@@ -2,6 +2,7 @@ import { distance, normalizeHeading } from './math';
 import type { Aircraft, GameEvent, RadarWorld, Vector2 } from './types';
 
 const FIX_PASS_DISTANCE_NM = 0.55;
+const HOLD_RADIUS_NM = 1.6;
 
 export function bearingTo(from: Vector2, to: Vector2) {
   return normalizeHeading((Math.atan2(to.x - from.x, -(to.y - from.y)) * 180) / Math.PI);
@@ -24,10 +25,19 @@ export function guideNavigation(aircraft: Aircraft, world: RadarWorld): { aircra
 
   const fixDistance = distance(aircraft.position, fix.position);
   if (navigation.mode === 'hold' && navigation.holding) {
+    // A stable right-hand orbit gives HOLD a predictable controller tool instead
+    // of repeatedly steering straight at the fix. The small radial correction
+    // keeps the aircraft near a usable holding radius as wind changes its track.
+    const radial = bearingTo(fix.position, aircraft.position);
+    const radiusError = fixDistance - HOLD_RADIUS_NM;
+    const radialCorrection = Math.max(-32, Math.min(42, radiusError * 28));
+    const targetHeading = fixDistance < 0.35
+      ? normalizeHeading(aircraft.heading + 90)
+      : normalizeHeading(radial + 90 + radialCorrection);
     return {
       aircraft: {
         ...aircraft,
-        targetHeading: normalizeHeading(bearingTo(aircraft.position, fix.position) + 95),
+        targetHeading,
         turnDirection: 'shortest',
       },
     };
