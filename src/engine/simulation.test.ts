@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createInitialState, initialState, scenarioCatalog, spawnTraffic, world } from './scenario';
-import { detectConflicts, landingClearanceStatus, stepGame, trafficProfile } from './simulation';
+import { detectConflicts, landingClearanceStatus, requiredFinalSeparationNm, stepGame, trafficProfile } from './simulation';
 
 describe('stepGame', () => {
   it('turns gradually instead of snapping to the target heading', () => {
@@ -45,9 +45,17 @@ describe('stepGame', () => {
   });
 
   it('raises traffic density and capacity in measured steps', () => {
-    expect(trafficProfile(0)).toMatchObject({ level: 1, maxAircraft: 5 });
-    expect(trafficProfile(9)).toMatchObject({ level: 4, maxAircraft: 8 });
+    expect(trafficProfile(0)).toMatchObject({ level: 1, maxAircraft: 5, spawnInterval: 18 });
+    expect(trafficProfile(9)).toMatchObject({ level: 4, maxAircraft: 8, spawnInterval: 11 });
     expect(trafficProfile(99)).toMatchObject({ level: 5, maxAircraft: 9 });
+  });
+
+  it('requires more final spacing behind heavy aircraft', () => {
+    const heavy = structuredClone(initialState.aircraft[2]);
+    const medium = structuredClone(initialState.aircraft[1]);
+
+    expect(requiredFinalSeparationNm(heavy)).toBe(5.5);
+    expect(requiredFinalSeparationNm(medium)).toBe(4.5);
   });
 
   it('introduces a timed priority arrival at higher traffic volume', () => {

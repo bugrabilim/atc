@@ -64,7 +64,7 @@ export function createInitialState(scenario: GameScenario = defaultScenario): Ga
   const trainingAircraft = scenario.initialAircraft.find((item) => item.phase === 'arrival');
   return {
     elapsedSeconds: 0, paused: false, timeScale: 1, aircraft: structuredClone(scenario.initialAircraft), conflicts: [],
-    selectedCallsign: trainingAircraft?.callsign ?? null, score: 0, landed: 0, spawned: 0, trafficLevel: 1, nextTrafficAt: 42,
+    selectedCallsign: trainingAircraft?.callsign ?? null, score: 0, landed: 0, spawned: 0, trafficLevel: 1, nextTrafficAt: 18,
     runwayAvailableAt: {}, eventLog: [{ id: 'welcome', type: 'info', message: `Eğitim: ${trainingAircraft?.callsign ?? 'ilk geliş'} için ILS ${trainingAircraft?.assignedRunway ?? ''} yaklaşmasını başlat.` }],
     activeLossPairs: [], handoffs: 0,
   };

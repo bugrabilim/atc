@@ -9,7 +9,6 @@ const GLIDESLOPE_FEET_PER_NM = 318;
 const APPROACH_CAPTURE_DISTANCE_NM = 16;
 const APPROACH_CAPTURE_LATERAL_NM = 2.2;
 const RUNWAY_TURNAROUND_SECONDS = 45;
-const FINAL_SEPARATION_NM = 4.5;
 
 interface ApproachGeometry {
   distanceToThreshold: number;
@@ -46,9 +45,15 @@ export function trafficProfile(spawned: number) {
   const level = Math.min(5, 1 + Math.floor(spawned / 3));
   return {
     level,
-    spawnInterval: [42, 36, 31, 27, 24][level - 1],
+    spawnInterval: [18, 16, 13, 11, 9][level - 1],
     maxAircraft: [5, 6, 7, 8, 9][level - 1],
   };
+}
+
+export function requiredFinalSeparationNm(leadingAircraft: Aircraft) {
+  if (['B77W', 'A330'].includes(leadingAircraft.type)) return 5.5;
+  if (['A321', 'A21N', 'B738', 'B39M'].includes(leadingAircraft.type)) return 4.5;
+  return 4;
 }
 
 function createPriorityTraffic(aircraft: Aircraft, elapsedSeconds: number): Aircraft {
@@ -78,10 +83,12 @@ export function landingClearanceStatus(state: GameState, callsign: string, world
   const leadOnFinal = state.aircraft.find((item) => {
     if (item.callsign === aircraft.callsign || item.approach?.runwayId !== runway.id || !item.approach.landingCleared) return false;
     const leadDistance = getApproachGeometry(item, runway).distanceToThreshold;
-    return leadDistance >= 0 && leadDistance < candidateDistance && candidateDistance - leadDistance < FINAL_SEPARATION_NM;
+    return leadDistance >= 0
+      && leadDistance < candidateDistance
+      && candidateDistance - leadDistance < requiredFinalSeparationNm(item);
   });
   if (leadOnFinal) {
-    return { ok: false, message: `${leadOnFinal.callsign} aynı pistte önde. En az ${FINAL_SEPARATION_NM} NM final aralığı bırak.` };
+    return { ok: false, message: `${leadOnFinal.callsign} aynı pistte önde. Bu ${leadOnFinal.type} için en az ${requiredFinalSeparationNm(leadOnFinal)} NM final aralığı bırak.` };
   }
   return { ok: true, message: `${runway.id} iniş izni verilebilir.` };
 }
