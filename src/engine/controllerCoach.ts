@@ -75,6 +75,16 @@ export function controllerCoach(state: GameState, world: RadarWorld): CoachAdvic
   const selected = state.aircraft.find((item) => item.callsign === state.selectedCallsign);
   if (selected?.phase === 'arrival') {
     const arrival = arrivalAdvice(state.aircraft, world).get(selected.callsign);
+    if (arrival?.spacingRisk && arrival.recommendedSpeed && !selected.approach) {
+      return {
+        tone: 'warning',
+        label: 'WAKE / SIRALAMA',
+        title: `${selected.callsign} İÇİN ARALIĞI AÇ`,
+        message: `${arrival.leaderCallsign} önünde. Gerekli wake aralığı ${arrival.requiredSpacingNm} NM; erken hız azaltarak finalde sıkışmayı önle.`,
+        callsign: selected.callsign,
+        command: `SPD ${arrival.recommendedSpeed}`,
+      };
+    }
     if (!selected.approach && arrival?.shouldDescend) {
       return {
         tone: 'info',
