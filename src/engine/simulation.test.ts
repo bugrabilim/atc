@@ -85,6 +85,7 @@ describe('stepGame', () => {
     const incoming = spawnTraffic(0, coastal.world);
 
     expect(state.selectedCallsign).toBe('CF101');
+    expect(state.timeScale).toBe(2);
     expect(['09L', '09R']).toContain(incoming.assignedRunway);
   });
 
