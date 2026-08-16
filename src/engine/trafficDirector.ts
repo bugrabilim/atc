@@ -3,8 +3,19 @@ import { createAircraft, HEAVY_PERFORMANCE, JET_PERFORMANCE } from './aircraftDa
 
 const jet: AircraftPerformance = JET_PERFORMANCE;
 const heavy: AircraftPerformance = HEAVY_PERFORMANCE;
-const aircraftTypes = ['A220', 'A320', 'A21N', 'B738', 'B39M', 'E190'] as const;
-const callsignPrefixes = ['AR', 'NX', 'OR', 'VX', 'SK'] as const;
+const arrivalFleet = [
+  { type: 'A220', performance: jet },
+  { type: 'A320', performance: jet },
+  { type: 'A21N', performance: jet },
+  { type: 'B738', performance: jet },
+  { type: 'B39M', performance: jet },
+  { type: 'E190', performance: jet },
+  { type: 'B789', performance: heavy },
+  { type: 'A330', performance: heavy },
+  { type: 'B77W', performance: heavy },
+  { type: 'A388', performance: heavy },
+] as const;
+const callsignPrefixes = ['AR', 'NX', 'OR', 'VX', 'SK', 'HL', 'CF'] as const;
 
 export interface TrafficPlan {
   aircraft: Aircraft;
@@ -40,12 +51,15 @@ function planArrival(index: number, activeAircraft: readonly Aircraft[], world: 
   const entry = entryPool[index % entryPool.length];
   if (!entry) throw new Error('Traffic director requires at least one boundary entry');
 
-  const altitude = 7000 + ((index * 1100) % 6000);
-  const speed = 235 + ((index * 17) % 55);
+  const fleet = arrivalFleet[index % arrivalFleet.length];
+  const altitude = 7000 + ((index * 1100) % 7000);
+  const speed = fleet.performance === heavy
+    ? 240 + ((index * 11) % 38)
+    : 225 + ((index * 17) % 68);
   const heading = (headingTo(entry.position, { x: 0, y: 0 }) + ((index % 3) - 1) * 12 + 360) % 360;
   const aircraft = createAircraft({
     callsign,
-    type: aircraftTypes[index % aircraftTypes.length],
+    type: fleet.type,
     phase: 'arrival',
     position: { ...entry.position },
     heading,
@@ -55,12 +69,12 @@ function planArrival(index: number, activeAircraft: readonly Aircraft[], world: 
     targetAltitude: altitude,
     targetSpeed: speed,
     turnDirection: 'shortest',
-    performance: jet,
+    performance: fleet.performance,
     assignedRunway: runway.id,
   });
   return {
     aircraft,
-    message: `${callsign} radar contact · ${entry.id} sınırı · ${Math.round(altitude / 100)} flight level · planlanan pist ${runway.id} · vektör bekliyor`,
+    message: `${callsign} ${fleet.type} · radar contact · ${entry.id} sınırı · ${Math.round(altitude / 100)} flight level · planlanan pist ${runway.id} · vektör bekliyor`,
   };
 }
 
