@@ -435,15 +435,20 @@ export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCa
     const label = [...labelBoxes.current.values()].find((box) => pointer.x >= box.x && pointer.x <= box.x + box.width && pointer.y >= box.y && pointer.y <= box.y + box.height);
     if (label) {
       onSelect(label.callsign);
+      // A tap on a datablock is a selection on touch devices. Reserving label
+      // dragging for mouse/pen input prevents a tiny finger movement from
+      // moving a label instead of selecting the intended aircraft.
+      if (event.pointerType === 'touch') return;
       dragRef.current = { kind: 'label', pointerId: event.pointerId, callsign: label.callsign, last: pointer };
       event.currentTarget.setPointerCapture(event.pointerId);
       return;
     }
     let closest: { callsign: string; distance: number } | null = null;
+    const hitRadius = event.pointerType === 'touch' ? 44 : 28;
     for (const item of aircraft) {
       const point = worldToScreen(item.position, viewport);
       const hitDistance = Math.hypot(pointer.x - point.x, pointer.y - point.y);
-      if (hitDistance <= 28 && (!closest || hitDistance < closest.distance)) closest = { callsign: item.callsign, distance: hitDistance };
+      if (hitDistance <= hitRadius && (!closest || hitDistance < closest.distance)) closest = { callsign: item.callsign, distance: hitDistance };
     }
     if (closest) {
       onSelect(closest.callsign);
@@ -533,7 +538,8 @@ export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCa
         onPointerCancel={endDrag}
         onWheel={handleWheel}
         onDoubleClick={resetView}
-        aria-label="Uçak seçmek için hedefe dokun; boş alanda sürükleyerek radarı kaydır"
+        onContextMenu={(event) => event.preventDefault()}
+        aria-label="Uçak seçmek için hedefe dokun. Boş alanda sürükleyerek radarı kaydır; iki kez dokunarak görünümü sıfırla."
       />
     </div>
   );
