@@ -1,7 +1,8 @@
-import type { Aircraft, GameState, RadarWorld } from './types';
+import type { Aircraft, GameMode, GameState, RadarWorld } from './types';
 import { planTraffic } from './trafficDirector';
 import { createAircraft, HEAVY_PERFORMANCE, JET_PERFORMANCE } from './aircraftData';
-import { INITIAL_SKILL, profileForSkill } from './skill';
+import { profileForSkill } from './skill';
+import { difficultyConfig, modeTrafficProfile } from './difficulty';
 
 export interface GameScenario {
   id: 'alpha' | 'coastal';
@@ -113,18 +114,20 @@ export function worldWithFlow(world: RadarWorld, flowId: string, skill?: number)
   };
 }
 
-export function createInitialState(scenario: GameScenario = defaultScenario): GameState {
-  const trainingAircraft = scenario.initialAircraft.find((item) => item.phase === 'arrival');
+export function createInitialState(scenario: GameScenario = defaultScenario, mode: GameMode = 'normal'): GameState {
+  const config = difficultyConfig(mode);
+  const initialAircraft = structuredClone(scenario.initialAircraft.slice(0, config.initialAircraft));
+  const trainingAircraft = initialAircraft.find((item) => item.phase === 'arrival');
   const flowId = scenario.world.flowConfigurations[0]?.id ?? 'default';
-  const initialProfile = profileForSkill(INITIAL_SKILL);
+  const initialProfile = modeTrafficProfile(mode, profileForSkill(config.initialSkill));
   const welcome = { id: 'welcome', type: 'info' as const, message: `Radar contact: ${trainingAircraft?.callsign ?? 'ilk geliş'}. Heading, irtifa ve hızla ${trainingAircraft?.assignedRunway ?? ''} finaline vektörle; sonra ILS'i silahlandır.` };
   return {
-    elapsedSeconds: 0, paused: false, timeScale: 2, aircraft: structuredClone(scenario.initialAircraft), conflicts: [],
-    selectedCallsign: trainingAircraft?.callsign ?? null, skill: INITIAL_SKILL, peakSkill: INITIAL_SKILL, targetAircraft: initialProfile.targetAircraft,
-    score: Math.round(INITIAL_SKILL * 10), landed: 0, spawned: 0, trafficLevel: initialProfile.level, nextTrafficAt: initialProfile.spawnInterval,
+    mode, elapsedSeconds: 0, paused: false, timeScale: config.timeScale, aircraft: initialAircraft, conflicts: [],
+    selectedCallsign: trainingAircraft?.callsign ?? null, skill: config.initialSkill, peakSkill: config.initialSkill, targetAircraft: initialProfile.targetAircraft,
+    score: Math.round(config.initialSkill * 10), landed: 0, spawned: 0, trafficLevel: initialProfile.level, nextTrafficAt: initialProfile.spawnInterval,
     runwayAvailableAt: {}, eventLog: [welcome],
     activeLossPairs: [], handoffs: 0, flowId,
-    trackHistory: Object.fromEntries(scenario.initialAircraft.map((item) => [item.callsign, [{ ...item.position }]])),
+    trackHistory: Object.fromEntries(initialAircraft.map((item) => [item.callsign, [{ ...item.position }]])),
     lastTrackAt: 0, pendingInstructions: [],
     metrics: { separationLosses: 0, goArounds: 0, missedHandoffs: 0, expiredPriorities: 0, unmanagedArrivals: 0, wakeViolations: 0 },
     eventTimeline: [welcome], seed: 73421, commandHistory: [],
