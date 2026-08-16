@@ -1,4 +1,4 @@
-import type { AircraftCommand, ParseResult } from './types';
+import type { AircraftCommand, ParseResult, Procedure } from './types';
 import { normalizeHeading } from './math';
 
 const RE_NUMBER = /^\d{1,5}$/;
@@ -14,6 +14,9 @@ const HANDOFF_ALIASES = new Set(['HANDOFF', 'HOF']);
 const GO_AROUND_ALIASES = new Set(['GA', 'GOAROUND', 'MISSED']);
 const RESUME_ALIASES = new Set(['RESUME', 'NORMAL', 'NORM', 'RN']);
 const EXPEDITE_ALIASES = new Set(['EXPEDITE', 'EXP', 'X']);
+const ARRIVAL_PROCEDURE_ALIASES = new Set(['STAR', 'ARRIVAL']);
+const DEPARTURE_PROCEDURE_ALIASES = new Set(['SID', 'DEPARTURE']);
+const PROCEDURE_ALIASES = new Set(['PROC', 'PROCEDURE']);
 
 function expandCompactSyntax(input: string) {
   return input
@@ -38,6 +41,7 @@ export function parseCommandLine(
   selectedCallsign: string | null,
   runwayIds: string[] = [],
   fixIds: string[] = [],
+  procedures: Procedure[] = [],
 ): ParseResult {
   const compact = expandCompactSyntax(input);
   if (!compact) return { ok: false, error: 'Bir komut yaz veya hızlı komutlardan birini seç.' };
@@ -113,6 +117,18 @@ export function parseCommandLine(
     };
   }
 
+  if (ARRIVAL_PROCEDURE_ALIASES.has(keyword) || DEPARTURE_PROCEDURE_ALIASES.has(keyword) || PROCEDURE_ALIASES.has(keyword)) {
+    const procedure = procedures.find((item) => item.id === rawValue.toUpperCase());
+    if (!procedure) return { ok: false, error: `${rawValue.toUpperCase()} bu sahada tanımlı bir prosedür değil.` };
+    const expectedKind = ARRIVAL_PROCEDURE_ALIASES.has(keyword) ? 'arrival' : DEPARTURE_PROCEDURE_ALIASES.has(keyword) ? 'departure' : procedure.kind;
+    if (procedure.kind !== expectedKind) return { ok: false, error: `${procedure.id} bir ${procedure.kind === 'arrival' ? 'STAR' : 'SID'} prosedürü.` };
+    return {
+      ok: true,
+      command: { kind: 'procedure', callsign, procedureId: procedure.id, procedureKind: procedure.kind, fixIds: [...procedure.fixIds] },
+      normalized: `${callsign} ${procedure.kind === 'arrival' ? 'STAR' : 'SID'} ${procedure.id}`,
+    };
+  }
+
   if (!RE_NUMBER.test(rawValue)) {
     return { ok: false, error: `${callsign} için örnek: HDG 090, FL100, SPD 220, DCT FINAL1 veya ILS 34L.` };
   }
@@ -159,6 +175,7 @@ export function parseCommandBatch(
   selectedCallsign: string | null,
   runwayIds: string[] = [],
   fixIds: string[] = [],
+  procedures: Procedure[] = [],
 ): ParseBatchResult {
   const compact = expandCompactSyntax(input);
   if (!compact) return { ok: false, error: 'Bir komut yaz veya hızlı komutlardan birini seç.' };
@@ -190,7 +207,7 @@ export function parseCommandBatch(
   const commands: AircraftCommand[] = [];
   const normalized: string[] = [];
   for (const chunk of chunks) {
-    const parsed = parseCommandLine(`${callsign} ${chunk.join(' ')}`, callsigns, callsign, runwayIds, fixIds);
+    const parsed = parseCommandLine(`${callsign} ${chunk.join(' ')}`, callsigns, callsign, runwayIds, fixIds, procedures);
     if (!parsed.ok) return parsed;
     commands.push(parsed.command);
     normalized.push(parsed.normalized);
@@ -243,6 +260,15 @@ export function applyCommand(stateAircraft: readonly import('./types').Aircraft[
         approach: undefined,
         navigation: { mode: 'hold' as const, fixIds: [command.fixId], currentLegIndex: 0, procedure: `HOLD ${command.fixId}`, holding: false },
       };
+    }
+    if (command.kind === 'procedure') {
+      return aircraft.phase === command.procedureKind
+        ? {
+          ...aircraft,
+          approach: undefined,
+          navigation: { mode: 'route' as const, fixIds: [...command.fixIds], currentLegIndex: 0, procedure: command.procedureId },
+        }
+        : aircraft;
     }
     if (command.kind === 'resumeSpeed') {
       return { ...aircraft, speedMode: 'normal' as const };
