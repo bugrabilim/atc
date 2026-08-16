@@ -98,6 +98,7 @@ export function worldWithFlow(world: RadarWorld, flowId: string): RadarWorld {
   if (!flow) return world;
   return {
     ...world,
+    activeFlowId: flow.id,
     runways: world.runways.map((runway) => {
       const arrival = flow.arrivalRunwayIds.includes(runway.id);
       const departure = flow.departureRunwayIds.includes(runway.id);

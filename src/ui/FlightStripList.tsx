@@ -1,16 +1,19 @@
 import { aircraftTrend } from '../engine/simulation';
 import { activeFixId } from '../engine/navigation';
-import type { Aircraft, Conflict } from '../engine/types';
+import { arrivalAdvice } from '../engine/arrivalAdvisor';
+import type { Aircraft, Conflict, RadarWorld } from '../engine/types';
 
 interface FlightStripListProps {
   aircraft: Aircraft[];
   conflicts: Conflict[];
   selectedCallsign: string | null;
   elapsedSeconds: number;
+  world: RadarWorld;
   onSelect: (callsign: string) => void;
 }
 
-export function FlightStripList({ aircraft, conflicts, selectedCallsign, elapsedSeconds, onSelect }: FlightStripListProps) {
+export function FlightStripList({ aircraft, conflicts, selectedCallsign, elapsedSeconds, world, onSelect }: FlightStripListProps) {
+  const advice = arrivalAdvice(aircraft, world);
   return (
     <aside className="flight-panel" aria-label="Aktif uçuşlar">
       <div className="panel-heading">
@@ -23,6 +26,7 @@ export function FlightStripList({ aircraft, conflicts, selectedCallsign, elapsed
           const conflict = conflicts.find((entry) => entry.pair.includes(item.callsign));
           const trend = aircraftTrend(item);
           const nextFix = activeFixId(item);
+          const arrival = advice.get(item.callsign);
           return (
             <button
               key={item.callsign}
@@ -33,11 +37,11 @@ export function FlightStripList({ aircraft, conflicts, selectedCallsign, elapsed
             >
               <span className="flight-strip__lead">
                 <strong>{item.callsign}</strong>
-                <small>{item.type} · {item.priority ? `ÖNCELİK ${Math.max(0, Math.ceil(item.priority.deadlineAt - elapsedSeconds))}sn` : item.approach ? `ILS ${item.approach.runwayId}` : item.handoffCleared ? 'HANDOFF ONAYLI' : nextFix ? `${item.navigation?.mode === 'hold' ? 'HOLD' : '→'} ${nextFix}` : item.phase === 'arrival' ? `PLAN ${item.assignedRunway ?? 'ATC'}` : 'KALKIŞ'}</small>
+                <small>{item.type} · {item.priority ? `ÖNCELİK ${Math.max(0, Math.ceil(item.priority.deadlineAt - elapsedSeconds))}sn` : item.approach ? `ILS ${item.approach.runwayId}` : item.handoffCleared ? 'HANDOFF ONAYLI' : arrival ? `${arrival.runwayId} · SIRA ${arrival.sequence} · ${arrival.etaSeconds}s` : nextFix ? `${item.navigation?.mode === 'hold' ? 'HOLD' : '→'} ${nextFix}` : 'KALKIŞ'}</small>
               </span>
               <span className="flight-strip__numbers">
                 <b>FL{String(Math.round(item.altitude / 100)).padStart(3, '0')}</b>
-                <small>{trend === 'climb' ? '↑' : trend === 'descend' ? '↓' : '—'} {Math.round(item.speed)} KT</small>
+                <small>{arrival?.shouldDescend ? `↓ FL${String(Math.round(arrival.recommendedAltitude / 100)).padStart(3, '0')}` : trend === 'climb' ? '↑' : trend === 'descend' ? '↓' : '—'} {Math.round(item.speed)} KT{arrival?.crosswindKt ? ` · XW${arrival.crosswindKt}` : ''}</small>
               </span>
             </button>
           );

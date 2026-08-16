@@ -104,6 +104,7 @@ export interface RadarWorld {
   trafficEntries: TrafficEntry[];
   trafficExits: TrafficExit[];
   flowConfigurations: FlowConfiguration[];
+  activeFlowId?: string;
 }
 
 export interface Conflict {

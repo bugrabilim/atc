@@ -2,6 +2,7 @@ import { distance, moveToward, turnToward } from './math';
 import { applyCommand } from './commands';
 import { guideNavigation } from './navigation';
 import { planTraffic, flowCapacity } from './trafficDirector';
+import { approachLateralToleranceNm, stabilizedApproachSpeedKt } from './weather';
 import type { Aircraft, Conflict, GameEvent, GameState, RadarWorld, Runway, Trend, Vector2 } from './types';
 
 const SECONDS_PER_HOUR = 3600;
@@ -103,13 +104,13 @@ function guideApproach(aircraft: Aircraft, world: RadarWorld): Aircraft {
   const geometry = getApproachGeometry(aircraft, runway);
   const canCapture = geometry.distanceToThreshold > 0
     && geometry.distanceToThreshold <= APPROACH_CAPTURE_DISTANCE_NM
-    && geometry.lateralDistance <= APPROACH_CAPTURE_LATERAL_NM
+    && geometry.lateralDistance <= Math.min(APPROACH_CAPTURE_LATERAL_NM, approachLateralToleranceNm(world, runway))
     && angularDifference(aircraft.heading, runway.heading) <= 35;
 
   if (aircraft.approach.status === 'armed' && !canCapture) return aircraft;
   const glideslopeAltitude = Math.max(0, geometry.distanceToThreshold * GLIDESLOPE_FEET_PER_NM + 40);
   const targetAltitude = aircraft.approach.landingCleared ? glideslopeAltitude : Math.max(1200, glideslopeAltitude);
-  const targetSpeed = Math.max(aircraft.performance.minSpeed + 5, 145);
+  const targetSpeed = stabilizedApproachSpeedKt(world, runway, aircraft.performance.minSpeed);
   return {
     ...aircraft,
     approach: { ...aircraft.approach, status: 'captured' },

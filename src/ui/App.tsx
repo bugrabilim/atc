@@ -230,6 +230,7 @@ export function App() {
         <FlightStripList
           aircraft={state.aircraft}
           conflicts={state.conflicts}
+          world={activeWorld}
           selectedCallsign={state.selectedCallsign}
           elapsedSeconds={state.elapsedSeconds}
           onSelect={selectAircraft}
