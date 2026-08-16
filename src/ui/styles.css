@@ -98,6 +98,13 @@ button { touch-action: manipulation; }
 .mission-score { display: flex; gap: 14px; color: var(--muted); font: 600 9px IBM Plex Mono, monospace; }
 .mission-score b { margin-left: 5px; color: var(--green); font-size: 12px; }
 .mission-event { color: #9dc7b0; font: 500 9px/1.35 IBM Plex Mono, monospace; text-align: right; }
+.operations-drawer { grid-column: 1 / -1; min-width: 0; }
+.operations-drawer summary, .career-drawer summary { display: flex; align-items: center; min-height: 30px; padding: 5px 8px; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; background: rgba(7, 22, 16, .72); cursor: pointer; font: 700 9px IBM Plex Mono, monospace; list-style: none; }
+.operations-drawer summary::-webkit-details-marker, .career-drawer summary::-webkit-details-marker { display: none; }
+.operations-drawer[open] summary, .career-drawer[open] summary { color: var(--cyan); border-radius: 6px 6px 0 0; }
+.operations-drawer__content { display: flex; flex-wrap: wrap; gap: 7px; padding: 8px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 6px 6px; background: rgba(3, 12, 8, .82); }
+.operations-drawer__content span { padding: 5px 7px; color: var(--muted); border-radius: 4px; background: rgba(19, 58, 42, .42); font: 600 9px IBM Plex Mono, monospace; }
+.operations-drawer__content b { color: #dff8ec; }
 .assistant-drawer { grid-column: 1 / -1; min-width: 0; }
 .assistant-drawer summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 26px; padding: 4px 8px; color: var(--cyan); border: 1px solid rgba(103,232,196,.18); border-radius: 5px; background: rgba(6,28,20,.52); cursor: pointer; font: 700 8px IBM Plex Mono, monospace; list-style: none; }
 .assistant-drawer summary::-webkit-details-marker { display: none; }
@@ -425,11 +432,18 @@ button { touch-action: manipulation; }
     grid-template-rows: auto auto auto auto auto;
   }
   .game-status { position: relative; z-index: 3; }
-  .mission-panel { padding-bottom: 6px; }
+  .mission-panel { min-height: 0; padding: 6px 10px; }
+  .mission-primary .eyebrow, .mission-briefing { display: none; }
+  .mission-primary strong { margin: 0; font-size: 12px; line-height: 1.25; }
+  .mission-score { display: flex; gap: 8px; }
+  .mission-score span { display: none; }
+  .mission-score span:first-child, .mission-score span:nth-child(2) { display: inline-flex; align-items: baseline; gap: 3px; }
+  .mission-score b { margin-left: 0; }
+  .mission-event, .career-drawer, .operations-drawer { display: none; }
   .assistant-drawer { margin-top: 7px; }
   .assistant-drawer:not([open]) { display: none; }
-  .workspace { min-height: clamp(330px, 52dvh, 520px); }
-  .radar-frame { height: clamp(330px, 52dvh, 520px); min-height: 0; }
+  .workspace { min-height: clamp(430px, 64dvh, 680px); }
+  .radar-frame { height: clamp(430px, 64dvh, 680px); min-height: 0; }
   .radar-canvas { cursor: default; }
   .command-panel {
     position: sticky;
@@ -439,6 +453,20 @@ button { touch-action: manipulation; }
   }
   .radar-queue { max-width: calc(100% - 164px); }
   .radar-decision { bottom: 18px; }
+}
+
+/* Focus layout: the controller sees only the live mission and tactical radar.
+   Secondary briefings, coaching and career data stay available on demand. */
+@media (min-width: 641px) {
+  .app-shell { grid-template-rows: auto auto auto minmax(0, 1fr) auto; }
+  .mission-panel { grid-template-columns: minmax(0, 1fr) auto minmax(220px, .6fr); gap: 10px 16px; min-height: 54px; padding-block: 7px; }
+  .mission-briefing { display: none; }
+  .mission-primary strong { max-width: 880px; margin-top: 2px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mission-score { gap: 10px; }
+  .mission-event { max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .career-drawer, .operations-drawer, .assistant-drawer { grid-column: 1 / -1; }
+  .career-drawer:not([open]), .operations-drawer:not([open]), .assistant-drawer:not([open]) { display: none; }
+  .workspace { grid-template-columns: minmax(0, 1fr) 280px; }
 }
 
 @media (max-width: 390px) {
