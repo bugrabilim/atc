@@ -44,11 +44,15 @@ export function landingClearanceStatus() {
 function createPriorityTraffic(aircraft: Aircraft, elapsedSeconds: number): Aircraft {
   if (aircraft.phase !== 'arrival') return aircraft;
   const kind = aircraft.callsign.endsWith('2') || aircraft.callsign.endsWith('9') ? 'minimumFuel' : 'medical';
+  const responseWindow = kind === 'minimumFuel' ? 210 : 260;
   return {
     ...aircraft,
     priority: {
       kind,
-      deadlineAt: elapsedSeconds + (kind === 'minimumFuel' ? 210 : 260),
+      // The window is intentionally generous at first: this is a sequencing
+      // decision, not a surprise fail state. Higher traffic still makes it a
+      // meaningful reason to protect a gap and use the parallel runway.
+      deadlineAt: elapsedSeconds + responseWindow,
       alertRaised: false,
     },
   };
@@ -153,6 +157,52 @@ function runwayReopen(state: GameState, elapsedSeconds: number) {
     type: 'success' as const,
     message: `PİST AÇILDI · ${runwayId} yeniden iniş akışına hazır`,
   };
+}
+
+/**
+ * Terminal capacity is modelled as an arrival-bank limit per available
+ * runway. It meters the boundary instead of silently spawning an impossible
+ * queue, and it recovers once the player has worked the bank down.
+ */
+function terminalMetering(state: GameState, aircraft: readonly Aircraft[], world: RadarWorld, elapsedSeconds: number) {
+  if (!difficultyConfig(state.mode).showAdvancedCommands || elapsedSeconds < 255) return null;
+  const arrivalRunways = world.runways.filter((runway) => runway.active && (runway.operation === 'arrival' || runway.operation === 'mixed'));
+  const arrivals = aircraft.filter((item) => item.phase === 'arrival').length;
+  const limit = Math.max(3, arrivalRunways.length * 3);
+  const alreadyMetering = hasOperationalEvent(state, 'terminal-metering-');
+  const alreadyRecovered = hasOperationalEvent(state, 'terminal-recovery-');
+  if (arrivals >= limit && !alreadyMetering) {
+    return {
+      metering: true,
+      event: {
+        id: `terminal-metering-${Math.round(elapsedSeconds)}`,
+        type: 'warning' as const,
+        message: `TERMİNAL KAPASİTESİ · ${arrivals}/${limit} yaklaşma slotu dolu · yeni girişler kısa süre metered, mevcut sırayı çöz`,
+      },
+    };
+  }
+  // Re-open as soon as one tactical slot per runway is restored. Waiting for
+  // the entire bank to drain made single-runway recovery feel artificially
+  // delayed even after the controller had created usable spacing.
+  if (alreadyMetering && !alreadyRecovered && arrivals <= Math.max(1, limit - Math.ceil(limit / 3))) {
+    return {
+      metering: false,
+      event: {
+        id: `terminal-recovery-${Math.round(elapsedSeconds)}`,
+        type: 'success' as const,
+        message: `TERMİNAL AKIŞI AÇILDI · ${arrivals}/${limit} yaklaşma slotu · sınır girişleri normale döndü`,
+      },
+    };
+  }
+  return alreadyMetering && !alreadyRecovered ? { metering: true } : null;
+}
+
+function priorityTrafficDue(state: GameState, aircraft: readonly Aircraft[]) {
+  if (!difficultyConfig(state.mode).allowPriorityTraffic || state.spawned === 0) return false;
+  // Priority flights are spaced out and never stack. The cadence varies by
+  // workload, making them memorable operational events rather than noise.
+  const cadence = state.mode === 'expert' ? 6 : 7;
+  return state.spawned % cadence === 0 && !aircraft.some((item) => item.priority && !item.priority.alertRaised);
 }
 
 export function detectConflicts(aircraft: readonly Aircraft[], world?: RadarWorld, elapsedSeconds = 0): Conflict[] {
@@ -321,10 +371,18 @@ function stepFixed(state: GameState, world: RadarWorld, dt: number): GameState {
   const peakSkill = Math.max(state.peakSkill, skill);
   const profile = trafficProfile(skill, world, state.mode);
 
+  const metering = terminalMetering(state, aircraft, world, elapsedSeconds);
+  if (metering?.event) eventLog = appendEvent(eventLog, metering.event);
+
   if (elapsedSeconds >= nextTrafficAt) {
-    if (aircraft.length < profile.targetAircraft) {
+    if (metering?.metering) {
+      // Preserve the current workload while the terminal is saturated. This
+      // gives a controller time to use speed, vectors, HOLD and parallel
+      // capacity without flooding the sector every fixed simulation tick.
+      nextTrafficAt = elapsedSeconds + Math.max(6, profile.spawnInterval * 0.65);
+    } else if (aircraft.length < profile.targetAircraft) {
       const plannedTraffic = planTraffic(spawned, aircraft, world, state.seed);
-      const incoming = difficultyConfig(state.mode).allowPriorityTraffic && spawned > 0 && spawned % 7 === 0
+      const incoming = priorityTrafficDue(state, aircraft)
         ? createPriorityTraffic(plannedTraffic.aircraft, elapsedSeconds)
         : plannedTraffic.aircraft;
       if (!aircraft.some((item) => item.callsign === incoming.callsign)) {
