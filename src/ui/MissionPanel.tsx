@@ -14,9 +14,10 @@ interface MissionPanelProps {
   priorityTraffic: Aircraft[];
   events: GameEvent[];
   activeFlowLabel: string;
+  pendingInstructionCount: number;
 }
 
-export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, bestScore, bestLandings, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel }: MissionPanelProps) {
+export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, bestScore, bestLandings, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount }: MissionPanelProps) {
   const trainingAircraft = aircraft.find((item) => item.callsign === trainingCallsign);
   const approachCaptured = trainingAircraft?.approach?.status === 'captured';
   const landingCleared = trainingAircraft?.approach?.landingCleared;
@@ -43,6 +44,7 @@ export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, 
         <span>HANDOFF <b>{handoffs}</b></span>
         <span>YOĞUNLUK <b>{trafficLevel}/5</b></span>
         <span>AKIŞ <b>{activeFlowLabel}</b></span>
+        {pendingInstructionCount > 0 ? <span>READBACK <b>{pendingInstructionCount}</b></span> : null}
         <span>KARİYER <b>{controllerRank(bestScore)} · {bestLandings} İNİŞ</b></span>
       </div>
       <div className="mission-event" aria-live="polite">

@@ -7,6 +7,7 @@ interface RadarScopeProps {
   aircraft: Aircraft[];
   conflicts: Conflict[];
   trackHistory: Record<string, Vector2[]>;
+  pendingCallsigns: string[];
   selectedCallsign: string | null;
   onSelect: (callsign: string) => void;
 }
@@ -55,6 +56,7 @@ function drawRadar(
   aircraft: Aircraft[],
   conflicts: Conflict[],
   trackHistory: Record<string, Vector2[]>,
+  pendingCallsigns: string[],
   selectedCallsign: string | null,
 ) {
   const { width, height, center, scale } = viewport;
@@ -136,6 +138,7 @@ function drawRadar(
     const targetRadians = (item.targetHeading * Math.PI) / 180;
     const activeFix = item.navigation?.fixIds[item.navigation.currentLegIndex];
     const fix = activeFix ? world.fixes.find((entry) => entry.id === activeFix) : undefined;
+    const pendingReadback = pendingCallsigns.includes(item.callsign);
 
     const trail = trackHistory[item.callsign] ?? [];
     if (trail.length > 1) {
@@ -201,6 +204,10 @@ function drawRadar(
       ctx.fillStyle = '#ffb648';
       ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';
       ctx.fillText(item.priority.alertRaised ? 'ÖNCELİK GECİKTİ' : 'ÖNCELİK', leaderEnd.x + 3, leaderEnd.y + 21);
+    } else if (pendingReadback) {
+      ctx.fillStyle = '#ffb648';
+      ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';
+      ctx.fillText('READBACK', leaderEnd.x + 3, leaderEnd.y + 21);
     } else if (item.handoffCleared) {
       ctx.fillStyle = '#79b9ff';
       ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';
@@ -227,7 +234,7 @@ function drawRadar(
   ctx.fillText('SIMÜLASYON · OPERASYONEL KULLANIM İÇİN DEĞİLDİR', 14, height - 14);
 }
 
-export function RadarScope({ world, aircraft, conflicts, trackHistory, selectedCallsign, onSelect }: RadarScopeProps) {
+export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCallsigns, selectedCallsign, onSelect }: RadarScopeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewportRef = useRef<Viewport | null>(null);
 
@@ -248,7 +255,7 @@ export function RadarScope({ world, aircraft, conflicts, trackHistory, selectedC
         scale: Math.min(rect.width, rect.height) / (world.rangeNm * 2.15),
         center: { x: rect.width / 2, y: rect.height / 2 + Math.min(24, rect.height * 0.04) },
       };
-      drawRadar(ctx, viewportRef.current, world, aircraft, conflicts, trackHistory, selectedCallsign);
+      drawRadar(ctx, viewportRef.current, world, aircraft, conflicts, trackHistory, pendingCallsigns, selectedCallsign);
     };
     resize();
     const observer = new ResizeObserver(resize);
@@ -261,8 +268,8 @@ export function RadarScope({ world, aircraft, conflicts, trackHistory, selectedC
     const viewport = viewportRef.current;
     if (!canvas || !viewport) return;
     const ctx = canvas.getContext('2d');
-    if (ctx) drawRadar(ctx, viewport, world, aircraft, conflicts, trackHistory, selectedCallsign);
-  }, [aircraft, conflicts, selectedCallsign, trackHistory, world]);
+    if (ctx) drawRadar(ctx, viewport, world, aircraft, conflicts, trackHistory, pendingCallsigns, selectedCallsign);
+  }, [aircraft, conflicts, pendingCallsigns, selectedCallsign, trackHistory, world]);
 
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;

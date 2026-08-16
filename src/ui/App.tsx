@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { applyCommand, parseCommandLine } from '../engine/commands';
+import { parseCommandLine } from '../engine/commands';
+import { queueInstruction } from '../engine/radio';
 import { createInitialState, defaultScenario, scenarioCatalog, worldWithFlow } from '../engine/scenario';
 import { landingClearanceStatus, stepGame } from '../engine/simulation';
 import type { GameState } from '../engine/types';
@@ -104,22 +105,21 @@ export function App() {
       }
     }
     setState((current) => ({
-      ...current,
+      ...queueInstruction(current, parsed.command, parsed.normalized),
       selectedCallsign: parsed.command.callsign,
-      aircraft: applyCommand(current.aircraft, parsed.command),
     }));
     setCommand('');
     setFeedback({
       type: 'success',
       message: parsed.command.kind === 'approach'
-        ? `${parsed.normalized} · ILS silahlandı; localizer ve glideslope yakalanınca otomatik takip başlayacak.`
+        ? `${parsed.normalized} · pilot readback verdi; kısa süre sonra ILS silahlanacak.`
         : parsed.command.kind === 'direct'
-          ? `${parsed.normalized} · Uçak waypoint'e doğrudan yönlendirildi.`
+          ? `${parsed.normalized} · pilot readback verdi; doğrudan rota birazdan uygulanacak.`
         : parsed.command.kind === 'hold'
-          ? `${parsed.normalized} · Uçak waypoint üzerinde hold paternine girecek.`
+            ? `${parsed.normalized} · pilot readback verdi; hold talimatı birazdan uygulanacak.`
           : parsed.command.kind === 'land'
-            ? `${parsed.normalized} · Pist sıralaması doğrulandı; yaklaşmayı sürdür.`
-          : `${parsed.normalized} · Talimat alındı, uçak kademeli uyguluyor.`,
+              ? `${parsed.normalized} · iniş izni readback ile onaylandı.`
+              : `${parsed.normalized} · pilot readback verdi; uçak talimatı kademeli uygulayacak.`,
     });
   }, [activeArrivalRunways, activeWorld, command]);
 
@@ -199,6 +199,7 @@ export function App() {
           priorityTraffic={state.aircraft.filter((item) => item.priority)}
           events={state.eventLog}
           activeFlowLabel={activeFlow?.label ?? 'STANDART'}
+          pendingInstructionCount={state.pendingInstructions.length}
         />
       </div>
 
@@ -208,6 +209,7 @@ export function App() {
           aircraft={state.aircraft}
           conflicts={state.conflicts}
           trackHistory={state.trackHistory}
+          pendingCallsigns={state.pendingInstructions.map((item) => item.command.callsign)}
           selectedCallsign={state.selectedCallsign}
           onSelect={selectAircraft}
         />

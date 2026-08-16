@@ -118,7 +118,7 @@ export function createInitialState(scenario: GameScenario = defaultScenario): Ga
     runwayAvailableAt: {}, eventLog: [{ id: 'welcome', type: 'info', message: `Eğitim: ${trainingAircraft?.callsign ?? 'ilk geliş'} için ILS ${trainingAircraft?.assignedRunway ?? ''} yaklaşmasını başlat.` }],
     activeLossPairs: [], handoffs: 0, flowId,
     trackHistory: Object.fromEntries(scenario.initialAircraft.map((item) => [item.callsign, [{ ...item.position }]])),
-    lastTrackAt: 0,
+    lastTrackAt: 0, pendingInstructions: [],
   };
 }
 

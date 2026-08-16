@@ -139,6 +139,8 @@ export interface GameState {
   /** Radar positions sampled at one-second intervals for history trails. */
   trackHistory: Record<string, Vector2[]>;
   lastTrackAt: number;
+  /** Instructions acknowledged by a pilot and waiting for execution. */
+  pendingInstructions: PendingInstruction[];
 }
 
 export interface GameEvent {
@@ -156,6 +158,14 @@ export type AircraftCommand =
   | { kind: 'handoff'; callsign: string }
   | { kind: 'direct'; callsign: string; fixId: string }
   | { kind: 'hold'; callsign: string; fixId: string };
+
+export interface PendingInstruction {
+  id: string;
+  command: AircraftCommand;
+  normalized: string;
+  issuedAt: number;
+  executeAt: number;
+}
 
 export type ParseResult =
   | { ok: true; command: AircraftCommand; normalized: string }

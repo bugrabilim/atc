@@ -1,4 +1,5 @@
 import { distance, moveToward, turnToward } from './math';
+import { applyCommand } from './commands';
 import { guideNavigation } from './navigation';
 import { spawnTraffic } from './scenario';
 import type { Aircraft, Conflict, GameEvent, GameState, RadarWorld, Runway, Trend, Vector2 } from './types';
@@ -229,7 +230,13 @@ export function detectConflicts(aircraft: readonly Aircraft[]): Conflict[] {
 export function stepGame(state: GameState, _world: RadarWorld, dt: number): GameState {
   if (state.paused) return state;
   const boundedDt = Math.min(dt, 0.1) * state.timeScale;
-  const navigationResults = state.aircraft.map((item) => guideNavigation(guideApproach(item, _world), _world));
+  const elapsedSeconds = state.elapsedSeconds + boundedDt;
+  const acknowledgedInstructions = state.pendingInstructions.filter((item) => item.executeAt <= elapsedSeconds);
+  const pendingInstructions = state.pendingInstructions.filter((item) => item.executeAt > elapsedSeconds);
+  const instructedAircraft = acknowledgedInstructions.reduce((aircraft, instruction) => (
+    applyCommand(aircraft, instruction.command)
+  ), state.aircraft);
+  const navigationResults = instructedAircraft.map((item) => guideNavigation(guideApproach(item, _world), _world));
   const movedAircraft = navigationResults.map((item) => stepAircraft(item.aircraft, boundedDt));
   const landedAircraft = movedAircraft.filter((item) => completedLanding(item, _world));
   const missedAircraft = movedAircraft.filter((item) => missedApproach(item, _world));
@@ -247,7 +254,13 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
   let eventLog = navigationResults.reduce<GameEvent[]>((events, result) => (
     result.event ? appendEvent(events, result.event) : events
   ), state.eventLog);
-  const elapsedSeconds = state.elapsedSeconds + boundedDt;
+  if (acknowledgedInstructions.length > 0) {
+    eventLog = acknowledgedInstructions.reduce((events, instruction) => appendEvent(events, {
+      id: `readback-${instruction.id}`,
+      type: 'info',
+      message: `${instruction.command.callsign} · readback onaylandı: ${instruction.normalized}`,
+    }), eventLog);
+  }
   const priorityLanded = landedAircraft.filter((item) => item.priority);
 
   if (landedAircraft.length > 0) {
@@ -374,5 +387,6 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
     handoffs: state.handoffs + handedOffAircraft.length,
     trackHistory,
     lastTrackAt: shouldSampleTrack ? elapsedSeconds : state.lastTrackAt,
+    pendingInstructions,
   };
 }
