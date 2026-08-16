@@ -1,0 +1,6 @@
+{
+  "appId": "com.bugrabilim.airspacecontrol",
+  "appName": "Airspace Control",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
