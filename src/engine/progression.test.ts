@@ -68,7 +68,10 @@ describe('career progression', () => {
   });
 
   it('unlocks content through demonstrated safety and procedure skill', () => {
-    const career = careerProgression(['beginner-complete', 'landing-trio', 'clean-start', 'wake-keeper', 'normal-complete', 'procedure-pilot', 'holding-strategist']);
+    const career = careerProgression(
+      ['beginner-complete', 'landing-trio', 'clean-start', 'wake-keeper', 'normal-complete', 'procedure-pilot', 'holding-strategist'],
+      { alpha: 150, coastal: 300 },
+    );
     expect(career.unlockedScenarioIds).toEqual(expect.arrayContaining(['alpha', 'coastal', 'metro']));
     expect(career.unlockedModeIds).toEqual(expect.arrayContaining(['beginner', 'normal', 'advanced']));
     expect(career.unlockedOperationIds).toContain('wake-advisor');
@@ -77,7 +80,9 @@ describe('career progression', () => {
 
   it('keeps every unlock backed by achievement requirements and reaches full completion', () => {
     expect(CAREER_UNLOCKS.every((unlock) => unlock.requiredAchievementIds.every(isAchievementId))).toBe(true);
-    const career = careerProgression(ACHIEVEMENTS.map((achievement) => achievement.id));
+    const career = careerProgression(ACHIEVEMENTS.map((achievement) => achievement.id), {
+      alpha: 150, coastal: 300, metro: 450, strait: 600, highland: 750, nordic: 900, desert: 1100,
+    });
     expect(career.completionPercent).toBe(100);
     expect(career.nextUnlock).toBeNull();
     expect(career.unlockedScenarioIds).toHaveLength(8);
