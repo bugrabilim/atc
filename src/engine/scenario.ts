@@ -5,7 +5,7 @@ import { profileForSkill } from './skill';
 import { difficultyConfig, modeTrafficProfile } from './difficulty';
 
 export interface GameScenario {
-  id: 'alpha' | 'coastal';
+  id: 'alpha' | 'coastal' | 'metro';
   label: string;
   world: RadarWorld;
   initialAircraft: Aircraft[];
@@ -73,6 +73,35 @@ const coastalWorld: RadarWorld = {
   ],
 };
 
+const metroWorld: RadarWorld = {
+  airport: 'METRO GATEWAY', sectorName: 'APPROACH · METRO SECTOR', rangeNm: 34,
+  runways: [
+    { id: '22', reciprocal: '04', center: { x: -0.9, y: 0.4 }, heading: 220, lengthNm: 1.86, active: true, operation: 'arrival' },
+    { id: '27', reciprocal: '09', center: { x: 1.8, y: -1.8 }, heading: 270, lengthNm: 1.54, active: true, operation: 'departure' },
+  ],
+  fixes: [
+    { id: 'NORTH', position: { x: -8, y: -25 } }, { id: 'EAST', position: { x: 24, y: 8 } },
+    { id: 'SOUTH', position: { x: 9, y: 24 } }, { id: 'WEST', position: { x: -24, y: 6 } },
+    { id: 'FINAL22', position: { x: 11, y: -10 } }, { id: 'EXIT27', position: { x: -22, y: -2 } },
+  ],
+  procedures: [
+    { id: 'NORTH-METRO', kind: 'arrival', runwayId: '22', fixIds: ['NORTH', 'FINAL22'] },
+    { id: 'EAST-METRO', kind: 'arrival', runwayId: '22', fixIds: ['EAST', 'FINAL22'] },
+    { id: 'SOUTH-METRO', kind: 'arrival', runwayId: '22', fixIds: ['SOUTH', 'FINAL22'] },
+    { id: 'EXIT27-METRO', kind: 'departure', fixIds: ['EXIT27'] },
+  ],
+  trafficEntries: [
+    { id: 'NORTH', position: { x: -8, y: -25 }, procedureId: 'NORTH-METRO', compatibleRunwayIds: ['22'] },
+    { id: 'EAST', position: { x: 24, y: 8 }, procedureId: 'EAST-METRO', compatibleRunwayIds: ['22'] },
+    { id: 'SOUTH', position: { x: 9, y: 24 }, procedureId: 'SOUTH-METRO', compatibleRunwayIds: ['22'] },
+  ],
+  trafficExits: [{ id: 'EXIT27', procedureId: 'EXIT27-METRO' }],
+  flowConfigurations: [
+    { id: 'metro-standard', label: 'METRO · STANDART', arrivalRunwayIds: ['22'], departureRunwayIds: ['27'], windDirection: 225, windSpeedKt: 8, visibilityNm: 10, qnh: 1017 },
+    { id: 'metro-lowvis', label: 'METRO · DÜŞÜK GÖRÜŞ', arrivalRunwayIds: ['22'], departureRunwayIds: ['27'], windDirection: 215, windSpeedKt: 16, visibilityNm: 4, qnh: 1005 },
+  ],
+};
+
 const alphaAircraft: Aircraft[] = [
   createAircraft({ callsign: 'AR101', type: 'A321', phase: 'arrival', position: { x: -1.65, y: 6 }, heading: 354, altitude: 1200, speed: 170, targetHeading: 354, targetAltitude: 1200, targetSpeed: 170, turnDirection: 'shortest', performance: JET_PERFORMANCE, assignedRunway: '34L' }),
   createAircraft({ callsign: 'NX204', type: 'B738', phase: 'arrival', position: { x: 20, y: -17 }, heading: 316, altitude: 8000, speed: 260, targetHeading: 316, targetAltitude: 8000, targetSpeed: 260, turnDirection: 'shortest', performance: JET_PERFORMANCE, assignedRunway: '34L' }),
@@ -85,9 +114,16 @@ const coastalAircraft: Aircraft[] = [
   createAircraft({ callsign: 'SK721', type: 'A330', phase: 'departure', position: { x: 3.8, y: 1.8 }, heading: 180, altitude: 3000, speed: 205, targetHeading: 180, targetAltitude: 11000, targetSpeed: 275, turnDirection: 'shortest', performance: HEAVY_PERFORMANCE, navigation: { mode: 'route', fixIds: ['EXIT1'], currentLegIndex: 0, procedure: 'EXIT1-COAST' } }),
 ];
 
+const metroAircraft: Aircraft[] = [
+  createAircraft({ callsign: 'MG104', type: 'A320', phase: 'arrival', position: { x: 12, y: -16 }, heading: 310, altitude: 7000, speed: 230, targetHeading: 310, targetAltitude: 7000, targetSpeed: 230, turnDirection: 'shortest', performance: JET_PERFORMANCE, assignedRunway: '22' }),
+  createAircraft({ callsign: 'MG602', type: 'B738', phase: 'arrival', position: { x: -9, y: -25 }, heading: 18, altitude: 9000, speed: 250, targetHeading: 18, targetAltitude: 9000, targetSpeed: 250, turnDirection: 'shortest', performance: JET_PERFORMANCE, assignedRunway: '22' }),
+  createAircraft({ callsign: 'MG711', type: 'A330', phase: 'departure', position: { x: 2, y: -1.8 }, heading: 270, altitude: 3000, speed: 205, targetHeading: 270, targetAltitude: 11000, targetSpeed: 275, turnDirection: 'shortest', performance: HEAVY_PERFORMANCE, navigation: { mode: 'route', fixIds: ['EXIT27'], currentLegIndex: 0, procedure: 'EXIT27-METRO' } }),
+];
+
 export const scenarioCatalog: GameScenario[] = [
   { id: 'alpha', label: 'ALPHA · PARALLEL', world: alphaWorld, initialAircraft: alphaAircraft },
   { id: 'coastal', label: 'COASTAL · CROSSWIND', world: coastalWorld, initialAircraft: coastalAircraft },
+  { id: 'metro', label: 'METRO · SINGLE RUNWAY', world: metroWorld, initialAircraft: metroAircraft },
 ];
 
 export const defaultScenario = scenarioCatalog[0];
