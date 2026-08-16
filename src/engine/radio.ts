@@ -39,6 +39,7 @@ function spokenClearance(normalized: string) {
   if (command === 'DCT') return `direct ${value}`;
   if (command === 'HOLD') return `hold at ${value}`;
   if (command === 'HANDOFF') return 'handoff approved';
+  if (command === 'GO') return 'go around';
   if (command === 'EXPEDITE') return 'expedite';
   if (command === 'RESUME') return 'resume normal speed';
   return normalized;
