@@ -26,4 +26,25 @@ describe('arrival advisor and weather', () => {
     expect(approachLateralToleranceNm(coastal, runway)).toBeLessThan(2.2);
     expect(stabilizedApproachSpeedKt(coastal, runway, 140)).toBeGreaterThan(145);
   });
+
+  it('flags insufficient planned spacing behind a heavy leader', () => {
+    const aircraft = structuredClone(initialState.aircraft).filter((item) => item.phase === 'arrival');
+    const [leader, follower] = aircraft;
+    if (!leader || !follower) throw new Error('Arrival fixtures are missing');
+    leader.type = 'B77W';
+    leader.wakeCategory = 'B';
+    leader.position = { x: -1.5, y: 3.2 };
+    leader.speed = 230;
+    leader.assignedRunway = '34L';
+    follower.position = { x: -1.4, y: 4.8 };
+    follower.speed = 250;
+    follower.assignedRunway = '34L';
+
+    const advice = arrivalAdvice(aircraft, world).get(follower.callsign);
+
+    expect(advice?.spacingRisk).toBe(true);
+    expect(advice?.leaderCallsign).toBe(leader.callsign);
+    expect(advice?.requiredSpacingNm).toBe(7);
+    expect(advice?.recommendedSpeed).toBeDefined();
+  });
 });
