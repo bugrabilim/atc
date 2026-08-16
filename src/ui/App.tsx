@@ -310,15 +310,21 @@ export function App() {
           <span>SKILL <b>{state.skill.toFixed(1)}</b> / PEAK <b>{state.peakSkill.toFixed(1)}</b></span>
         </div>
         <div className="session-actions">
+          <button type="button" onClick={togglePause}>{state.paused ? 'DEVAM' : 'DUR'}</button>
+          <button type="button" onClick={cycleSpeed}>{state.timeScale}×</button>
+          <button type="button" className={audioEnabled ? 'is-active' : ''} onClick={toggleAudio}>{audioEnabled ? 'SES AÇIK' : 'SES'}</button>
+        </div>
+        <details className="session-menu">
+          <summary aria-label="Oyun menüsü">MENÜ</summary>
+          <div className="session-menu__panel">
+            <span>SENARYO</span>
           {scenarioCatalog.map((item) => (
             <button key={item.id} type="button" className={item.id === scenario.id ? 'is-active' : ''} onClick={() => selectScenario(item)}>{item.id === 'alpha' ? 'ALPHA' : 'COASTAL'}</button>
           ))}
-          <button type="button" onClick={togglePause}>{state.paused ? 'DEVAM' : 'DURAKLAT'}</button>
-          <button type="button" onClick={cycleSpeed}>{state.timeScale}×</button>
-          <button type="button" className={audioEnabled ? 'is-active' : ''} onClick={toggleAudio}>{audioEnabled ? 'SES AÇIK' : 'SES'}</button>
           <button type="button" onClick={endShift}>BİTİR</button>
           <button type="button" onClick={reset}>YENİLE</button>
-        </div>
+          </div>
+        </details>
       </header>
 
       <div className="operation-bar" aria-label="Operasyon ve hava koşulları">
