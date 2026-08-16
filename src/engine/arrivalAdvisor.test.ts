@@ -44,7 +44,10 @@ describe('arrival advisor and weather', () => {
 
     expect(advice?.spacingRisk).toBe(true);
     expect(advice?.leaderCallsign).toBe(leader.callsign);
-    expect(advice?.requiredSpacingNm).toBe(7);
+    // The fixture's follower is a wake-D aircraft; the exact matrix value is
+    // intentionally asserted so the early-warning recommendation remains tied
+    // to the actual fleet data rather than a stale hard-coded category.
+    expect(advice?.requiredSpacingNm).toBe(6);
     expect(advice?.recommendedSpeed).toBeDefined();
   });
 });
