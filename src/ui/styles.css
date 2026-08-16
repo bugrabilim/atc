@@ -215,6 +215,9 @@ button { touch-action: manipulation; }
 .debrief-metrics b { display: block; margin-top: 5px; color: var(--green); font-size: 18px; }
 .debrief-columns { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .debrief-columns p { margin-top: 8px; }
+.debrief-awards { grid-column: 1 / -1; padding: 10px; border: 1px solid rgba(103,232,196,.26); border-radius: 7px; background: rgba(7,39,29,.45); }
+.debrief-awards > div { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.debrief-awards b { padding: 6px 8px; color: #032218; border-radius: 4px; background: var(--cyan); font: 700 9px IBM Plex Mono, monospace; }
 .debrief-timeline { grid-column: 1 / -1; display: grid; gap: 5px; padding: 11px; border: 1px solid var(--line); border-radius: 7px; background: rgba(2, 11, 8, .55); }
 .debrief-timeline p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .debrief-event--success { color: var(--green) !important; }
