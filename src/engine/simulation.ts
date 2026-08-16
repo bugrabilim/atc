@@ -52,7 +52,8 @@ function guideApproach(aircraft: Aircraft, world: RadarWorld): Aircraft {
     && angularDifference(aircraft.heading, runway.heading) <= 35;
 
   if (aircraft.approach.status === 'armed' && !canCapture) return aircraft;
-  const targetAltitude = Math.max(0, geometry.distanceToThreshold * GLIDESLOPE_FEET_PER_NM + 40);
+  const glideslopeAltitude = Math.max(0, geometry.distanceToThreshold * GLIDESLOPE_FEET_PER_NM + 40);
+  const targetAltitude = aircraft.approach.landingCleared ? glideslopeAltitude : Math.max(1200, glideslopeAltitude);
   const targetSpeed = Math.max(aircraft.performance.minSpeed + 5, 145);
   return {
     ...aircraft,
@@ -94,11 +95,29 @@ function completedLanding(aircraft: Aircraft, world: RadarWorld) {
   const runway = world.runways.find((item) => item.id === aircraft.approach?.runwayId);
   if (!runway) return false;
   const geometry = getApproachGeometry(aircraft, runway);
-  return geometry.distanceToThreshold <= 0.18
+  return aircraft.approach.landingCleared
+    && geometry.distanceToThreshold <= 0.18
     && geometry.distanceToThreshold >= -0.65
     && geometry.lateralDistance <= 0.22
     && aircraft.altitude <= 160
     && angularDifference(aircraft.heading, runway.heading) <= 5;
+}
+
+function missedApproach(aircraft: Aircraft, world: RadarWorld) {
+  if (aircraft.approach?.status !== 'captured' || aircraft.approach.landingCleared) return false;
+  const runway = world.runways.find((item) => item.id === aircraft.approach?.runwayId);
+  return runway ? getApproachGeometry(aircraft, runway).distanceToThreshold < -0.25 : false;
+}
+
+function initiateGoAround(aircraft: Aircraft): Aircraft {
+  return {
+    ...aircraft,
+    approach: undefined,
+    targetHeading: (aircraft.heading + 180) % 360,
+    targetAltitude: Math.max(3000, aircraft.altitude),
+    targetSpeed: Math.max(210, aircraft.speed),
+    turnDirection: 'shortest',
+  };
 }
 
 function appendEvent(events: GameEvent[], event: GameEvent) {
@@ -132,11 +151,13 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
   const navigationResults = state.aircraft.map((item) => guideNavigation(guideApproach(item, _world), _world));
   const movedAircraft = navigationResults.map((item) => stepAircraft(item.aircraft, boundedDt));
   const landedAircraft = movedAircraft.filter((item) => completedLanding(item, _world));
-  const handedOffAircraft = movedAircraft.filter((item) => (
+  const missedAircraft = movedAircraft.filter((item) => missedApproach(item, _world));
+  const recoveredAircraft = movedAircraft.map((item) => missedAircraft.includes(item) ? initiateGoAround(item) : item);
+  const handedOffAircraft = recoveredAircraft.filter((item) => (
     item.phase === 'departure'
     && distance(item.position, { x: 0, y: 0 }) > _world.rangeNm + 2
   ));
-  let aircraft = movedAircraft.filter((item) => !landedAircraft.includes(item) && !handedOffAircraft.includes(item));
+  let aircraft = recoveredAircraft.filter((item) => !landedAircraft.includes(item) && !handedOffAircraft.includes(item));
   let spawned = state.spawned;
   let nextTrafficAt = state.nextTrafficAt;
   let eventLog = navigationResults.reduce<GameEvent[]>((events, result) => (
@@ -149,6 +170,14 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
       id: `landing-${Math.round(elapsedSeconds * 10)}`,
       type: 'success',
       message: `${landedAircraft.map((item) => item.callsign).join(', ')} · iniş tamamlandı (+100)`,
+    });
+  }
+
+  if (missedAircraft.length > 0) {
+    eventLog = appendEvent(eventLog, {
+      id: `go-around-${Math.round(elapsedSeconds * 10)}`,
+      type: 'warning',
+      message: `${missedAircraft.map((item) => item.callsign).join(', ')} · iniş izni yok, go-around`,
     });
   }
 

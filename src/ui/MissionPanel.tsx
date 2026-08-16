@@ -11,8 +11,11 @@ interface MissionPanelProps {
 export function MissionPanel({ aircraft, score, landed, handoffs, events }: MissionPanelProps) {
   const trainingAircraft = aircraft.find((item) => item.callsign === 'TK1953');
   const approachCaptured = trainingAircraft?.approach?.status === 'captured';
+  const landingCleared = trainingAircraft?.approach?.landingCleared;
   const mission = landed > 0
     ? 'Trafiği ayır, gelişleri ILS yaklaşmasına yönlendir.'
+    : approachCaptured && !landingCleared
+      ? 'TK1953 ILS üzerinde. Pist geçmeden LAND komutuyla iniş izni ver.'
     : approachCaptured
       ? 'TK1953 localizer ve glideslope üzerinde. Pisti takip et.'
       : 'İlk görev: TK1953 için ILS 34L komutunu ver. Diğer trafikte DCT ve HOLD kullan.';

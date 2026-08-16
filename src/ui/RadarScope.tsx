@@ -182,7 +182,7 @@ function drawRadar(
     if (item.approach) {
       ctx.fillStyle = '#67e8c4';
       ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';
-      ctx.fillText(`ILS ${item.approach.runwayId} · ${item.approach.status === 'captured' ? 'CAPTURED' : 'ARMED'}`, leaderEnd.x + 3, leaderEnd.y + 21);
+      ctx.fillText(`ILS ${item.approach.runwayId} · ${item.approach.status === 'captured' ? item.approach.landingCleared ? 'LAND' : 'CAPTURED' : 'ARMED'}`, leaderEnd.x + 3, leaderEnd.y + 21);
     } else if (activeFix) {
       ctx.fillStyle = item.navigation?.mode === 'hold' ? '#ffb648' : '#79b9ff';
       ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';

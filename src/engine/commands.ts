@@ -8,6 +8,7 @@ const ALTITUDE_ALIASES = new Set(['ALT', 'A', 'ALTITUDE']);
 const APPROACH_ALIASES = new Set(['APP', 'ILS']);
 const DIRECT_ALIASES = new Set(['DCT', 'DIRECT']);
 const HOLD_ALIASES = new Set(['HOLD']);
+const LAND_ALIASES = new Set(['LAND', 'CLEARED']);
 
 function resolveCallsign(token: string, callsigns: string[]): string | null {
   const upper = token.toUpperCase();
@@ -41,6 +42,9 @@ export function parseCommandLine(
 
   const keyword = body[0];
   const rawValue = body[1];
+  if (keyword && LAND_ALIASES.has(keyword)) {
+    return { ok: true, command: { kind: 'land', callsign }, normalized: `${callsign} CLEARED TO LAND` };
+  }
   if (!keyword || !rawValue) {
     return { ok: false, error: `${callsign} için örnek: HDG 090, FL100, SPD 220 veya ILS 34L.` };
   }
@@ -113,7 +117,12 @@ export function applyCommand(stateAircraft: readonly import('./types').Aircraft[
     if (command.kind === 'altitude') return { ...aircraft, targetAltitude: command.value };
     if (command.kind === 'approach') {
       return aircraft.phase === 'arrival'
-        ? { ...aircraft, approach: { runwayId: command.runwayId, status: 'armed' as const }, navigation: undefined }
+        ? { ...aircraft, approach: { runwayId: command.runwayId, status: 'armed' as const, landingCleared: false }, navigation: undefined }
+        : aircraft;
+    }
+    if (command.kind === 'land') {
+      return aircraft.approach
+        ? { ...aircraft, approach: { ...aircraft.approach, landingCleared: true } }
         : aircraft;
     }
     if (command.kind === 'direct') {

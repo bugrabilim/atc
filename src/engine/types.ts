@@ -30,6 +30,7 @@ export interface Aircraft {
   approach?: {
     runwayId: string;
     status: ApproachStatus;
+    landingCleared: boolean;
   };
   navigation?: {
     mode: NavigationMode;
@@ -97,6 +98,7 @@ export type AircraftCommand =
   | { kind: 'altitude'; callsign: string; value: number }
   | { kind: 'speed'; callsign: string; value: number }
   | { kind: 'approach'; callsign: string; runwayId: string }
+  | { kind: 'land'; callsign: string }
   | { kind: 'direct'; callsign: string; fixId: string }
   | { kind: 'hold'; callsign: string; fixId: string };
 

@@ -22,7 +22,7 @@ describe('stepGame', () => {
   it('captures the ILS and completes a landing over time', () => {
     let state = structuredClone(initialState);
     state.aircraft = [state.aircraft[0]];
-    state.aircraft[0].approach = { runwayId: '34L', status: 'armed' };
+    state.aircraft[0].approach = { runwayId: '34L', status: 'armed', landingCleared: true };
 
     for (let index = 0; index < 1200; index += 1) {
       state = stepGame(state, world, 0.1);

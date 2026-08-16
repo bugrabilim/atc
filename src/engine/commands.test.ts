@@ -41,4 +41,12 @@ describe('parseCommandLine', () => {
       command: { kind: 'hold', callsign: 'PGT7KM', fixId: 'FM001' },
     });
   });
+
+  it('accepts a landing clearance without a numeric argument', () => {
+    expect(parseCommandLine('TK LAND', callsigns, null)).toEqual({
+      ok: true,
+      command: { kind: 'land', callsign: 'TK1953' },
+      normalized: 'TK1953 CLEARED TO LAND',
+    });
+  });
 });
