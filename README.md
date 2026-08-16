@@ -19,6 +19,8 @@ Mobil ve masaüstü tarayıcılarda çalışan, klasik radar görünümüne sahi
 - Radar pan/zoom/lock, taşınabilir etiket, kavisli predictor ve mesafe ölçümü
 - Pilot readback kuyruğu ve isteğe bağlı tarayıcı TTS sesi
 - PWA manifesti ve çevrimdışı kabuk
+- Dört zorlukta tamamlanabilir vardiya hedefleri ve otomatik debrief
+- İstanbul paralel akış, çapraz rüzgâr ve tek pist senaryo paketleri
 
 ## Komutlar
 
@@ -72,6 +74,23 @@ npm run build
 - Simülasyon: arayüzden bağımsız TypeScript motoru
 - Test: Vitest
 - Mobil paketleme hedefi: Capacitor ile Android ve iOS
+
+## Android ve iOS paketleme
+
+Proje PWA olarak hemen kurulabilir; native mağaza paketi için Capacitor yapılandırması da eklidir.
+Bir macOS/Android geliştirme ortamında aşağıdaki adımlar App Store ve Google Play için imzalı çıktıya götürür:
+
+```bash
+npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/ios
+npm run build
+npx cap add android
+npx cap add ios
+npx cap sync
+npx cap open android
+npx cap open ios
+```
+
+Google Play için Android Studio’dan imzalı `.aab`, App Store için Xcode’dan imzalı `.ipa` oluşturulur. Yayın aşamasında geliştirici hesapları, sertifikalar ve mağaza gizlilik formları zorunludur.
 
 ## Özgünlük ve veri notu
 
