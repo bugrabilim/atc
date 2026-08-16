@@ -1,5 +1,6 @@
 import type { Aircraft, GameEvent } from '../engine/types';
 import { controllerRank, nextMission, type TrainingGuide } from '../engine/progression';
+import type { CoachAdvice } from '../engine/controllerCoach';
 
 interface MissionPanelProps {
   aircraft: Aircraft[];
@@ -17,9 +18,11 @@ interface MissionPanelProps {
   pendingInstructionCount: number;
   tutorial: TrainingGuide | null;
   onTutorialCommand: (guide: TrainingGuide) => void;
+  coach: CoachAdvice;
+  onCoachCommand: (advice: CoachAdvice) => void;
 }
 
-export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, bestScore, bestLandings, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand }: MissionPanelProps) {
+export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, bestScore, bestLandings, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
   const trainingAircraft = aircraft.find((item) => item.callsign === trainingCallsign);
   const approachCaptured = trainingAircraft?.approach?.status === 'captured';
   const landingCleared = trainingAircraft?.approach?.landingCleared;
@@ -59,6 +62,11 @@ export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, 
           {tutorial.command ? <button type="button" onClick={() => onTutorialCommand(tutorial)}>{tutorial.command} UYGULA</button> : null}
         </div>
       ) : null}
+      <div className={`coach-guide coach-guide--${coach.tone}`} aria-live="polite">
+        <span className="coach-guide__label">{coach.label}</span>
+        <div><strong>{coach.title}</strong><small>{coach.message}</small></div>
+        {coach.command ? <button type="button" onClick={() => onCoachCommand(coach)}>{coach.command} UYGULA</button> : null}
+      </div>
     </section>
   );
 }

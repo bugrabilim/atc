@@ -11,6 +11,7 @@ import { FlightStripList } from './FlightStripList';
 import { MissionPanel } from './MissionPanel';
 import { RadarScope } from './RadarScope';
 import { buildDebrief, trainingGuide, type TrainingGuide } from '../engine/progression';
+import { controllerCoach, type CoachAdvice } from '../engine/controllerCoach';
 import { restoreSession, serializeSession, type SavedSession } from '../engine/session';
 
 interface CareerStats {
@@ -169,6 +170,11 @@ export function App() {
     if (!guide.callsign || !guide.command) return;
     if (issueCommand(`${guide.callsign} ${guide.command}`)) setCommand('');
   }, [issueCommand]);
+  const coach = controllerCoach(state, activeWorld);
+  const submitCoachCommand = useCallback((advice: CoachAdvice) => {
+    if (!advice.callsign || !advice.command) return;
+    if (issueCommand(`${advice.callsign} ${advice.command}`)) setCommand('');
+  }, [issueCommand]);
 
   const togglePause = () => setState((current) => ({ ...current, paused: !current.paused }));
   const cycleSpeed = () => setState((current) => ({ ...current, timeScale: current.timeScale === 1 ? 2 : current.timeScale === 2 ? 4 : 1 }));
@@ -262,6 +268,8 @@ export function App() {
           pendingInstructionCount={state.pendingInstructions.length}
           tutorial={tutorial}
           onTutorialCommand={submitTutorialCommand}
+          coach={coach}
+          onCoachCommand={submitCoachCommand}
         />
       </div>
 
