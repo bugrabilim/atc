@@ -38,7 +38,7 @@ function loadCareerStats(): CareerStats {
       completedObjectives: typeof parsed.completedObjectives === 'number' ? parsed.completedObjectives : 0,
     };
   } catch {
-    return { bestScore: 0, bestLandings: 0 };
+    return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0 };
   }
 }
 
@@ -109,6 +109,7 @@ export function App() {
   useEffect(() => {
     setCareer((current) => {
       const next = {
+        ...current,
         bestScore: Math.max(current.bestScore, state.score),
         bestLandings: Math.max(current.bestLandings, state.landed),
       };
