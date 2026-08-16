@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import type { Aircraft, GameEvent } from '../engine/types';
+import { useEffect, useState } from 'react';
+import type { Aircraft, GameEvent, GameMode } from '../engine/types';
 import { controllerRank, nextMission, type TrainingGuide } from '../engine/progression';
 import type { CoachAdvice } from '../engine/controllerCoach';
 
 interface MissionPanelProps {
   aircraft: Aircraft[];
+  mode: GameMode;
   score: number;
   landed: number;
   handoffs: number;
@@ -26,9 +27,12 @@ interface MissionPanelProps {
   onCoachCommand: (advice: CoachAdvice) => void;
 }
 
-export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, skill, peakSkill, targetAircraft, bestScore, bestLandings, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
+export function MissionPanel({ aircraft, mode, score, landed, handoffs, trafficLevel, skill, peakSkill, targetAircraft, bestScore, bestLandings, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
   // Radar alanı ilk açılışta öncelikli. Yardım, oyuncunun isteğiyle açılır.
-  const [helpOpen, setHelpOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(mode === 'beginner');
+  useEffect(() => {
+    setHelpOpen(mode === 'beginner');
+  }, [mode]);
   const trainingAircraft = aircraft.find((item) => item.callsign === trainingCallsign);
   const priorityMission = priorityTraffic.find((item) => item.priority && !item.priority.alertRaised);
   const mission = priorityMission
@@ -48,6 +52,11 @@ export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, 
       <div className="mission-primary">
         <span className="eyebrow">GÖREV</span>
         <strong>{mission}</strong>
+        {mode === 'beginner' && tutorial?.command ? (
+          <button type="button" className="mission-primary__action" onClick={() => onTutorialCommand(tutorial)}>
+            {tutorial.command} · İLK ADIMI UYGULA
+          </button>
+        ) : null}
       </div>
       <div className="mission-score" aria-label={`Skill ${skill}, tamamlanan iniş ${landed}, handoff ${handoffs}`}>
         <span>SKILL <b>{skill.toFixed(1)}</b></span>
