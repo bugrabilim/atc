@@ -1,9 +1,10 @@
 import type { GameScenario } from './scenario';
-import type { GameState } from './types';
+import type { GameMode, GameState } from './types';
 import { createAircraft, HEAVY_PERFORMANCE, JET_PERFORMANCE } from './aircraftData';
 import { INITIAL_SKILL, profileForSkill } from './skill';
+import { modeTrafficProfile } from './difficulty';
 
-export const SESSION_VERSION = 2;
+export const SESSION_VERSION = 3;
 
 export interface SavedSession {
   version: typeof SESSION_VERSION;
@@ -36,17 +37,19 @@ export function restoreSession(serialized: string | null, scenarios: readonly Ga
     const parsedVersion = (parsed as { version?: number }).version;
     const scenario = scenarios.find((item) => item.id === parsed.scenarioId);
     const state = parsed.state;
-    if ((parsedVersion !== 1 && parsedVersion !== SESSION_VERSION) || !scenario || !hasRequiredState(state)) return null;
+    if ((parsedVersion !== 1 && parsedVersion !== 2 && parsedVersion !== SESSION_VERSION) || !scenario || !hasRequiredState(state)) return null;
     if (!scenario.world.flowConfigurations.some((item) => item.id === state.flowId)) return null;
-    const legacyState = state as GameState & { skill?: number; peakSkill?: number; targetAircraft?: number; seed?: number; commandHistory?: GameState['commandHistory'] };
+    const legacyState = state as GameState & { mode?: GameMode; skill?: number; peakSkill?: number; targetAircraft?: number; seed?: number; commandHistory?: GameState['commandHistory'] };
+    const mode: GameMode = legacyState.mode === 'beginner' || legacyState.mode === 'normal' || legacyState.mode === 'advanced' || legacyState.mode === 'expert' ? legacyState.mode : 'normal';
     const skill = typeof legacyState.skill === 'number' ? legacyState.skill : Math.max(INITIAL_SKILL, Math.min(12, state.score / 100 + INITIAL_SKILL));
-    const profile = profileForSkill(skill);
+    const profile = modeTrafficProfile(mode, profileForSkill(skill));
     return {
       version: SESSION_VERSION,
       scenarioId: scenario.id,
       savedAt: typeof parsed.savedAt === 'number' ? parsed.savedAt : Date.now(),
       state: {
         ...state,
+        mode,
         aircraft: state.aircraft.map((aircraft) => {
           const defaults = ['B77W', 'A330', 'A332', 'A333', 'B748'].includes(aircraft.type) ? HEAVY_PERFORMANCE : JET_PERFORMANCE;
           const legacyApproach = aircraft.approach as (Omit<NonNullable<typeof aircraft.approach>, 'status'> & { status?: string; landingCleared?: boolean }) | undefined;
