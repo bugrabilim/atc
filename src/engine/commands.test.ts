@@ -30,4 +30,15 @@ describe('parseCommandLine', () => {
       normalized: 'TK1953 ILS 34L',
     });
   });
+
+  it('accepts direct-to and hold clearances for known fixes', () => {
+    expect(parseCommandLine('PGT DCT FM001', callsigns, null, [], ['FM001'])).toMatchObject({
+      ok: true,
+      command: { kind: 'direct', callsign: 'PGT7KM', fixId: 'FM001' },
+    });
+    expect(parseCommandLine('PGT HOLD FM001', callsigns, null, [], ['FM001'])).toMatchObject({
+      ok: true,
+      command: { kind: 'hold', callsign: 'PGT7KM', fixId: 'FM001' },
+    });
+  });
 });

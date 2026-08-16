@@ -18,6 +18,8 @@ const quickCommands = [
   { label: 'FL100', command: 'FL100' },
   { label: 'SPD 220', command: 'SPD 220' },
   { label: 'SPD 180', command: 'SPD 180' },
+  { label: 'DCT FM001', command: 'DCT FM001' },
+  { label: 'HOLD FM001', command: 'HOLD FM001' },
   { label: 'ILS 34L', command: 'ILS 34L' },
 ];
 

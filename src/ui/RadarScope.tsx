@@ -132,6 +132,13 @@ function drawRadar(
     const color = conflict?.severity === 'loss' ? '#ff5d5d' : conflict ? '#ffb648' : selected ? '#ffffff' : item.phase === 'arrival' ? '#67e8c4' : '#79b9ff';
     const headingRadians = (item.heading * Math.PI) / 180;
     const targetRadians = (item.targetHeading * Math.PI) / 180;
+    const activeFix = item.navigation?.fixIds[item.navigation.currentLegIndex];
+    const fix = activeFix ? world.fixes.find((entry) => entry.id === activeFix) : undefined;
+
+    if (fix) {
+      const fixPoint = worldToScreen(fix.position, viewport);
+      drawLine(ctx, point, fixPoint, item.navigation?.mode === 'hold' ? 'rgba(255, 182, 72, 0.46)' : 'rgba(121, 185, 255, 0.38)', 1, [2, 5]);
+    }
 
     drawLine(
       ctx,
@@ -176,6 +183,10 @@ function drawRadar(
       ctx.fillStyle = '#67e8c4';
       ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';
       ctx.fillText(`ILS ${item.approach.runwayId} · ${item.approach.status === 'captured' ? 'CAPTURED' : 'ARMED'}`, leaderEnd.x + 3, leaderEnd.y + 21);
+    } else if (activeFix) {
+      ctx.fillStyle = item.navigation?.mode === 'hold' ? '#ffb648' : '#79b9ff';
+      ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';
+      ctx.fillText(`${item.navigation?.mode === 'hold' ? 'HOLD' : 'DCT'} ${activeFix}`, leaderEnd.x + 3, leaderEnd.y + 21);
     }
   }
 

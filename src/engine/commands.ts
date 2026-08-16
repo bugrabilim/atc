@@ -6,6 +6,8 @@ const HEADING_ALIASES = new Set(['HDG', 'H', 'HEADING']);
 const SPEED_ALIASES = new Set(['SPD', 'S', 'SPEED']);
 const ALTITUDE_ALIASES = new Set(['ALT', 'A', 'ALTITUDE']);
 const APPROACH_ALIASES = new Set(['APP', 'ILS']);
+const DIRECT_ALIASES = new Set(['DCT', 'DIRECT']);
+const HOLD_ALIASES = new Set(['HOLD']);
 
 function resolveCallsign(token: string, callsigns: string[]): string | null {
   const upper = token.toUpperCase();
@@ -19,6 +21,7 @@ export function parseCommandLine(
   callsigns: string[],
   selectedCallsign: string | null,
   runwayIds: string[] = [],
+  fixIds: string[] = [],
 ): ParseResult {
   const compact = input.trim().toUpperCase().replace(/(HDG|SPD|ALT|FL)(\d)/g, '$1 $2');
   if (!compact) return { ok: false, error: 'Bir komut yaz veya hızlı komutlardan birini seç.' };
@@ -54,8 +57,21 @@ export function parseCommandLine(
     };
   }
 
+  if (DIRECT_ALIASES.has(keyword) || HOLD_ALIASES.has(keyword)) {
+    const fixId = rawValue.toUpperCase();
+    if (fixIds.length > 0 && !fixIds.includes(fixId)) {
+      return { ok: false, error: `${fixId} bu sahada tanımlı bir waypoint değil.` };
+    }
+    const kind = DIRECT_ALIASES.has(keyword) ? 'direct' : 'hold';
+    return {
+      ok: true,
+      command: { kind, callsign, fixId },
+      normalized: `${callsign} ${kind === 'direct' ? 'DCT' : 'HOLD'} ${fixId}`,
+    };
+  }
+
   if (!RE_NUMBER.test(rawValue)) {
-    return { ok: false, error: `${callsign} için örnek: HDG 090, FL100, SPD 220 veya ILS 34L.` };
+    return { ok: false, error: `${callsign} için örnek: HDG 090, FL100, SPD 220, DCT FM001 veya ILS 34L.` };
   }
 
   const numericValue = Number(rawValue);
@@ -82,7 +98,7 @@ export function parseCommandLine(
     command = { kind: 'speed', callsign, value: numericValue };
     normalized = `${callsign} SPD ${numericValue}`;
   } else {
-    return { ok: false, error: `“${keyword}” bilinmeyen komut. HDG, FL, ALT, SPD veya ILS kullan.` };
+    return { ok: false, error: `“${keyword}” bilinmeyen komut. HDG, FL, ALT, SPD, DCT, HOLD veya ILS kullan.` };
   }
 
   return { ok: true, command, normalized };
@@ -92,13 +108,27 @@ export function applyCommand(stateAircraft: readonly import('./types').Aircraft[
   return stateAircraft.map((aircraft) => {
     if (aircraft.callsign !== command.callsign) return aircraft;
     if (command.kind === 'heading') {
-      return { ...aircraft, targetHeading: command.value, turnDirection: command.direction, approach: undefined };
+      return { ...aircraft, targetHeading: command.value, turnDirection: command.direction, approach: undefined, navigation: undefined };
     }
     if (command.kind === 'altitude') return { ...aircraft, targetAltitude: command.value };
     if (command.kind === 'approach') {
       return aircraft.phase === 'arrival'
-        ? { ...aircraft, approach: { runwayId: command.runwayId, status: 'armed' as const } }
+        ? { ...aircraft, approach: { runwayId: command.runwayId, status: 'armed' as const }, navigation: undefined }
         : aircraft;
+    }
+    if (command.kind === 'direct') {
+      return {
+        ...aircraft,
+        approach: undefined,
+        navigation: { mode: 'direct' as const, fixIds: [command.fixId], currentLegIndex: 0, procedure: `DCT ${command.fixId}` },
+      };
+    }
+    if (command.kind === 'hold') {
+      return {
+        ...aircraft,
+        approach: undefined,
+        navigation: { mode: 'hold' as const, fixIds: [command.fixId], currentLegIndex: 0, procedure: `HOLD ${command.fixId}`, holding: false },
+      };
     }
     return {
       ...aircraft,

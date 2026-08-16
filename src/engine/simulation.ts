@@ -1,4 +1,5 @@
 import { distance, moveToward, turnToward } from './math';
+import { guideNavigation } from './navigation';
 import { spawnTraffic } from './scenario';
 import type { Aircraft, Conflict, GameEvent, GameState, RadarWorld, Runway, Trend, Vector2 } from './types';
 
@@ -128,13 +129,19 @@ export function detectConflicts(aircraft: readonly Aircraft[]): Conflict[] {
 export function stepGame(state: GameState, _world: RadarWorld, dt: number): GameState {
   if (state.paused) return state;
   const boundedDt = Math.min(dt, 0.1) * state.timeScale;
-  const guidedAircraft = state.aircraft.map((item) => guideApproach(item, _world));
-  const movedAircraft = guidedAircraft.map((item) => stepAircraft(item, boundedDt));
+  const navigationResults = state.aircraft.map((item) => guideNavigation(guideApproach(item, _world), _world));
+  const movedAircraft = navigationResults.map((item) => stepAircraft(item.aircraft, boundedDt));
   const landedAircraft = movedAircraft.filter((item) => completedLanding(item, _world));
-  let aircraft = movedAircraft.filter((item) => !landedAircraft.includes(item));
+  const handedOffAircraft = movedAircraft.filter((item) => (
+    item.phase === 'departure'
+    && distance(item.position, { x: 0, y: 0 }) > _world.rangeNm + 2
+  ));
+  let aircraft = movedAircraft.filter((item) => !landedAircraft.includes(item) && !handedOffAircraft.includes(item));
   let spawned = state.spawned;
   let nextTrafficAt = state.nextTrafficAt;
-  let eventLog = state.eventLog;
+  let eventLog = navigationResults.reduce<GameEvent[]>((events, result) => (
+    result.event ? appendEvent(events, result.event) : events
+  ), state.eventLog);
   const elapsedSeconds = state.elapsedSeconds + boundedDt;
 
   if (landedAircraft.length > 0) {
@@ -142,6 +149,14 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
       id: `landing-${Math.round(elapsedSeconds * 10)}`,
       type: 'success',
       message: `${landedAircraft.map((item) => item.callsign).join(', ')} · iniş tamamlandı (+100)`,
+    });
+  }
+
+  if (handedOffAircraft.length > 0) {
+    eventLog = appendEvent(eventLog, {
+      id: `handoff-${Math.round(elapsedSeconds * 10)}`,
+      type: 'success',
+      message: `${handedOffAircraft.map((item) => item.callsign).join(', ')} · sahadan çıktı, handoff tamamlandı (+50)`,
     });
   }
 
@@ -159,15 +174,30 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
     nextTrafficAt += 48;
   }
 
+  const conflicts = detectConflicts(aircraft);
+  const lossPairs = conflicts
+    .filter((item) => item.severity === 'loss')
+    .map((item) => [...item.pair].sort().join('-'));
+  const newLossPairs = lossPairs.filter((item) => !state.activeLossPairs.includes(item));
+  if (newLossPairs.length > 0) {
+    eventLog = appendEvent(eventLog, {
+      id: `loss-${Math.round(elapsedSeconds * 10)}`,
+      type: 'danger',
+      message: `AYIRMA KAYBI · ${newLossPairs.join(', ')} (-250)`,
+    });
+  }
+
   return {
     ...state,
     elapsedSeconds,
     aircraft,
-    conflicts: detectConflicts(aircraft),
+    conflicts,
     landed: state.landed + landedAircraft.length,
-    score: state.score + landedAircraft.length * 100,
+    score: Math.max(0, state.score + landedAircraft.length * 100 + handedOffAircraft.length * 50 - newLossPairs.length * 250),
     spawned,
     nextTrafficAt,
     eventLog,
+    activeLossPairs: lossPairs,
+    handoffs: state.handoffs + handedOffAircraft.length,
   };
 }

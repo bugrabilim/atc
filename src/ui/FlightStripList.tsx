@@ -1,4 +1,5 @@
 import { aircraftTrend } from '../engine/simulation';
+import { activeFixId } from '../engine/navigation';
 import type { Aircraft, Conflict } from '../engine/types';
 
 interface FlightStripListProps {
@@ -20,6 +21,7 @@ export function FlightStripList({ aircraft, conflicts, selectedCallsign, onSelec
           const selected = item.callsign === selectedCallsign;
           const conflict = conflicts.find((entry) => entry.pair.includes(item.callsign));
           const trend = aircraftTrend(item);
+          const nextFix = activeFixId(item);
           return (
             <button
               key={item.callsign}
@@ -30,7 +32,7 @@ export function FlightStripList({ aircraft, conflicts, selectedCallsign, onSelec
             >
               <span className="flight-strip__lead">
                 <strong>{item.callsign}</strong>
-                <small>{item.type} · {item.approach ? `ILS ${item.approach.runwayId}` : item.phase === 'arrival' ? 'GELİŞ' : 'KALKIŞ'}</small>
+                <small>{item.type} · {item.approach ? `ILS ${item.approach.runwayId}` : nextFix ? `${item.navigation?.mode === 'hold' ? 'HOLD' : '→'} ${nextFix}` : item.phase === 'arrival' ? 'GELİŞ' : 'KALKIŞ'}</small>
               </span>
               <span className="flight-strip__numbers">
                 <b>FL{String(Math.round(item.altitude / 100)).padStart(3, '0')}</b>

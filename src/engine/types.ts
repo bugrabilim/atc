@@ -3,6 +3,7 @@ export type Vector2 = { x: number; y: number };
 export type AircraftPhase = 'arrival' | 'departure';
 export type Trend = 'climb' | 'level' | 'descend';
 export type ApproachStatus = 'armed' | 'captured';
+export type NavigationMode = 'route' | 'direct' | 'hold';
 
 export interface AircraftPerformance {
   turnRateDegPerSecond: number;
@@ -29,6 +30,13 @@ export interface Aircraft {
   approach?: {
     runwayId: string;
     status: ApproachStatus;
+  };
+  navigation?: {
+    mode: NavigationMode;
+    fixIds: string[];
+    currentLegIndex: number;
+    procedure: string;
+    holding?: boolean;
   };
 }
 
@@ -74,11 +82,13 @@ export interface GameState {
   spawned: number;
   nextTrafficAt: number;
   eventLog: GameEvent[];
+  activeLossPairs: string[];
+  handoffs: number;
 }
 
 export interface GameEvent {
   id: string;
-  type: 'info' | 'success' | 'warning';
+  type: 'info' | 'success' | 'warning' | 'danger';
   message: string;
 }
 
@@ -86,7 +96,9 @@ export type AircraftCommand =
   | { kind: 'heading'; callsign: string; value: number; direction: 'shortest' | 'left' | 'right' }
   | { kind: 'altitude'; callsign: string; value: number }
   | { kind: 'speed'; callsign: string; value: number }
-  | { kind: 'approach'; callsign: string; runwayId: string };
+  | { kind: 'approach'; callsign: string; runwayId: string }
+  | { kind: 'direct'; callsign: string; fixId: string }
+  | { kind: 'hold'; callsign: string; fixId: string };
 
 export type ParseResult =
   | { ok: true; command: AircraftCommand; normalized: string }

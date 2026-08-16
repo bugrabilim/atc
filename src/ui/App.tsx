@@ -50,6 +50,7 @@ export function App() {
       snapshot.aircraft.map((item) => item.callsign),
       snapshot.selectedCallsign,
       world.runways.map((item) => item.id),
+      world.fixes.map((item) => item.id),
     );
     if (!parsed.ok) {
       setFeedback({ type: 'error', message: parsed.error });
@@ -65,6 +66,10 @@ export function App() {
       type: 'success',
       message: parsed.command.kind === 'approach'
         ? `${parsed.normalized} · ILS silahlandı; localizer ve glideslope yakalanınca otomatik takip başlayacak.`
+        : parsed.command.kind === 'direct'
+          ? `${parsed.normalized} · Uçak waypoint'e doğrudan yönlendirildi.`
+          : parsed.command.kind === 'hold'
+            ? `${parsed.normalized} · Uçak waypoint üzerinde hold paternine girecek.`
         : `${parsed.normalized} · Talimat alındı, uçak kademeli uyguluyor.`,
     });
   }, [command]);
@@ -108,6 +113,7 @@ export function App() {
           aircraft={state.aircraft}
           score={state.score}
           landed={state.landed}
+          handoffs={state.handoffs}
           events={state.eventLog}
         />
       </div>
