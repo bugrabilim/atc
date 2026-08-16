@@ -70,6 +70,17 @@ export interface DebriefReport {
   improvements: string[];
   objective: string;
   objectiveComplete: boolean;
+  awards: { id: string; label: string }[];
+}
+
+export function earnedAwards(state: GameState, goal = shiftGoal(state.mode)) {
+  const awards: { id: string; label: string }[] = [];
+  if (state.landed > 0) awards.push({ id: 'first-touchdown', label: 'İLK TOUCHDOWN' });
+  if (state.metrics.separationLosses === 0 && state.landed >= goal.targetLandings) awards.push({ id: 'clean-shift', label: 'TEMİZ VARDİYA' });
+  if (state.metrics.wakeViolations === 0 && state.landed >= 3) awards.push({ id: 'wake-keeper', label: 'WAKE USTASI' });
+  if (state.peakSkill >= 12) awards.push({ id: 'high-workload', label: 'YOĞUN AKIŞ' });
+  if (state.aircraft.some((item) => item.priority) === false && state.metrics.expiredPriorities === 0 && state.spawned >= 7) awards.push({ id: 'priority-ready', label: 'ÖNCELİK HAZIR' });
+  return awards;
 }
 
 export function buildDebrief(state: GameState, goal = shiftGoal(state.mode)): DebriefReport {
@@ -97,5 +108,6 @@ export function buildDebrief(state: GameState, goal = shiftGoal(state.mode)): De
     improvements,
     objective: `${goal.label}: ${state.landed}/${goal.targetLandings} iniş · ${state.handoffs}/${goal.targetHandoffs} handoff · en çok ${goal.maximumLosses} ayırma kaybı`,
     objectiveComplete: goalComplete(state, goal),
+    awards: earnedAwards(state, goal),
   };
 }
