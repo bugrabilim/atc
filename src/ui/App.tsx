@@ -407,6 +407,7 @@ export function App() {
         feedback={feedback}
         onChange={setCommand}
         onSubmit={submitCommand}
+        onQuickCommand={issueCommand}
         onSelect={selectAircraft}
         onNext={selectNextAircraft}
       />
