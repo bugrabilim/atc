@@ -386,3 +386,39 @@ button { touch-action: manipulation; }
   .app-shell { height: auto; min-height: 100dvh; grid-template-rows: auto auto auto minmax(280px, 1fr) auto; }
   .workspace { min-height: 280px; }
 }
+
+
+/* Phone control pass. A radar game must reserve a real tactical viewport,
+   while the command console remains immediately reachable. Short phones can
+   scroll the briefing rather than squeezing the radar into an unreadable box. */
+@media (max-width: 640px) {
+  body { overflow: auto; overscroll-behavior-y: contain; }
+  .app-shell {
+    height: auto;
+    min-height: 100dvh;
+    grid-template-rows: auto auto auto auto auto;
+  }
+  .game-status { position: relative; z-index: 3; }
+  .mission-panel { padding-bottom: 6px; }
+  .assistant-drawer { margin-top: 7px; }
+  .assistant-drawer:not([open]) { display: none; }
+  .workspace { min-height: clamp(330px, 52dvh, 520px); }
+  .radar-frame { height: clamp(330px, 52dvh, 520px); min-height: 0; }
+  .command-panel {
+    position: sticky;
+    z-index: 9;
+    bottom: 0;
+    box-shadow: 0 -14px 28px rgba(0, 0, 0, .24);
+  }
+  .radar-queue { max-width: calc(100% - 164px); }
+  .radar-decision { bottom: 18px; }
+}
+
+@media (max-width: 390px) {
+  .operation-bar label:first-of-type { display: none; }
+  .selected-aircraft__metrics span:nth-child(3) { display: none; }
+  .vector-control { gap: 6px; }
+  .vector-control > div:nth-child(2) button,
+  .vector-control > div:nth-child(3) button { min-width: 44px; }
+  .quick-command { min-width: 92px; }
+}
