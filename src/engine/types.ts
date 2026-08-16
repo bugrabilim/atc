@@ -205,7 +205,8 @@ export type AircraftCommand =
   | { kind: 'handoff'; callsign: string }
   | { kind: 'goAround'; callsign: string }
   | { kind: 'direct'; callsign: string; fixId: string }
-  | { kind: 'hold'; callsign: string; fixId: string };
+  | { kind: 'hold'; callsign: string; fixId: string }
+  | { kind: 'procedure'; callsign: string; procedureId: string; procedureKind: 'arrival' | 'departure'; fixIds: string[] };
 
 export interface PendingInstruction {
   id: string;
