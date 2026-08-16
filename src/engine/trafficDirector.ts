@@ -16,6 +16,13 @@ const arrivalFleet = [
   { type: 'A388', performance: heavy },
 ] as const;
 const callsignPrefixes = ['AR', 'NX', 'OR', 'VX', 'SK', 'HL', 'CF'] as const;
+const departureFleet = [
+  { type: 'A320', performance: jet },
+  { type: 'B738', performance: jet },
+  { type: 'E190', performance: jet },
+  { type: 'A330', performance: heavy },
+  { type: 'B77W', performance: heavy },
+] as const;
 
 export interface TrafficPlan {
   aircraft: Aircraft;
@@ -38,6 +45,10 @@ function activeArrivalRunways(world: RadarWorld) {
 
 function arrivalLoad(aircraft: readonly Aircraft[], runwayId: string) {
   return aircraft.filter((item) => item.phase === 'arrival' && item.assignedRunway === runwayId).length;
+}
+
+function departureLoad(aircraft: readonly Aircraft[], runwayId: string) {
+  return aircraft.filter((item) => item.phase === 'departure' && item.assignedRunway === runwayId).length;
 }
 
 function chooseArrivalRunway(aircraft: readonly Aircraft[], world: RadarWorld, index: number, seed: number) {
@@ -88,16 +99,22 @@ function planArrival(index: number, activeAircraft: readonly Aircraft[], world: 
   };
 }
 
-function planDeparture(index: number, world: RadarWorld, callsign: string): TrafficPlan | null {
+function planDeparture(index: number, activeAircraft: readonly Aircraft[], world: RadarWorld, callsign: string, seed: number): TrafficPlan | null {
   const runways = world.runways.filter((runway) => runway.active && (runway.operation === 'departure' || runway.operation === 'mixed'));
-  const runway = runways[index % runways.length];
-  const exit = world.trafficExits[index % world.trafficExits.length];
+  const runway = [...runways].sort((first, second) => (
+    departureLoad(activeAircraft, first.id) - departureLoad(activeAircraft, second.id)
+      || trafficVariant(index, seed, first.id.length + 11) % 5 - trafficVariant(index, seed, second.id.length + 11) % 5
+      || first.id.localeCompare(second.id)
+  ))[0];
+  const exit = world.trafficExits[trafficVariant(index, seed, 8) % world.trafficExits.length];
   const procedure = world.procedures.find((item) => item.id === exit?.procedureId);
   if (!runway || !procedure) return null;
-  const altitude = 9000 + (index % 4) * 1500;
+  const variant = trafficVariant(index, seed, 9);
+  const fleet = departureFleet[variant % departureFleet.length];
+  const altitude = 8000 + (variant % 6) * 1000;
   const aircraft = createAircraft({
     callsign,
-    type: index % 2 === 0 ? 'B77W' : 'A330',
+    type: fleet.type,
     phase: 'departure',
     position: { ...runway.center },
     heading: runway.heading,
@@ -107,10 +124,11 @@ function planDeparture(index: number, world: RadarWorld, callsign: string): Traf
     targetAltitude: altitude,
     targetSpeed: 285,
     turnDirection: 'shortest',
-    performance: heavy,
+    performance: fleet.performance,
+    assignedRunway: runway.id,
     navigation: { mode: 'route', fixIds: [...procedure.fixIds], currentLegIndex: 0, procedure: procedure.id },
   });
-  return { aircraft, message: `${callsign} kalkış trafiği · ${runway.id} · ${procedure.id}` };
+  return { aircraft, message: `${callsign} ${fleet.type} kalkış trafiği · ${runway.id} · ${procedure.id}` };
 }
 
 /** Plans one new flight against current runway capacity and arrival load. */
@@ -121,7 +139,7 @@ export function planTraffic(index: number, activeAircraft: readonly Aircraft[], 
   const activeArrivals = activeAircraft.filter((item) => item.phase === 'arrival').length;
   const targetArrivalBacklog = Math.max(2, activeArrivalRunways(world).length * 2);
   const departure = index % 5 === 3 || activeArrivals >= targetArrivalBacklog + 2
-    ? planDeparture(variantIndex, world, callsign)
+    ? planDeparture(variantIndex, activeAircraft, world, callsign, seed)
     : null;
   return departure ?? planArrival(variantIndex, activeAircraft, world, callsign, seed);
 }
