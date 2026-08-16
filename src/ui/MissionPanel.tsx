@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import type { Aircraft, GameEvent, GameMode } from '../engine/types';
-import { controllerRank, nextMission, type TrainingGuide } from '../engine/progression';
+import { controllerRank, nextMission, type ShiftGoal, type TrainingGuide } from '../engine/progression';
 import type { CoachAdvice } from '../engine/controllerCoach';
 
 interface MissionPanelProps {
   aircraft: Aircraft[];
   mode: GameMode;
+  scenarioLabel: string;
+  scenarioBriefing: string;
+  scenarioFocus: string;
+  goal: ShiftGoal;
   score: number;
   landed: number;
   handoffs: number;
@@ -27,7 +31,7 @@ interface MissionPanelProps {
   onCoachCommand: (advice: CoachAdvice) => void;
 }
 
-export function MissionPanel({ aircraft, mode, score, landed, handoffs, trafficLevel, skill, peakSkill, targetAircraft, bestScore, bestLandings, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
+export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, scenarioFocus, goal, score, landed, handoffs, trafficLevel, skill, peakSkill, targetAircraft, bestScore, bestLandings, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
   // Radar alanı ilk açılışta öncelikli. Yardım, oyuncunun isteğiyle açılır.
   const [helpOpen, setHelpOpen] = useState(mode === 'beginner');
   useEffect(() => {
@@ -52,6 +56,7 @@ export function MissionPanel({ aircraft, mode, score, landed, handoffs, trafficL
       <div className="mission-primary">
         <span className="eyebrow">GÖREV</span>
         <strong>{mission}</strong>
+        <small className="mission-briefing"><b>{scenarioLabel}</b> · {scenarioBriefing} <em>Odak: {scenarioFocus}</em></small>
         {mode === 'beginner' && tutorial?.command ? (
           <button type="button" className="mission-primary__action" onClick={() => onTutorialCommand(tutorial)}>
             {tutorial.command} · İLK ADIMI UYGULA
@@ -64,6 +69,7 @@ export function MissionPanel({ aircraft, mode, score, landed, handoffs, trafficL
         <span>HEDEF <b>{aircraft.length}/{targetAircraft}</b></span>
         <span>İNİŞ <b>{landed}</b></span>
         <span>HANDOFF <b>{handoffs}</b></span>
+        <span>VARDİYA <b>{landed}/{goal.targetLandings} · {handoffs}/{goal.targetHandoffs}</b></span>
         <span>YOĞUNLUK <b>{trafficLevel}/5</b></span>
         <span>AKIŞ <b>{activeFlowLabel}</b></span>
         {pendingInstructionCount > 0 ? <span>READBACK <b>{pendingInstructionCount}</b></span> : null}
