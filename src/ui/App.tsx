@@ -10,7 +10,7 @@ import { DebriefPanel } from './DebriefPanel';
 import { FlightStripList } from './FlightStripList';
 import { MissionPanel } from './MissionPanel';
 import { RadarScope } from './RadarScope';
-import { buildDebrief, trainingGuide, type TrainingGuide } from '../engine/progression';
+import { buildDebrief, goalComplete, shiftGoal, trainingGuide, type TrainingGuide } from '../engine/progression';
 import { controllerCoach, type CoachAdvice } from '../engine/controllerCoach';
 import { restoreSession, serializeSession, type SavedSession } from '../engine/session';
 import { AudioCuePlayer, type AudioCue } from './audioCues';
@@ -71,6 +71,7 @@ export function App() {
   const audioPlayer = useRef<AudioCuePlayer | null>(null);
   const activeWorld = useMemo(() => worldWithFlow(worldForMode(scenario.world, state.mode), state.flowId, state.peakSkill), [scenario.world, state.flowId, state.mode, state.peakSkill]);
   const activeFlow = activeWorld.flowConfigurations.find((item) => item.id === state.flowId) ?? activeWorld.flowConfigurations[0];
+  const goal = useMemo(() => shiftGoal(state.mode), [state.mode]);
   const activeArrivalRunways = activeWorld.runways.filter((item) => item.active && (item.operation === 'arrival' || item.operation === 'mixed'));
   const trainingAircraft = scenario.initialAircraft.find((item) => item.phase === 'arrival');
 
@@ -122,6 +123,13 @@ export function App() {
     }, 33);
     return () => window.clearInterval(timer);
   }, [activeWorld]);
+
+  useEffect(() => {
+    if (!debriefOpen && goalComplete(state, goal)) {
+      setState((current) => ({ ...current, paused: true }));
+      setDebriefOpen(true);
+    }
+  }, [debriefOpen, goal, state]);
 
   const playCue = useCallback((cue: AudioCue) => {
     if (!audioEnabled) return;
@@ -353,6 +361,10 @@ export function App() {
         <MissionPanel
           aircraft={state.aircraft}
           mode={state.mode}
+          scenarioLabel={scenario.label}
+          scenarioBriefing={scenario.briefing}
+          scenarioFocus={scenario.focus}
+          goal={goal}
           score={state.score}
           landed={state.landed}
           handoffs={state.handoffs}
@@ -413,7 +425,7 @@ export function App() {
         onSelect={selectAircraft}
         onNext={selectNextAircraft}
       />
-      {debriefOpen ? <DebriefPanel report={buildDebrief(state)} state={state} onRestart={reset} onContinue={continueShift} /> : null}
+      {debriefOpen ? <DebriefPanel report={buildDebrief(state, goal)} state={state} onRestart={reset} onContinue={continueShift} /> : null}
     </main>
   );
 }
