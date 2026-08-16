@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { parseCommandBatch } from '../engine/commands';
-import { queueInstructions } from '../engine/radio';
+import { queueInstructions, spokenRadioMessage } from '../engine/radio';
 import { createInitialState, defaultScenario, scenarioCatalog, worldWithFlow } from '../engine/scenario';
 import { stepGame } from '../engine/simulation';
 import type { GameState } from '../engine/types';
@@ -125,11 +125,13 @@ export function App() {
     if (!event || event.id === lastSpokenEvent.current) return;
     lastSpokenEvent.current = event.id;
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(event.message.replace(/·/g, ','));
+    const utterance = new SpeechSynthesisUtterance(spokenRadioMessage(event.message));
     utterance.rate = 1.08;
     utterance.pitch = 0.92;
-    utterance.lang = 'tr-TR';
-    const voices = window.speechSynthesis.getVoices().filter((voice) => voice.lang.startsWith('tr') || voice.lang.startsWith('en'));
+    utterance.lang = 'en-US';
+    const installedVoices = window.speechSynthesis.getVoices();
+    const englishVoices = installedVoices.filter((voice) => voice.lang.startsWith('en'));
+    const voices = englishVoices.length > 0 ? englishVoices : installedVoices.filter((voice) => voice.lang.startsWith('tr'));
     const voiceIndex = [...event.message].reduce((sum, character) => sum + character.charCodeAt(0), 0) % Math.max(1, voices.length);
     if (voices[voiceIndex]) utterance.voice = voices[voiceIndex];
     window.speechSynthesis.speak(utterance);
