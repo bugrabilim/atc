@@ -1,0 +1,19 @@
+{
+  "name": "İstanbul Radar",
+  "short_name": "İST Radar",
+  "description": "Klasik radar görünümünde yaklaşma kontrol simülasyonu.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030907",
+  "theme_color": "#06110e",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
