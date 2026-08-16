@@ -282,7 +282,7 @@ export function RadarScope({ world, aircraft, conflicts, trackHistory, selectedC
   }, [aircraft, onSelect]);
 
   return (
-    <div className="radar-frame" aria-label="İstanbul yaklaşma radar ekranı">
+    <div className="radar-frame" aria-label="Yaklaşma radar ekranı">
       <div className="scope-corner scope-corner--top-left" />
       <div className="scope-corner scope-corner--bottom-right" />
       <canvas
