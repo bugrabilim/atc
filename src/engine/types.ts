@@ -20,6 +20,9 @@ export interface CareerUnlock {
   label: string;
   description: string;
   requiredAchievementIds: string[];
+  /** Mini Metro-style per-map high-score gate, evaluated against career history. */
+  scoreScenarioId?: ScenarioId;
+  requiredScore?: number;
 }
 
 export interface CareerProgression {
