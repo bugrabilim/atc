@@ -209,6 +209,7 @@ export function App() {
       snapshot.selectedCallsign,
       activeArrivalRunways.map((item) => item.id),
       activeWorld.fixes.map((item) => item.id),
+      activeWorld.procedures,
     );
     if (!parsed.ok) {
       setFeedback({ type: 'error', message: parsed.error });
@@ -439,6 +440,7 @@ export function App() {
         aircraft={state.aircraft}
         runwayIds={activeArrivalRunways.map((item) => item.id)}
         fixIds={activeWorld.fixes.map((item) => item.id)}
+        procedures={activeWorld.procedures}
         selectedCallsign={state.selectedCallsign}
         mode={state.mode}
         coach={coach}
