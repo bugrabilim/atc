@@ -26,6 +26,12 @@ function headingTo(from: { x: number; y: number }, to: { x: number; y: number })
   return (Math.atan2(to.x - from.x, -(to.y - from.y)) * 180 / Math.PI + 360) % 360;
 }
 
+/** Small deterministic mixer: replays stay identical without a random API. */
+function trafficVariant(index: number, seed: number, salt = 0) {
+  const value = Math.imul(index + 1 + salt * 17, 1103515245) + Math.imul(seed + 97, 12345);
+  return Math.abs(value >>> 0);
+}
+
 function activeArrivalRunways(world: RadarWorld) {
   return world.runways.filter((runway) => runway.active && (runway.operation === 'arrival' || runway.operation === 'mixed'));
 }
@@ -34,29 +40,33 @@ function arrivalLoad(aircraft: readonly Aircraft[], runwayId: string) {
   return aircraft.filter((item) => item.phase === 'arrival' && item.assignedRunway === runwayId).length;
 }
 
-function chooseArrivalRunway(aircraft: readonly Aircraft[], world: RadarWorld, index: number) {
+function chooseArrivalRunway(aircraft: readonly Aircraft[], world: RadarWorld, index: number, seed: number) {
   const runways = activeArrivalRunways(world);
   if (runways.length === 0) throw new Error('Traffic director requires an active arrival runway');
   return [...runways].sort((first, second) => {
     const difference = arrivalLoad(aircraft, first.id) - arrivalLoad(aircraft, second.id);
-    return difference || ((index + first.id.length) % 3) - ((index + second.id.length) % 3);
+    if (difference) return difference;
+    const firstTieBreak = trafficVariant(index, seed, first.id.length) % 7;
+    const secondTieBreak = trafficVariant(index, seed, second.id.length) % 7;
+    return firstTieBreak - secondTieBreak || first.id.localeCompare(second.id);
   })[0];
 }
 
-function planArrival(index: number, activeAircraft: readonly Aircraft[], world: RadarWorld, callsign: string): TrafficPlan {
-  const runway = chooseArrivalRunway(activeAircraft, world, index);
+function planArrival(index: number, activeAircraft: readonly Aircraft[], world: RadarWorld, callsign: string, seed: number): TrafficPlan {
+  const runway = chooseArrivalRunway(activeAircraft, world, index, seed);
   const entriesForRunway = world.trafficEntries.filter((entry) => entry.compatibleRunwayIds.includes(runway.id));
   const fallbackEntries = world.trafficEntries;
   const entryPool = entriesForRunway.length > 0 ? entriesForRunway : fallbackEntries;
-  const entry = entryPool[index % entryPool.length];
+  const entry = entryPool[trafficVariant(index, seed, 1) % entryPool.length];
   if (!entry) throw new Error('Traffic director requires at least one boundary entry');
 
-  const fleet = arrivalFleet[index % arrivalFleet.length];
-  const altitude = 7000 + ((index * 1100) % 7000);
+  const variant = trafficVariant(index, seed, 2);
+  const fleet = arrivalFleet[variant % arrivalFleet.length];
+  const altitude = 7000 + ((variant * 1100) % 7000);
   const speed = fleet.performance === heavy
-    ? 240 + ((index * 11) % 38)
-    : 225 + ((index * 17) % 68);
-  const heading = (headingTo(entry.position, { x: 0, y: 0 }) + ((index % 3) - 1) * 12 + 360) % 360;
+    ? 240 + ((variant * 11) % 38)
+    : 225 + ((variant * 17) % 68);
+  const heading = (headingTo(entry.position, { x: 0, y: 0 }) + ((variant % 3) - 1) * 12 + 360) % 360;
   const aircraft = createAircraft({
     callsign,
     type: fleet.type,
@@ -113,7 +123,7 @@ export function planTraffic(index: number, activeAircraft: readonly Aircraft[], 
   const departure = index % 5 === 3 || activeArrivals >= targetArrivalBacklog + 2
     ? planDeparture(variantIndex, world, callsign)
     : null;
-  return departure ?? planArrival(variantIndex, activeAircraft, world, callsign);
+  return departure ?? planArrival(variantIndex, activeAircraft, world, callsign, seed);
 }
 
 export function flowCapacity(world: RadarWorld) {
