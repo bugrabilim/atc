@@ -1,11 +1,13 @@
 import { useRef } from 'react';
-import type { Aircraft } from '../engine/types';
+import { difficultyConfig } from '../engine/difficulty';
+import type { Aircraft, GameMode } from '../engine/types';
 
 interface CommandPanelProps {
   aircraft: Aircraft[];
   runwayIds: string[];
   fixIds: string[];
   selectedCallsign: string | null;
+  mode: GameMode;
   value: string;
   feedback: { type: 'success' | 'error' | 'info'; message: string };
   onChange: (value: string) => void;
@@ -25,6 +27,7 @@ export function CommandPanel({
   runwayIds,
   fixIds,
   selectedCallsign,
+  mode,
   value,
   feedback,
   onChange,
@@ -34,12 +37,13 @@ export function CommandPanel({
 }: CommandPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const selected = aircraft.find((item) => item.callsign === selectedCallsign) ?? null;
+  const modeConfig = difficultyConfig(mode);
   const primaryFix = fixIds.find((item) => item.startsWith('FINAL')) ?? fixIds[0];
   const quickCommands = [
-    ...(primaryFix ? [{ label: `DCT ${primaryFix}`, command: `DCT ${primaryFix}` }, { label: `HOLD ${primaryFix}`, command: `HOLD ${primaryFix}` }] : []),
     ...runwayIds.slice(0, 2).map((runwayId) => ({ label: `ILS ${runwayId}`, command: `ILS ${runwayId}` })),
-    ...runwayIds.slice(0, 2).map((runwayId) => ({ label: `LOC ${runwayId}`, command: `LOC ${runwayId}` })),
-    ...baseQuickCommands,
+    ...(mode !== 'beginner' ? runwayIds.slice(0, 2).map((runwayId) => ({ label: `LOC ${runwayId}`, command: `LOC ${runwayId}` })) : []),
+    ...(modeConfig.showAdvancedCommands && primaryFix ? [{ label: `DCT ${primaryFix}`, command: `DCT ${primaryFix}` }, { label: `HOLD ${primaryFix}`, command: `HOLD ${primaryFix}` }] : []),
+    ...(mode !== 'beginner' ? baseQuickCommands : [{ label: 'NORMAL SPD', command: 'RN' }]),
   ];
 
   const useQuickCommand = (command: string) => {
