@@ -1,7 +1,8 @@
-const CACHE_NAME = 'airspace-control-core-parity-v3';
+const CACHE_NAME = 'airspace-control-core-v4';
+const CORE_ASSETS = ['/', '/manifest.webmanifest', '/icon.svg'];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(['/', '/manifest.webmanifest', '/icon.svg'])));
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)));
   self.skipWaiting();
 });
 
@@ -15,14 +16,27 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
   if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request).catch(() => caches.match('/')));
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put('/', copy));
+          return response;
+        })
+        .catch(() => caches.match('/')),
+    );
     return;
   }
   event.respondWith(
-    caches.match(event.request).then((cached) => cached ?? fetch(event.request).then((response) => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-      return response;
-    })),
+    caches.match(event.request).then((cached) => {
+      const network = fetch(event.request).then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      });
+      return cached ?? network;
+    }),
   );
 });
