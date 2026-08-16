@@ -71,7 +71,12 @@ function stepFixed(state: GameState, world: RadarWorld, dt: number): GameState {
     state.aircraft,
   );
 
-  const approachResults = instructedAircraft.map((item) => guideApproach(item, world, elapsedSeconds));
+  const manualGoAroundAircraft = instructedAircraft.filter((item) => item.goAroundRequested && item.approach);
+  const approachInputAircraft = instructedAircraft.map((item) => (
+    item.goAroundRequested && item.approach ? initiateGoAround(item, world, elapsedSeconds) : item
+  ));
+
+  const approachResults = approachInputAircraft.map((item) => guideApproach(item, world, elapsedSeconds));
   const guidanceGoAroundAircraft = approachResults.filter((item) => item.goAround).map((item) => item.aircraft);
   const guidedResults = approachResults.map((result) => {
     const aircraft = result.goAround ? initiateGoAround(result.aircraft, world, elapsedSeconds) : result.aircraft;
@@ -97,7 +102,7 @@ function stepFixed(state: GameState, world: RadarWorld, dt: number): GameState {
   const movedAircraft = initiallyMovedAircraft.map((item) => (
     operationalGoAroundCallsigns.has(item.callsign) ? initiateGoAround(item, world, elapsedSeconds) : item
   ));
-  const goAroundAircraft = [...guidanceGoAroundAircraft, ...operationalGoAroundAircraft];
+  const goAroundAircraft = [...manualGoAroundAircraft, ...guidanceGoAroundAircraft, ...operationalGoAroundAircraft];
   const landedAircraft = movedAircraft.filter((item) => completedLanding(item, world));
   const leavingAircraft = movedAircraft.filter((item) => (
     item.phase === 'departure' && distance(item.position, { x: 0, y: 0 }) > world.rangeNm + 2
@@ -146,7 +151,7 @@ function stepFixed(state: GameState, world: RadarWorld, dt: number): GameState {
     eventLog = appendEvent(eventLog, {
       id: `go-around-${Math.round(elapsedSeconds * 20)}`,
       type: 'warning',
-      message: `${goAroundAircraft.map((item) => item.callsign).join(', ')} · yaklaşma stabil değil, go-around`,
+      message: `${goAroundAircraft.map((item) => item.callsign).join(', ')} · go-around prosedürü başlatıldı`,
     });
   }
   if (handedOffAircraft.length > 0) {
