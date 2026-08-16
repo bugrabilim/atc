@@ -40,4 +40,17 @@ describe('traffic director', () => {
     expect(categories.has('B')).toBe(true);
     expect(categories.has('D')).toBe(true);
   });
+
+  it('varies boundary entries and fleet composition while preserving seeded replay', () => {
+    const plans = Array.from({ length: 16 }, (_, index) => planTraffic(index, [], world, 73421));
+    const arrivalTypes = new Set(plans.filter((plan) => plan.aircraft.phase === 'arrival').map((plan) => plan.aircraft.type));
+    const entryMessages = new Set(plans.filter((plan) => plan.aircraft.phase === 'arrival').map((plan) => plan.message.split(' · ')[2]));
+
+    expect(arrivalTypes.size).toBeGreaterThan(4);
+    // The active runway flow deliberately limits arrivals to compatible
+    // boundaries; two or more proves deterministic entry variation without
+    // assigning an unsafe/incompatible entry just for variety.
+    expect(entryMessages.size).toBeGreaterThan(1);
+    expect(planTraffic(9, [], world, 73421)).toEqual(plans[9]);
+  });
 });
