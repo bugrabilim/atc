@@ -1,5 +1,33 @@
 import type { GameState } from './types';
 
+export interface TrainingGuide {
+  step: number;
+  totalSteps: number;
+  title: string;
+  message: string;
+  callsign?: string;
+  command?: string;
+}
+
+export function trainingGuide(state: GameState, trainingCallsign: string | null, runwayId: string | null): TrainingGuide | null {
+  if (!trainingCallsign || !runwayId || state.landed > 0) return null;
+  const aircraft = state.aircraft.find((item) => item.callsign === trainingCallsign);
+  if (!aircraft) return { step: 5, totalSteps: 5, title: 'İLK İNİŞ TAMAMLANDI', message: 'İlk geliş radardan çıktı. Artık diğer trafik üzerinde aynı döngüyü uygulayabilirsin.' };
+  if (state.selectedCallsign !== trainingCallsign) {
+    return { step: 1, totalSteps: 5, title: 'UÇAĞI SEÇ', message: `${trainingCallsign} uçuş şeridine veya radar etiketine dokun. Seçili uçak komutların hedefidir.`, callsign: trainingCallsign };
+  }
+  if (!aircraft.approach) {
+    return { step: 2, totalSteps: 5, title: 'YAKLAŞMAYI BAŞLAT', message: `${trainingCallsign} için ILS ${runwayId} yaklaşmasını silahlandır. Uçak localizer ve glideslope'a uygun konuma geldiğinde otomatik capture yapar.`, callsign: trainingCallsign, command: `ILS ${runwayId}` };
+  }
+  if (aircraft.approach.status === 'armed') {
+    return { step: 3, totalSteps: 5, title: 'CAPTURE BEKLE', message: `${trainingCallsign} ILS'e yönleniyor. Yeşil yaklaşma çizgisine yaklaştığında capture gerçekleşecek; bu sırada heading ve hızını izle.`, callsign: trainingCallsign };
+  }
+  if (!aircraft.approach.landingCleared) {
+    return { step: 4, totalSteps: 5, title: 'İNİŞ İZNİ VER', message: `${trainingCallsign} localizer ve glideslope üzerinde. Pist ve öndeki trafik uygunsa LAND komutuyla iniş izni ver.`, callsign: trainingCallsign, command: 'LAND' };
+  }
+  return { step: 5, totalSteps: 5, title: 'FİNALİ İZLE', message: `${trainingCallsign} iniş izni aldı. Finalde kalmasını izle; touchdown sonrası ilk görevin tamamlanacak.`, callsign: trainingCallsign };
+}
+
 export function controllerRank(score: number) {
   if (score >= 1800) return 'BAŞ KONTROLÖR';
   if (score >= 900) return 'KIDEMLİ KONTROLÖR';

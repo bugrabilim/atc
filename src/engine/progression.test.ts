@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildDebrief, controllerRank, nextMission } from './progression';
+import { buildDebrief, controllerRank, nextMission, trainingGuide } from './progression';
 import { initialState } from './scenario';
 
 describe('controller progression', () => {
@@ -33,5 +33,17 @@ describe('debrief', () => {
 
     expect(report.grade).toBe('D');
     expect(report.improvements[0]).toContain('2 ayırma kaybı');
+  });
+});
+
+describe('guided training', () => {
+  it('walks a first arrival through ILS and landing clearance', () => {
+    const state = structuredClone(initialState);
+    const first = trainingGuide(state, 'AR101', '34L');
+    state.aircraft[0].approach = { runwayId: '34L', status: 'captured', landingCleared: false };
+    const final = trainingGuide(state, 'AR101', '34L');
+
+    expect(first?.command).toBe('ILS 34L');
+    expect(final?.command).toBe('LAND');
   });
 });

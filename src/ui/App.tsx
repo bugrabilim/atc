@@ -10,7 +10,7 @@ import { DebriefPanel } from './DebriefPanel';
 import { FlightStripList } from './FlightStripList';
 import { MissionPanel } from './MissionPanel';
 import { RadarScope } from './RadarScope';
-import { buildDebrief } from '../engine/progression';
+import { buildDebrief, trainingGuide, type TrainingGuide } from '../engine/progression';
 import { restoreSession, serializeSession, type SavedSession } from '../engine/session';
 
 interface CareerStats {
@@ -121,10 +121,10 @@ export function App() {
     setFeedback({ type: 'info', message: `${callsign} seçildi. Hedef komutu yazabilir veya hızlı komut kullanabilirsin.` });
   }, []);
 
-  const submitCommand = useCallback(() => {
+  const issueCommand = useCallback((input: string) => {
     const snapshot = stateRef.current;
     const parsed = parseCommandLine(
-      command,
+      input,
       snapshot.aircraft.map((item) => item.callsign),
       snapshot.selectedCallsign,
       activeArrivalRunways.map((item) => item.id),
@@ -132,20 +132,19 @@ export function App() {
     );
     if (!parsed.ok) {
       setFeedback({ type: 'error', message: parsed.error });
-      return;
+      return false;
     }
     if (parsed.command.kind === 'land') {
       const clearance = landingClearanceStatus(snapshot, parsed.command.callsign, activeWorld);
       if (!clearance.ok) {
         setFeedback({ type: 'error', message: clearance.message });
-        return;
+        return false;
       }
     }
     setState((current) => ({
       ...queueInstruction(current, parsed.command, parsed.normalized),
       selectedCallsign: parsed.command.callsign,
     }));
-    setCommand('');
     setFeedback({
       type: 'success',
       message: parsed.command.kind === 'approach'
@@ -158,7 +157,18 @@ export function App() {
               ? `${parsed.normalized} · iniş izni readback ile onaylandı.`
               : `${parsed.normalized} · pilot readback verdi; uçak talimatı kademeli uygulayacak.`,
     });
-  }, [activeArrivalRunways, activeWorld, command]);
+    return true;
+  }, [activeArrivalRunways, activeWorld]);
+
+  const submitCommand = useCallback(() => {
+    if (issueCommand(command)) setCommand('');
+  }, [command, issueCommand]);
+
+  const tutorial = trainingGuide(state, trainingAircraft?.callsign ?? null, trainingAircraft?.assignedRunway ?? null);
+  const submitTutorialCommand = useCallback((guide: TrainingGuide) => {
+    if (!guide.callsign || !guide.command) return;
+    if (issueCommand(`${guide.callsign} ${guide.command}`)) setCommand('');
+  }, [issueCommand]);
 
   const togglePause = () => setState((current) => ({ ...current, paused: !current.paused }));
   const cycleSpeed = () => setState((current) => ({ ...current, timeScale: current.timeScale === 1 ? 2 : current.timeScale === 2 ? 4 : 1 }));
@@ -250,6 +260,8 @@ export function App() {
           events={state.eventLog}
           activeFlowLabel={activeFlow?.label ?? 'STANDART'}
           pendingInstructionCount={state.pendingInstructions.length}
+          tutorial={tutorial}
+          onTutorialCommand={submitTutorialCommand}
         />
       </div>
 

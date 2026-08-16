@@ -84,6 +84,12 @@ button { touch-action: manipulation; }
 .mission-score { display: flex; gap: 14px; color: var(--muted); font: 600 9px IBM Plex Mono, monospace; }
 .mission-score b { margin-left: 5px; color: var(--green); font-size: 12px; }
 .mission-event { color: #9dc7b0; font: 500 9px/1.35 IBM Plex Mono, monospace; text-align: right; }
+.tutorial-guide { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid rgba(103,232,196,.32); border-radius: 7px; background: rgba(7, 39, 29, .52); }
+.tutorial-guide__step { padding: 5px 6px; color: #032218; border-radius: 4px; background: var(--cyan); font: 700 8px IBM Plex Mono, monospace; white-space: nowrap; }
+.tutorial-guide strong, .tutorial-guide small { display: block; font-family: IBM Plex Mono, monospace; }
+.tutorial-guide strong { color: var(--cyan); font-size: 9px; }
+.tutorial-guide small { margin-top: 3px; color: #a8cbb9; font-size: 8px; line-height: 1.35; }
+.tutorial-guide button { min-height: 34px; padding: 0 10px; color: #04120c; border: 1px solid var(--cyan); border-radius: 6px; background: var(--cyan); font: 700 8px IBM Plex Mono, monospace; cursor: pointer; white-space: nowrap; }
 
 .workspace { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 260px; }
 .radar-frame { position: relative; min-height: 0; overflow: hidden; border-right: 1px solid var(--line); }
@@ -160,6 +166,8 @@ button { touch-action: manipulation; }
   .command-feedback { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .mission-panel { grid-template-columns: minmax(0, 1fr) auto; gap: 9px 14px; padding: 8px 10px; }
   .mission-event { grid-column: 1 / -1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tutorial-guide { grid-template-columns: auto minmax(0, 1fr); }
+  .tutorial-guide button { grid-column: 1 / -1; width: 100%; }
 }
 
 @media (max-width: 520px) {

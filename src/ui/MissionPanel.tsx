@@ -1,5 +1,5 @@
 import type { Aircraft, GameEvent } from '../engine/types';
-import { controllerRank, nextMission } from '../engine/progression';
+import { controllerRank, nextMission, type TrainingGuide } from '../engine/progression';
 
 interface MissionPanelProps {
   aircraft: Aircraft[];
@@ -15,9 +15,11 @@ interface MissionPanelProps {
   events: GameEvent[];
   activeFlowLabel: string;
   pendingInstructionCount: number;
+  tutorial: TrainingGuide | null;
+  onTutorialCommand: (guide: TrainingGuide) => void;
 }
 
-export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, bestScore, bestLandings, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount }: MissionPanelProps) {
+export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, bestScore, bestLandings, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand }: MissionPanelProps) {
   const trainingAircraft = aircraft.find((item) => item.callsign === trainingCallsign);
   const approachCaptured = trainingAircraft?.approach?.status === 'captured';
   const landingCleared = trainingAircraft?.approach?.landingCleared;
@@ -50,6 +52,13 @@ export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, 
       <div className="mission-event" aria-live="polite">
         {events.at(-1)?.message ?? 'Radar sahası izleniyor.'}
       </div>
+      {tutorial ? (
+        <div className="tutorial-guide" aria-label={`Eğitim adımı ${tutorial.step}`}>
+          <span className="tutorial-guide__step">EĞİTİM {tutorial.step}/{tutorial.totalSteps}</span>
+          <div><strong>{tutorial.title}</strong><small>{tutorial.message}</small></div>
+          {tutorial.command ? <button type="button" onClick={() => onTutorialCommand(tutorial)}>{tutorial.command} UYGULA</button> : null}
+        </div>
+      ) : null}
     </section>
   );
 }
