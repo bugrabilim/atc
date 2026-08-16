@@ -83,6 +83,22 @@ function operationalFlowChange(state: GameState, world: RadarWorld, elapsedSecon
   };
 }
 
+function runwayInspection(state: GameState, world: RadarWorld, elapsedSeconds: number) {
+  if (state.mode !== 'expert' || elapsedSeconds < 330) return null;
+  if (state.eventTimeline.some((event) => event.id.startsWith('runway-inspection-'))) return null;
+  const arrivalRunway = world.runways.find((runway) => runway.active && (runway.operation === 'arrival' || runway.operation === 'mixed'));
+  if (!arrivalRunway) return null;
+  return {
+    runwayId: arrivalRunway.id,
+    availableAt: elapsedSeconds + 70,
+    event: {
+      id: `runway-inspection-${Math.round(elapsedSeconds)}`,
+      type: 'danger' as const,
+      message: `PİST KONTROLÜ · ${arrivalRunway.id} 70 sn inişe kapalı · yaklaşan trafiği HOLD / hız / go-around ile yönet`,
+    },
+  };
+}
+
 export function detectConflicts(aircraft: readonly Aircraft[], world?: RadarWorld, elapsedSeconds = 0): Conflict[] {
   return detectOperationalConflicts(aircraft, world, elapsedSeconds);
 }
@@ -278,6 +294,12 @@ function stepFixed(state: GameState, world: RadarWorld, dt: number): GameState {
   if (flowChange) {
     flowId = flowChange.flowId;
     eventLog = appendEvent(eventLog, flowChange.event);
+  }
+
+  const inspection = runwayInspection(state, world, elapsedSeconds);
+  if (inspection) {
+    runwayAvailableAt = { ...runwayAvailableAt, [inspection.runwayId]: inspection.availableAt };
+    eventLog = appendEvent(eventLog, inspection.event);
   }
 
   const conflicts = detectOperationalConflicts(aircraft, world, elapsedSeconds);
