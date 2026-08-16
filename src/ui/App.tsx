@@ -10,7 +10,7 @@ import { DebriefPanel } from './DebriefPanel';
 import { FlightStripList } from './FlightStripList';
 import { MissionPanel } from './MissionPanel';
 import { RadarScope } from './RadarScope';
-import { ACHIEVEMENT_TOTAL, buildDebrief, earnedAwards, goalComplete, isAchievementId, shiftGoal, trainingGuide, type TrainingGuide } from '../engine/progression';
+import { ACHIEVEMENT_TOTAL, buildDebrief, careerProgression, earnedAwards, goalComplete, isAchievementId, shiftGoal, trainingGuide, type TrainingGuide } from '../engine/progression';
 import { controllerCoach, type CoachAdvice } from '../engine/controllerCoach';
 import { restoreSession, serializeSession, type SavedSession } from '../engine/session';
 import { AudioCuePlayer, type AudioCue } from './audioCues';
@@ -81,6 +81,7 @@ export function App() {
   const activeWorld = useMemo(() => worldWithFlow(worldForMode(scenario.world, state.mode), state.flowId, state.peakSkill), [scenario.world, state.flowId, state.mode, state.peakSkill]);
   const activeFlow = activeWorld.flowConfigurations.find((item) => item.id === state.flowId) ?? activeWorld.flowConfigurations[0];
   const goal = useMemo(() => shiftGoal(state.mode), [state.mode]);
+  const progression = useMemo(() => careerProgression(career.badges), [career.badges]);
   const activeArrivalRunways = activeWorld.runways.filter((item) => item.active && (item.operation === 'arrival' || item.operation === 'mixed'));
   const trainingAircraft = scenario.initialAircraft.find((item) => item.phase === 'arrival');
 
@@ -305,6 +306,11 @@ export function App() {
     try { window.localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* storage unavailable */ }
   };
   const selectScenario = (nextScenario: GameScenario) => {
+    if (!progression.unlockedScenarioIds.includes(nextScenario.id)) {
+      const next = progression.nextUnlock;
+      setFeedback({ type: 'info', message: `${nextScenario.label} henüz kilitli.${next ? ` Sıradaki açılma: ${next.label}.` : ''}` });
+      return;
+    }
     shiftRecorded.current = false;
     setNewAchievementIds([]);
     setScenario(nextScenario);
@@ -321,6 +327,11 @@ export function App() {
     setFeedback({ type: 'info', message: `${flow.label} operasyonu aktif. Yeni trafik bu pist akışına göre planlanacak.` });
   };
   const selectMode = (mode: GameMode) => {
+    if (!progression.unlockedModeIds.includes(mode)) {
+      const next = progression.nextUnlock;
+      setFeedback({ type: 'info', message: `${difficultyConfig(mode).label} modu henüz kilitli.${next ? ` Sıradaki açılma: ${next.label}.` : ''}` });
+      return;
+    }
     shiftRecorded.current = false;
     setNewAchievementIds([]);
     const config = difficultyConfig(mode);
@@ -366,7 +377,7 @@ export function App() {
           <div className="session-menu__panel">
             <span>SENARYO</span>
           {scenarioCatalog.map((item) => (
-            <button key={item.id} type="button" className={item.id === scenario.id ? 'is-active' : ''} onClick={() => selectScenario(item)}>{item.label}</button>
+            <button key={item.id} type="button" disabled={!progression.unlockedScenarioIds.includes(item.id)} className={item.id === scenario.id ? 'is-active' : ''} onClick={() => selectScenario(item)}>{progression.unlockedScenarioIds.includes(item.id) ? item.label : `🔒 ${item.label}`}</button>
           ))}
           <button type="button" onClick={endShift}>BİTİR</button>
           <button type="button" onClick={reset}>YENİLE</button>
@@ -385,7 +396,7 @@ export function App() {
         <label>
           Mod
           <select value={state.mode} onChange={(event) => selectMode(event.target.value as GameMode)}>
-            {DIFFICULTY_MODES.map((mode) => <option key={mode.id} value={mode.id}>{mode.label}</option>)}
+            {DIFFICULTY_MODES.map((mode) => <option key={mode.id} value={mode.id} disabled={!progression.unlockedModeIds.includes(mode.id)}>{progression.unlockedModeIds.includes(mode.id) ? mode.label : `🔒 ${mode.label}`}</option>)}
           </select>
         </label>
         {activeFlow ? <span>RÜZGÂR <b>{String(activeFlow.windDirection).padStart(3, '0')}°/{activeFlow.windSpeedKt}KT</b></span> : null}
