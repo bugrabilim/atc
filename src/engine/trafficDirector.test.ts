@@ -53,4 +53,21 @@ describe('traffic director', () => {
     expect(entryMessages.size).toBeGreaterThan(1);
     expect(planTraffic(9, [], world, 73421)).toEqual(plans[9]);
   });
+
+  it('balances departures across active runways and varies their fleet', () => {
+    const parallelDepartureWorld = {
+      ...world,
+      runways: world.runways.map((runway) => runway.id === '35L'
+        ? { ...runway, active: true, operation: 'departure' as const }
+        : runway),
+    };
+    const departures = Array.from({ length: 12 }, (_, index) => planTraffic(index * 5 + 3, [], parallelDepartureWorld, 1459));
+    const departurePlans = departures.filter((plan) => plan.aircraft.phase === 'departure');
+    const runwayIds = new Set(departurePlans.map((plan) => plan.aircraft.assignedRunway));
+    const types = new Set(departurePlans.map((plan) => plan.aircraft.type));
+
+    expect(runwayIds.size).toBeGreaterThan(1);
+    expect(types.size).toBeGreaterThan(2);
+    expect(planTraffic(18, [], world, 1459)).toEqual(planTraffic(18, [], world, 1459));
+  });
 });
