@@ -11,16 +11,12 @@ interface CommandPanelProps {
   onChange: (value: string) => void;
   onSubmit: () => void;
   onSelect: (callsign: string) => void;
+  onNext: () => void;
 }
 
 const baseQuickCommands = [
-  { label: 'HDG 090', command: 'HDG 090' },
-  { label: 'HDG 180', command: 'HDG 180' },
-  { label: 'FL060', command: 'FL060' },
-  { label: 'FL100', command: 'FL100' },
-  { label: 'SPD 220', command: 'SPD 220' },
-  { label: 'SPD 180', command: 'SPD 180' },
-  { label: 'CLEARED LAND', command: 'LAND' },
+  { label: 'NORMAL SPD', command: 'RN' },
+  { label: 'EXPEDITE', command: 'X' },
   { label: 'HANDOFF', command: 'HANDOFF' },
 ];
 
@@ -34,21 +30,32 @@ export function CommandPanel({
   onChange,
   onSubmit,
   onSelect,
+  onNext,
 }: CommandPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const selected = aircraft.find((item) => item.callsign === selectedCallsign) ?? null;
   const primaryFix = fixIds.find((item) => item.startsWith('FINAL')) ?? fixIds[0];
   const quickCommands = [
-    ...baseQuickCommands.slice(0, 6),
     ...(primaryFix ? [{ label: `DCT ${primaryFix}`, command: `DCT ${primaryFix}` }, { label: `HOLD ${primaryFix}`, command: `HOLD ${primaryFix}` }] : []),
     ...runwayIds.slice(0, 2).map((runwayId) => ({ label: `ILS ${runwayId}`, command: `ILS ${runwayId}` })),
-    ...baseQuickCommands.slice(6),
+    ...runwayIds.slice(0, 2).map((runwayId) => ({ label: `LOC ${runwayId}`, command: `LOC ${runwayId}` })),
+    ...baseQuickCommands,
   ];
 
   const useQuickCommand = (command: string) => {
     if (!selectedCallsign) return;
     onChange(`${selectedCallsign} ${command}`);
     inputRef.current?.focus();
+  };
+
+  const relativeCommand = (kind: 'heading' | 'altitude' | 'speed', delta: number) => {
+    if (!selected) return;
+    const command = kind === 'heading'
+      ? `H${String((Math.round(selected.heading / 10) * 10 + delta + 360) % 360).padStart(3, '0')}`
+      : kind === 'altitude'
+        ? `A${Math.max(10, Math.min(450, Math.round((selected.targetAltitude + delta) / 100)))}`
+        : `S${Math.max(selected.performance.minSpeed, Math.min(selected.performance.maxSpeed, Math.round(selected.targetSpeed + delta)))}`;
+    useQuickCommand(command);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -81,8 +88,17 @@ export function CommandPanel({
             <span>HDG <b>{String(Math.round(selected.heading)).padStart(3, '0')}</b></span>
             <span>FL <b>{String(Math.round(selected.altitude / 100)).padStart(3, '0')}</b></span>
             <span>SPD <b>{Math.round(selected.speed)}</b></span>
+            <span>GS <b>{Math.round(selected.groundSpeed)}</b></span>
+            <span>WTC <b>{selected.wakeCategory}</b></span>
           </div>
         ) : null}
+        <button type="button" className="next-aircraft" onClick={onNext}>SONRAKİ · TAB</button>
+      </div>
+
+      <div className="vector-control" aria-label="Dokunmatik vektör kontrolleri">
+        <div><span>HEADING</span><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', -30)}>−30°</button><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', -10)}>−10°</button><b>{selected ? String(Math.round(selected.targetHeading)).padStart(3, '0') : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', 10)}>+10°</button><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', 30)}>+30°</button></div>
+        <div><span>ALTITUDE</span><button type="button" disabled={!selected} onClick={() => relativeCommand('altitude', -1000)}>−1000</button><b>{selected ? `FL${String(Math.round(selected.targetAltitude / 100)).padStart(3, '0')}` : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('altitude', 1000)}>+1000</button></div>
+        <div><span>SPEED</span><button type="button" disabled={!selected} onClick={() => relativeCommand('speed', -20)}>−20</button><b>{selected ? Math.round(selected.targetSpeed) : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('speed', 20)}>+20</button></div>
       </div>
 
       <div className="quick-command-row" aria-label="Hızlı komutlar">
@@ -109,7 +125,7 @@ export function CommandPanel({
           autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}
-        placeholder={selectedCallsign ? `${selectedCallsign} HDG 090 · ILS ${runwayIds[0] ?? '---'}` : 'Uçağa dokun veya çağrı kodunu yaz'}
+        placeholder={selectedCallsign ? `${selectedCallsign} H090 A30 S180 I${runwayIds[0] ?? '---'} · birleşik komut yazabilirsin` : 'Uçağa dokun veya çağrı kodunu yaz'}
           aria-label="Komut satırı"
         />
         <button type="button" className="send-command" onClick={onSubmit}>UYGULA</button>

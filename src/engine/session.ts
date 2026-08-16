@@ -1,7 +1,9 @@
 import type { GameScenario } from './scenario';
 import type { GameState } from './types';
+import { createAircraft, HEAVY_PERFORMANCE, JET_PERFORMANCE } from './aircraftData';
+import { INITIAL_SKILL, profileForSkill } from './skill';
 
-export const SESSION_VERSION = 1;
+export const SESSION_VERSION = 2;
 
 export interface SavedSession {
   version: typeof SESSION_VERSION;
@@ -31,20 +33,51 @@ export function restoreSession(serialized: string | null, scenarios: readonly Ga
   if (!serialized) return null;
   try {
     const parsed = JSON.parse(serialized) as Partial<SavedSession>;
+    const parsedVersion = (parsed as { version?: number }).version;
     const scenario = scenarios.find((item) => item.id === parsed.scenarioId);
     const state = parsed.state;
-    if (parsed.version !== SESSION_VERSION || !scenario || !hasRequiredState(state)) return null;
+    if ((parsedVersion !== 1 && parsedVersion !== SESSION_VERSION) || !scenario || !hasRequiredState(state)) return null;
     if (!scenario.world.flowConfigurations.some((item) => item.id === state.flowId)) return null;
+    const legacyState = state as GameState & { skill?: number; peakSkill?: number; targetAircraft?: number; seed?: number; commandHistory?: GameState['commandHistory'] };
+    const skill = typeof legacyState.skill === 'number' ? legacyState.skill : Math.max(INITIAL_SKILL, Math.min(12, state.score / 100 + INITIAL_SKILL));
+    const profile = profileForSkill(skill);
     return {
       version: SESSION_VERSION,
       scenarioId: scenario.id,
       savedAt: typeof parsed.savedAt === 'number' ? parsed.savedAt : Date.now(),
       state: {
         ...state,
+        aircraft: state.aircraft.map((aircraft) => {
+          const defaults = ['B77W', 'A330', 'A332', 'A333', 'B748'].includes(aircraft.type) ? HEAVY_PERFORMANCE : JET_PERFORMANCE;
+          const legacyApproach = aircraft.approach as (Omit<NonNullable<typeof aircraft.approach>, 'status'> & { status?: string; landingCleared?: boolean }) | undefined;
+          return createAircraft({
+            ...aircraft,
+            performance: { ...defaults, ...aircraft.performance },
+            approach: legacyApproach
+              ? {
+                runwayId: legacyApproach.runwayId,
+                status: legacyApproach.status === 'captured'
+                  ? legacyApproach.landingCleared ? 'tower' : 'glideslope'
+                  : legacyApproach.status === 'localizer' || legacyApproach.status === 'glideslope' || legacyApproach.status === 'tower'
+                    ? legacyApproach.status
+                    : 'armed',
+                localizerOnly: legacyApproach.localizerOnly,
+                capturedAt: legacyApproach.capturedAt,
+                towerHandoffAt: legacyApproach.towerHandoffAt,
+              }
+              : undefined,
+          });
+        }),
         paused: true,
+        skill,
+        peakSkill: typeof legacyState.peakSkill === 'number' ? legacyState.peakSkill : skill,
+        targetAircraft: typeof legacyState.targetAircraft === 'number' ? legacyState.targetAircraft : profile.targetAircraft,
+        seed: typeof legacyState.seed === 'number' ? legacyState.seed : 73421,
+        commandHistory: Array.isArray(legacyState.commandHistory) ? legacyState.commandHistory : [],
         metrics: {
           ...state.metrics,
           unmanagedArrivals: typeof state.metrics?.unmanagedArrivals === 'number' ? state.metrics.unmanagedArrivals : 0,
+          wakeViolations: typeof state.metrics?.wakeViolations === 'number' ? state.metrics.wakeViolations : 0,
         },
         eventTimeline: Array.isArray(state.eventTimeline) ? state.eventTimeline : state.eventLog,
       },

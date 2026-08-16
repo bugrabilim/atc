@@ -1,8 +1,7 @@
 import type { Aircraft, GameState, RadarWorld } from './types';
 import { planTraffic } from './trafficDirector';
-
-const jet = { turnRateDegPerSecond: 3, climbRateFpm: 2200, descentRateFpm: 1800, accelerationKtPerSecond: 2.2, minSpeed: 140, maxSpeed: 480 };
-const heavy = { turnRateDegPerSecond: 2.2, climbRateFpm: 1700, descentRateFpm: 1500, accelerationKtPerSecond: 1.4, minSpeed: 150, maxSpeed: 500 };
+import { createAircraft, HEAVY_PERFORMANCE, JET_PERFORMANCE } from './aircraftData';
+import { INITIAL_SKILL, profileForSkill } from './skill';
 
 export interface GameScenario {
   id: 'alpha' | 'coastal';
@@ -74,15 +73,15 @@ const coastalWorld: RadarWorld = {
 };
 
 const alphaAircraft: Aircraft[] = [
-  { callsign: 'AR101', type: 'A321', phase: 'arrival', position: { x: -1.65, y: 6 }, heading: 354, altitude: 1500, speed: 160, targetHeading: 354, targetAltitude: 1500, targetSpeed: 160, turnDirection: 'shortest', performance: jet, assignedRunway: '34L' },
-  { callsign: 'NX204', type: 'B738', phase: 'arrival', position: { x: 20, y: -17 }, heading: 316, altitude: 8000, speed: 260, targetHeading: 316, targetAltitude: 8000, targetSpeed: 260, turnDirection: 'shortest', performance: jet, assignedRunway: '35R', navigation: { mode: 'route', fixIds: ['GATE2', 'FINAL2'], currentLegIndex: 0, procedure: 'GATE2 1K' } },
-  { callsign: 'VX810', type: 'B77W', phase: 'departure', position: { x: 5.7, y: 3.5 }, heading: 354, altitude: 3200, speed: 210, targetHeading: 354, targetAltitude: 12000, targetSpeed: 280, turnDirection: 'shortest', performance: heavy },
+  createAircraft({ callsign: 'AR101', type: 'A321', phase: 'arrival', position: { x: -1.65, y: 6 }, heading: 354, altitude: 1200, speed: 170, targetHeading: 354, targetAltitude: 1200, targetSpeed: 170, turnDirection: 'shortest', performance: JET_PERFORMANCE, assignedRunway: '34L' }),
+  createAircraft({ callsign: 'NX204', type: 'B738', phase: 'arrival', position: { x: 20, y: -17 }, heading: 316, altitude: 8000, speed: 260, targetHeading: 316, targetAltitude: 8000, targetSpeed: 260, turnDirection: 'shortest', performance: JET_PERFORMANCE, assignedRunway: '34L' }),
+  createAircraft({ callsign: 'VX810', type: 'B77W', phase: 'departure', position: { x: 5.7, y: 3.5 }, heading: 354, altitude: 3200, speed: 210, targetHeading: 354, targetAltitude: 12000, targetSpeed: 280, turnDirection: 'shortest', performance: HEAVY_PERFORMANCE, navigation: { mode: 'route', fixIds: ['EXIT1'], currentLegIndex: 0, procedure: 'EXIT1-DEPARTURE' } }),
 ];
 
 const coastalAircraft: Aircraft[] = [
-  { callsign: 'CF101', type: 'A320', phase: 'arrival', position: { x: -8, y: 0.6 }, heading: 90, altitude: 1600, speed: 165, targetHeading: 90, targetAltitude: 1600, targetSpeed: 165, turnDirection: 'shortest', performance: jet, assignedRunway: '09L' },
-  { callsign: 'OR330', type: 'E190', phase: 'arrival', position: { x: 18, y: -20 }, heading: 316, altitude: 7000, speed: 250, targetHeading: 316, targetAltitude: 7000, targetSpeed: 250, turnDirection: 'shortest', performance: jet, assignedRunway: '09R', navigation: { mode: 'route', fixIds: ['GATE2', 'FINAL2'], currentLegIndex: 0, procedure: 'GATE2 2C' } },
-  { callsign: 'SK721', type: 'A330', phase: 'departure', position: { x: 3.8, y: 1.8 }, heading: 180, altitude: 3000, speed: 205, targetHeading: 180, targetAltitude: 11000, targetSpeed: 275, turnDirection: 'shortest', performance: heavy },
+  createAircraft({ callsign: 'CF101', type: 'A320', phase: 'arrival', position: { x: -8, y: 0.6 }, heading: 90, altitude: 1500, speed: 170, targetHeading: 90, targetAltitude: 1500, targetSpeed: 170, turnDirection: 'shortest', performance: JET_PERFORMANCE, assignedRunway: '09L' }),
+  createAircraft({ callsign: 'OR330', type: 'E190', phase: 'arrival', position: { x: 18, y: -20 }, heading: 316, altitude: 7000, speed: 250, targetHeading: 316, targetAltitude: 7000, targetSpeed: 250, turnDirection: 'shortest', performance: JET_PERFORMANCE, assignedRunway: '09L' }),
+  createAircraft({ callsign: 'SK721', type: 'A330', phase: 'departure', position: { x: 3.8, y: 1.8 }, heading: 180, altitude: 3000, speed: 205, targetHeading: 180, targetAltitude: 11000, targetSpeed: 275, turnDirection: 'shortest', performance: HEAVY_PERFORMANCE, navigation: { mode: 'route', fixIds: ['EXIT1'], currentLegIndex: 0, procedure: 'EXIT1-COAST' } }),
 ];
 
 export const scenarioCatalog: GameScenario[] = [
@@ -93,14 +92,17 @@ export const scenarioCatalog: GameScenario[] = [
 export const defaultScenario = scenarioCatalog[0];
 export const world = defaultScenario.world;
 
-export function worldWithFlow(world: RadarWorld, flowId: string): RadarWorld {
+export function worldWithFlow(world: RadarWorld, flowId: string, skill?: number): RadarWorld {
   const flow = world.flowConfigurations.find((item) => item.id === flowId) ?? world.flowConfigurations[0];
   if (!flow) return world;
+  const availableArrivalRunways = skill !== undefined && skill < 7.5
+    ? flow.arrivalRunwayIds.slice(0, 1)
+    : flow.arrivalRunwayIds;
   return {
     ...world,
     activeFlowId: flow.id,
     runways: world.runways.map((runway) => {
-      const arrival = flow.arrivalRunwayIds.includes(runway.id);
+      const arrival = availableArrivalRunways.includes(runway.id);
       const departure = flow.departureRunwayIds.includes(runway.id);
       return {
         ...runway,
@@ -114,15 +116,18 @@ export function worldWithFlow(world: RadarWorld, flowId: string): RadarWorld {
 export function createInitialState(scenario: GameScenario = defaultScenario): GameState {
   const trainingAircraft = scenario.initialAircraft.find((item) => item.phase === 'arrival');
   const flowId = scenario.world.flowConfigurations[0]?.id ?? 'default';
+  const initialProfile = profileForSkill(INITIAL_SKILL);
+  const welcome = { id: 'welcome', type: 'info' as const, message: `Radar contact: ${trainingAircraft?.callsign ?? 'ilk geliş'}. Heading, irtifa ve hızla ${trainingAircraft?.assignedRunway ?? ''} finaline vektörle; sonra ILS'i silahlandır.` };
   return {
     elapsedSeconds: 0, paused: false, timeScale: 2, aircraft: structuredClone(scenario.initialAircraft), conflicts: [],
-    selectedCallsign: trainingAircraft?.callsign ?? null, score: 0, landed: 0, spawned: 0, trafficLevel: 1, nextTrafficAt: 18,
-    runwayAvailableAt: {}, eventLog: [{ id: 'welcome', type: 'info', message: `Eğitim: ${trainingAircraft?.callsign ?? 'ilk geliş'} için ILS ${trainingAircraft?.assignedRunway ?? ''} yaklaşmasını başlat.` }],
+    selectedCallsign: trainingAircraft?.callsign ?? null, skill: INITIAL_SKILL, peakSkill: INITIAL_SKILL, targetAircraft: initialProfile.targetAircraft,
+    score: Math.round(INITIAL_SKILL * 10), landed: 0, spawned: 0, trafficLevel: initialProfile.level, nextTrafficAt: initialProfile.spawnInterval,
+    runwayAvailableAt: {}, eventLog: [welcome],
     activeLossPairs: [], handoffs: 0, flowId,
     trackHistory: Object.fromEntries(scenario.initialAircraft.map((item) => [item.callsign, [{ ...item.position }]])),
     lastTrackAt: 0, pendingInstructions: [],
-    metrics: { separationLosses: 0, goArounds: 0, missedHandoffs: 0, expiredPriorities: 0, unmanagedArrivals: 0 },
-    eventTimeline: [{ id: 'welcome', type: 'info', message: `Eğitim: ${trainingAircraft?.callsign ?? 'ilk geliş'} için ILS ${trainingAircraft?.assignedRunway ?? ''} yaklaşmasını başlat.` }],
+    metrics: { separationLosses: 0, goArounds: 0, missedHandoffs: 0, expiredPriorities: 0, unmanagedArrivals: 0, wakeViolations: 0 },
+    eventTimeline: [welcome], seed: 73421, commandHistory: [],
   };
 }
 

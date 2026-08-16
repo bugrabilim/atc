@@ -12,8 +12,8 @@ describe('arrival advisor and weather', () => {
     const advice = arrivalAdvice(aircraft, world);
     const arrival = advice.get('NX204');
 
-    expect(arrival?.runwayId).toBe('35R');
-    expect(arrival?.sequence).toBe(1);
+    expect(arrival?.runwayId).toBe('34L');
+    expect(arrival?.sequence).toBe(2);
     expect(arrival?.shouldDescend).toBe(true);
   });
 

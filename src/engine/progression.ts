@@ -17,28 +17,28 @@ export function trainingGuide(state: GameState, trainingCallsign: string | null,
     return { step: 1, totalSteps: 5, title: 'UÇAĞI SEÇ', message: `${trainingCallsign} uçuş şeridine veya radar etiketine dokun. Seçili uçak komutların hedefidir.`, callsign: trainingCallsign };
   }
   if (!aircraft.approach) {
-    return { step: 2, totalSteps: 5, title: 'YAKLAŞMAYI BAŞLAT', message: `${trainingCallsign} için ILS ${runwayId} yaklaşmasını silahlandır. Uçak localizer ve glideslope'a uygun konuma geldiğinde otomatik capture yapar.`, callsign: trainingCallsign, command: `ILS ${runwayId}` };
+    return { step: 2, totalSteps: 5, title: 'ILS’İ SİLAHLANDIR', message: `${trainingCallsign} final hattına yakın. ILS ${runwayId} komutunu ver; localizer önce, glideslope ise aşağıdan yakalanır.`, callsign: trainingCallsign, command: `ILS ${runwayId}` };
   }
   if (aircraft.approach.status === 'armed') {
-    return { step: 3, totalSteps: 5, title: 'CAPTURE BEKLE', message: `${trainingCallsign} ILS'e yönleniyor. Yeşil yaklaşma çizgisine yaklaştığında capture gerçekleşecek; bu sırada heading ve hızını izle.`, callsign: trainingCallsign };
+    return { step: 3, totalSteps: 5, title: 'LOCALIZER’I YAKALA', message: `30° civarı kesişme açısı en rahatı. Gerekirse heading ve irtifa ver; ILS silahlı kalır.`, callsign: trainingCallsign };
   }
-  if (!aircraft.approach.landingCleared) {
-    return { step: 4, totalSteps: 5, title: 'İNİŞ İZNİ VER', message: `${trainingCallsign} localizer ve glideslope üzerinde. Pist ve öndeki trafik uygunsa LAND komutuyla iniş izni ver.`, callsign: trainingCallsign, command: 'LAND' };
+  if (aircraft.approach.status === 'localizer') {
+    return { step: 4, totalSteps: 5, title: 'GLIDESLOPE’U AŞAĞIDAN YAKALA', message: `${trainingCallsign} localizer üzerinde. Uçağın süzülüş hattının altında kalmasını sağla; yakaladığında kule devri otomatik olacak.`, callsign: trainingCallsign };
   }
-  return { step: 5, totalSteps: 5, title: 'FİNALİ İZLE', message: `${trainingCallsign} iniş izni aldı. Finalde kalmasını izle; touchdown sonrası ilk görevin tamamlanacak.`, callsign: trainingCallsign };
+  return { step: 5, totalSteps: 5, title: aircraft.approach.status === 'tower' ? 'KULEYE DEVREDİLDİ' : 'ESTABLISHED', message: `${trainingCallsign} yaklaşma üzerinde. Handoff ve iniş otomatik; sen sıradaki gelişe geçebilirsin.`, callsign: trainingCallsign };
 }
 
 export function controllerRank(score: number) {
-  if (score >= 1800) return 'BAŞ KONTROLÖR';
-  if (score >= 900) return 'KIDEMLİ KONTROLÖR';
-  if (score >= 350) return 'YAKLAŞMA KONTROLÖRÜ';
+  if (score >= 180) return 'BAŞ KONTROLÖR';
+  if (score >= 100) return 'KIDEMLİ KONTROLÖR';
+  if (score >= 55) return 'YAKLAŞMA KONTROLÖRÜ';
   return 'STAJYER KONTROLÖR';
 }
 
 export function nextMission(landed: number, score: number) {
-  if (landed < 1) return 'İlk inişi tamamla: ILS yakala, finali izle ve doğru anda LAND izni ver.';
-  if (landed < 3) return 'İki geliş daha sıraya al. DCT/HOLD ile final aralığını koru; her uçağa planlanan pisti atamak zorunda değilsin.';
-  if (score < 900) return 'Yoğunluk artıyor. Aynı piste iniş izni verirken öndeki trafik ve pist işgal uyarılarını kontrol et.';
+  if (landed < 1) return 'İlk gelişi heading, irtifa ve hızla final hattına getir; ILS ile LOC ve glideslope established olduğunda kule devri otomatik.';
+  if (landed < 3) return 'İki geliş daha sıraya al. DCT/HOLD ile final aralığını ve wake mesafesini koru.';
+  if (score < 90) return 'Skill yükseldikçe trafik artar. Hata yaparsan yük azalır; toparlanıp yeniden tırman.';
   return 'Serbest operasyon: gelişleri iki aktif pist arasında dağıt, kalkışları handoff noktasına ulaştır ve ayırma kaybı yaşatma.';
 }
 
@@ -62,6 +62,7 @@ export function buildDebrief(state: GameState): DebriefReport {
   ];
   const improvements = [
     metrics.separationLosses > 0 ? `${metrics.separationLosses} ayırma kaybı yaşandı; CPA uyarısını daha erken çöz.` : 'Ayırma kaybı yok.',
+    metrics.wakeViolations > 0 ? `${metrics.wakeViolations} wake ihlali kaydedildi; lider/takipçi kategorisini ve final aralığını büyüt.` : 'Wake aralığı ihlali yok.',
     metrics.goArounds > 0 ? `${metrics.goArounds} go-around oluştu; iniş izni zamanlamasını güçlendir.` : 'Go-around yok.',
     metrics.unmanagedArrivals > 0 ? `${metrics.unmanagedArrivals} geliş yaklaşma yönetilmeden sektörden çıktı; ILS kararını daha erken ver.` : 'Kontrol edilmeden sektörden çıkan geliş yok.',
     metrics.expiredPriorities > 0 ? `${metrics.expiredPriorities} öncelikli trafik süresi aşıldı.` : 'Öncelikli trafik süresi aşılmadı.',
@@ -69,7 +70,7 @@ export function buildDebrief(state: GameState): DebriefReport {
   return {
     grade,
     headline: grade === 'A' ? 'ÜST DÜZEY VARDİYA' : grade === 'B' ? 'GÜVENLİ OPERASYON' : grade === 'C' ? 'KONTROLLÜ, FAKAT GELİŞTİRİLEBİLİR' : 'EMNİYET ÖNCELİKLİ TEKRAR GEREKİYOR',
-    summary: `${controllerRank(state.score)} · ${Math.floor(state.elapsedSeconds / 60)} dk simülasyon · ${state.score} puan`,
+    summary: `${controllerRank(state.score)} · ${Math.floor(state.elapsedSeconds / 60)} dk · peak skill ${state.peakSkill.toFixed(1)}`,
     strengths,
     improvements,
   };

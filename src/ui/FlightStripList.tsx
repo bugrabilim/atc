@@ -37,11 +37,11 @@ export function FlightStripList({ aircraft, conflicts, selectedCallsign, elapsed
             >
               <span className="flight-strip__lead">
                 <strong>{item.callsign}</strong>
-                <small>{item.type} · {item.priority ? `ÖNCELİK ${Math.max(0, Math.ceil(item.priority.deadlineAt - elapsedSeconds))}sn` : item.approach ? `ILS ${item.approach.runwayId}` : item.handoffCleared ? 'HANDOFF ONAYLI' : arrival ? `${arrival.runwayId} · SIRA ${arrival.sequence} · ${arrival.etaSeconds}s` : nextFix ? `${item.navigation?.mode === 'hold' ? 'HOLD' : '→'} ${nextFix}` : 'KALKIŞ'}</small>
+                <small>{item.type} · WTC {item.wakeCategory} · {item.priority ? `ÖNCELİK ${Math.max(0, Math.ceil(item.priority.deadlineAt - elapsedSeconds))}sn` : item.approach ? `${item.approach.status.toUpperCase()} ${item.approach.runwayId}` : item.handoffCleared ? 'HANDOFF ONAYLI' : arrival ? `${arrival.runwayId} · SIRA ${arrival.sequence} · ${arrival.etaSeconds}s` : nextFix ? `${item.navigation?.mode === 'hold' ? 'HOLD' : '→'} ${nextFix}` : 'KALKIŞ'}</small>
               </span>
               <span className="flight-strip__numbers">
                 <b>FL{String(Math.round(item.altitude / 100)).padStart(3, '0')}</b>
-                <small>{arrival?.shouldDescend ? `↓ FL${String(Math.round(arrival.recommendedAltitude / 100)).padStart(3, '0')}` : trend === 'climb' ? '↑' : trend === 'descend' ? '↓' : '—'} {Math.round(item.speed)} KT{arrival?.crosswindKt ? ` · XW${arrival.crosswindKt}` : ''}</small>
+                <small>{arrival?.shouldDescend ? `↓ FL${String(Math.round(arrival.recommendedAltitude / 100)).padStart(3, '0')}` : trend === 'climb' ? '↑' : trend === 'descend' ? '↓' : '—'} {Math.round(item.speed)}/{Math.round(item.groundSpeed)} KT{item.speedMode === 'assigned' ? ' A' : ' N'}{arrival?.crosswindKt ? ` · XW${arrival.crosswindKt}` : ''}</small>
               </span>
             </button>
           );

@@ -2,16 +2,20 @@ export type Vector2 = { x: number; y: number };
 
 export type AircraftPhase = 'arrival' | 'departure';
 export type Trend = 'climb' | 'level' | 'descend';
-export type ApproachStatus = 'armed' | 'captured';
+export type ApproachStatus = 'armed' | 'localizer' | 'glideslope' | 'tower';
 export type NavigationMode = 'route' | 'direct' | 'hold';
+export type SpeedMode = 'normal' | 'assigned';
+export type WakeCategory = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
 
 export interface AircraftPerformance {
-  turnRateDegPerSecond: number;
   climbRateFpm: number;
   descentRateFpm: number;
   accelerationKtPerSecond: number;
   minSpeed: number;
   maxSpeed: number;
+  maxBankDeg: number;
+  rollRateDegPerSecond: number;
+  finalApproachSpeed: number;
 }
 
 export interface Aircraft {
@@ -21,12 +25,20 @@ export interface Aircraft {
   position: Vector2;
   heading: number;
   altitude: number;
+  /** Indicated airspeed. Kept as `speed` for backwards-compatible UI and saves. */
   speed: number;
+  groundSpeed: number;
+  track: number;
+  bankAngle: number;
+  verticalSpeed: number;
   targetHeading: number;
   targetAltitude: number;
   targetSpeed: number;
+  speedMode: SpeedMode;
+  expedite: boolean;
   turnDirection: 'shortest' | 'left' | 'right';
   performance: AircraftPerformance;
+  wakeCategory: WakeCategory;
   /** Suggested arrival runway from the traffic flow. The controller may still assign another active runway. */
   assignedRunway?: string;
   handoffCleared?: boolean;
@@ -38,7 +50,9 @@ export interface Aircraft {
   approach?: {
     runwayId: string;
     status: ApproachStatus;
-    landingCleared: boolean;
+    localizerOnly?: boolean;
+    capturedAt?: number;
+    towerHandoffAt?: number;
   };
   navigation?: {
     mode: NavigationMode;
@@ -47,6 +61,7 @@ export interface Aircraft {
     procedure: string;
     holding?: boolean;
   };
+  goAroundGraceUntil?: number;
 }
 
 export interface Runway {
@@ -112,6 +127,7 @@ export interface Conflict {
   horizontalNm: number;
   verticalFt: number;
   severity: 'warning' | 'loss';
+  reason?: 'separation' | 'wake';
   predicted?: {
     timeSeconds: number;
     horizontalNm: number;
@@ -125,6 +141,11 @@ export interface GameState {
   aircraft: Aircraft[];
   conflicts: Conflict[];
   selectedCallsign: string | null;
+  /** Endless-style live workload rating. Traffic target follows this value up and down. */
+  skill: number;
+  /** Highest live skill reached in the current shift. */
+  peakSkill: number;
+  targetAircraft: number;
   score: number;
   landed: number;
   spawned: number;
@@ -145,6 +166,9 @@ export interface GameState {
   metrics: SessionMetrics;
   /** Rolling operational history used by the debrief, separate from the short live event log. */
   eventTimeline: GameEvent[];
+  /** Seed retained in saves so traffic is reproducible. */
+  seed: number;
+  commandHistory: CommandRecord[];
 }
 
 export interface SessionMetrics {
@@ -154,6 +178,7 @@ export interface SessionMetrics {
   expiredPriorities: number;
   /** Arrivals that crossed the sector boundary without being safely established. */
   unmanagedArrivals: number;
+  wakeViolations: number;
 }
 
 export interface GameEvent {
@@ -166,7 +191,11 @@ export type AircraftCommand =
   | { kind: 'heading'; callsign: string; value: number; direction: 'shortest' | 'left' | 'right' }
   | { kind: 'altitude'; callsign: string; value: number }
   | { kind: 'speed'; callsign: string; value: number }
+  | { kind: 'resumeSpeed'; callsign: string }
+  | { kind: 'expedite'; callsign: string }
   | { kind: 'approach'; callsign: string; runwayId: string }
+  | { kind: 'localizer'; callsign: string; runwayId: string }
+  /** Legacy save compatibility. Standard approach mode hands aircraft to tower automatically. */
   | { kind: 'land'; callsign: string }
   | { kind: 'handoff'; callsign: string }
   | { kind: 'direct'; callsign: string; fixId: string }
@@ -178,6 +207,11 @@ export interface PendingInstruction {
   normalized: string;
   issuedAt: number;
   executeAt: number;
+}
+
+export interface CommandRecord {
+  issuedAt: number;
+  normalized: string;
 }
 
 export type ParseResult =

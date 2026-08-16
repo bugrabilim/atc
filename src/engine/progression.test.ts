@@ -5,8 +5,8 @@ import { initialState } from './scenario';
 describe('controller progression', () => {
   it('promotes the controller through score thresholds', () => {
     expect(controllerRank(0)).toBe('STAJYER KONTROLÖR');
-    expect(controllerRank(350)).toBe('YAKLAŞMA KONTROLÖRÜ');
-    expect(controllerRank(1800)).toBe('BAŞ KONTROLÖR');
+    expect(controllerRank(60)).toBe('YAKLAŞMA KONTROLÖRÜ');
+    expect(controllerRank(180)).toBe('BAŞ KONTROLÖR');
   });
 
   it('keeps early objectives concise and actionable', () => {
@@ -37,13 +37,14 @@ describe('debrief', () => {
 });
 
 describe('guided training', () => {
-  it('walks a first arrival through ILS and landing clearance', () => {
+  it('walks a first arrival through ILS and automatic tower handoff', () => {
     const state = structuredClone(initialState);
     const first = trainingGuide(state, 'AR101', '34L');
-    state.aircraft[0].approach = { runwayId: '34L', status: 'captured', landingCleared: false };
+    state.aircraft[0].approach = { runwayId: '34L', status: 'tower' };
     const final = trainingGuide(state, 'AR101', '34L');
 
     expect(first?.command).toBe('ILS 34L');
-    expect(final?.command).toBe('LAND');
+    expect(final?.command).toBeUndefined();
+    expect(final?.title).toContain('KULEYE');
   });
 });

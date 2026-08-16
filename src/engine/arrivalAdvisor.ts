@@ -2,6 +2,7 @@ import { distance } from './math';
 import { activeFixId } from './navigation';
 import type { Aircraft, RadarWorld, Runway, Vector2 } from './types';
 import { runwayWindComponents } from './weather';
+import { bearingTo } from './navigation';
 
 export interface ArrivalAdvice {
   runwayId: string;
@@ -11,6 +12,7 @@ export interface ArrivalAdvice {
   recommendedAltitude: number;
   shouldDescend: boolean;
   crosswindKt: number;
+  recommendedHeading: number;
 }
 
 function routeDistance(aircraft: Aircraft, runway: Runway, world: RadarWorld) {
@@ -36,7 +38,13 @@ export function arrivalAdvice(aircraft: readonly Aircraft[], world: RadarWorld) 
       const distanceNm = routeDistance(item, runway, world);
       const etaSeconds = Math.max(1, Math.round(distanceNm / Math.max(120, item.speed) * 3600));
       const recommendedAltitude = Math.max(3000, Math.min(12000, Math.round((distanceNm * 318 + 50) / 100) * 100));
-      return [{ aircraft: item, runway, distanceNm, etaSeconds, recommendedAltitude }];
+      const radians = runway.heading * Math.PI / 180;
+      const finalIntercept = {
+        x: runway.center.x - Math.sin(radians) * 9,
+        y: runway.center.y + Math.cos(radians) * 9,
+      };
+      const recommendedHeading = Math.round(bearingTo(item.position, finalIntercept));
+      return [{ aircraft: item, runway, distanceNm, etaSeconds, recommendedAltitude, recommendedHeading }];
     });
   const advice = new Map<string, ArrivalAdvice>();
   for (const runwayId of new Set(candidates.map((item) => item.runway.id))) {
@@ -50,6 +58,7 @@ export function arrivalAdvice(aircraft: readonly Aircraft[], world: RadarWorld) 
         recommendedAltitude: item.recommendedAltitude,
         shouldDescend: item.aircraft.altitude > item.recommendedAltitude + 600,
         crosswindKt: runwayWindComponents(world, item.runway).crosswindKt,
+        recommendedHeading: item.recommendedHeading,
       });
     });
   }

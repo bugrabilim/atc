@@ -1,7 +1,8 @@
 import type { Aircraft, AircraftPerformance, RadarWorld } from './types';
+import { createAircraft, HEAVY_PERFORMANCE, JET_PERFORMANCE } from './aircraftData';
 
-const jet: AircraftPerformance = { turnRateDegPerSecond: 3, climbRateFpm: 2200, descentRateFpm: 1800, accelerationKtPerSecond: 2.2, minSpeed: 140, maxSpeed: 480 };
-const heavy: AircraftPerformance = { turnRateDegPerSecond: 2.2, climbRateFpm: 1700, descentRateFpm: 1500, accelerationKtPerSecond: 1.4, minSpeed: 150, maxSpeed: 500 };
+const jet: AircraftPerformance = JET_PERFORMANCE;
+const heavy: AircraftPerformance = HEAVY_PERFORMANCE;
 const aircraftTypes = ['A220', 'A320', 'A21N', 'B738', 'B39M', 'E190'] as const;
 const callsignPrefixes = ['AR', 'NX', 'OR', 'VX', 'SK'] as const;
 
@@ -37,14 +38,12 @@ function planArrival(index: number, activeAircraft: readonly Aircraft[], world: 
   const fallbackEntries = world.trafficEntries;
   const entryPool = entriesForRunway.length > 0 ? entriesForRunway : fallbackEntries;
   const entry = entryPool[index % entryPool.length];
-  const procedure = world.procedures.find((item) => item.id === entry.procedureId);
-  const entryFix = world.fixes.find((fix) => fix.id === entry.id);
-  if (!procedure || !entryFix) throw new Error(`Traffic director cannot resolve ${entry.id} procedure`);
+  if (!entry) throw new Error('Traffic director requires at least one boundary entry');
 
   const altitude = 7000 + ((index * 1100) % 6000);
   const speed = 235 + ((index * 17) % 55);
-  const heading = headingTo(entry.position, entryFix.position);
-  const aircraft: Aircraft = {
+  const heading = (headingTo(entry.position, { x: 0, y: 0 }) + ((index % 3) - 1) * 12 + 360) % 360;
+  const aircraft = createAircraft({
     callsign,
     type: aircraftTypes[index % aircraftTypes.length],
     phase: 'arrival',
@@ -58,11 +57,10 @@ function planArrival(index: number, activeAircraft: readonly Aircraft[], world: 
     turnDirection: 'shortest',
     performance: jet,
     assignedRunway: runway.id,
-    navigation: { mode: 'route', fixIds: [...procedure.fixIds], currentLegIndex: 0, procedure: procedure.id },
-  };
+  });
   return {
     aircraft,
-    message: `${callsign} sahaya girdi · ${procedure.id} · planlanan pist ${runway.id} · ${arrivalLoad(activeAircraft, runway.id) + 1}. sıra`,
+    message: `${callsign} radar contact · ${entry.id} sınırı · ${Math.round(altitude / 100)} flight level · planlanan pist ${runway.id} · vektör bekliyor`,
   };
 }
 
@@ -73,7 +71,7 @@ function planDeparture(index: number, world: RadarWorld, callsign: string): Traf
   const procedure = world.procedures.find((item) => item.id === exit?.procedureId);
   if (!runway || !procedure) return null;
   const altitude = 9000 + (index % 4) * 1500;
-  const aircraft: Aircraft = {
+  const aircraft = createAircraft({
     callsign,
     type: index % 2 === 0 ? 'B77W' : 'A330',
     phase: 'departure',
@@ -87,20 +85,21 @@ function planDeparture(index: number, world: RadarWorld, callsign: string): Traf
     turnDirection: 'shortest',
     performance: heavy,
     navigation: { mode: 'route', fixIds: [...procedure.fixIds], currentLegIndex: 0, procedure: procedure.id },
-  };
+  });
   return { aircraft, message: `${callsign} kalkış trafiği · ${runway.id} · ${procedure.id}` };
 }
 
 /** Plans one new flight against current runway capacity and arrival load. */
-export function planTraffic(index: number, activeAircraft: readonly Aircraft[], world: RadarWorld): TrafficPlan {
+export function planTraffic(index: number, activeAircraft: readonly Aircraft[], world: RadarWorld, seed = 0): TrafficPlan {
+  const variantIndex = index + Math.abs(seed % 17);
   const suffix = String(310 + index * 13).padStart(3, '0');
   const callsign = `${callsignPrefixes[index % callsignPrefixes.length]}${suffix}`;
   const activeArrivals = activeAircraft.filter((item) => item.phase === 'arrival').length;
   const targetArrivalBacklog = Math.max(2, activeArrivalRunways(world).length * 2);
   const departure = index % 5 === 3 || activeArrivals >= targetArrivalBacklog + 2
-    ? planDeparture(index, world, callsign)
+    ? planDeparture(variantIndex, world, callsign)
     : null;
-  return departure ?? planArrival(index, activeAircraft, world, callsign);
+  return departure ?? planArrival(variantIndex, activeAircraft, world, callsign);
 }
 
 export function flowCapacity(world: RadarWorld) {

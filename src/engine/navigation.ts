@@ -17,7 +17,7 @@ function eventFor(aircraft: Aircraft, message: string): GameEvent {
 
 export function guideNavigation(aircraft: Aircraft, world: RadarWorld): { aircraft: Aircraft; event?: GameEvent } {
   const navigation = aircraft.navigation;
-  if (!navigation || aircraft.approach?.status === 'captured') return { aircraft };
+  if (!navigation || (aircraft.approach && aircraft.approach.status !== 'armed')) return { aircraft };
   const fixId = navigation.fixIds[navigation.currentLegIndex];
   const fix = world.fixes.find((item) => item.id === fixId);
   if (!fix) return { aircraft: { ...aircraft, navigation: undefined } };

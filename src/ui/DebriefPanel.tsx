@@ -19,9 +19,12 @@ export function DebriefPanel({ report, state, onRestart, onContinue }: DebriefPa
           <p>{report.summary}</p>
         </div>
         <div className="debrief-metrics">
+          <span>SKILL <b>{state.skill.toFixed(1)}</b></span>
+          <span>PEAK <b>{state.peakSkill.toFixed(1)}</b></span>
           <span>İNİŞ <b>{state.landed}</b></span>
           <span>HANDOFF <b>{state.handoffs}</b></span>
           <span>AYIRMA <b>{state.metrics.separationLosses}</b></span>
+          <span>WAKE <b>{state.metrics.wakeViolations}</b></span>
           <span>GO-AROUND <b>{state.metrics.goArounds}</b></span>
           <span>KAYIP GELİŞ <b>{state.metrics.unmanagedArrivals}</b></span>
         </div>

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { parseCommandLine } from '../engine/commands';
-import { queueInstruction } from '../engine/radio';
+import { parseCommandBatch } from '../engine/commands';
+import { queueInstructions } from '../engine/radio';
 import { createInitialState, defaultScenario, scenarioCatalog, worldWithFlow } from '../engine/scenario';
-import { landingClearanceStatus, stepGame } from '../engine/simulation';
+import { stepGame } from '../engine/simulation';
 import type { GameState } from '../engine/types';
 import type { GameScenario } from '../engine/scenario';
 import { CommandPanel } from './CommandPanel';
@@ -63,7 +63,9 @@ export function App() {
     message: savedSession ? 'Kaydedilmiş vardiya duraklatıldı. Devam ile aynı trafikten sürdürebilirsin.' : 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. Çağrı kodunun ilk harflerini yazıp Tab ile tamamlayabilirsin.',
   });
   const [debriefOpen, setDebriefOpen] = useState(false);
-  const activeWorld = useMemo(() => worldWithFlow(scenario.world, state.flowId), [scenario.world, state.flowId]);
+  const [radioEnabled, setRadioEnabled] = useState(false);
+  const lastSpokenEvent = useRef<string | null>(null);
+  const activeWorld = useMemo(() => worldWithFlow(scenario.world, state.flowId, state.peakSkill), [scenario.world, state.flowId, state.peakSkill]);
   const activeFlow = activeWorld.flowConfigurations.find((item) => item.id === state.flowId) ?? activeWorld.flowConfigurations[0];
   const activeArrivalRunways = activeWorld.runways.filter((item) => item.active && (item.operation === 'arrival' || item.operation === 'mixed'));
   const trainingAircraft = scenario.initialAircraft.find((item) => item.phase === 'arrival');
@@ -117,6 +119,26 @@ export function App() {
     return () => window.clearInterval(timer);
   }, [activeWorld]);
 
+  useEffect(() => {
+    if (!radioEnabled || !('speechSynthesis' in window)) return;
+    const event = [...state.eventLog].reverse().find((item) => item.id.startsWith('readback-') || item.id.startsWith('tower-'));
+    if (!event || event.id === lastSpokenEvent.current) return;
+    lastSpokenEvent.current = event.id;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(event.message.replace(/·/g, ','));
+    utterance.rate = 1.08;
+    utterance.pitch = 0.92;
+    utterance.lang = 'tr-TR';
+    const voices = window.speechSynthesis.getVoices().filter((voice) => voice.lang.startsWith('tr') || voice.lang.startsWith('en'));
+    const voiceIndex = [...event.message].reduce((sum, character) => sum + character.charCodeAt(0), 0) % Math.max(1, voices.length);
+    if (voices[voiceIndex]) utterance.voice = voices[voiceIndex];
+    window.speechSynthesis.speak(utterance);
+  }, [radioEnabled, state.eventLog]);
+
+  useEffect(() => () => {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  }, []);
+
   const selectAircraft = useCallback((callsign: string) => {
     setState((current) => ({ ...current, selectedCallsign: callsign }));
     setFeedback({ type: 'info', message: `${callsign} seçildi. Hedef komutu yazabilir veya hızlı komut kullanabilirsin.` });
@@ -124,7 +146,7 @@ export function App() {
 
   const issueCommand = useCallback((input: string) => {
     const snapshot = stateRef.current;
-    const parsed = parseCommandLine(
+    const parsed = parseCommandBatch(
       input,
       snapshot.aircraft.map((item) => item.callsign),
       snapshot.selectedCallsign,
@@ -135,31 +157,46 @@ export function App() {
       setFeedback({ type: 'error', message: parsed.error });
       return false;
     }
-    if (parsed.command.kind === 'land') {
-      const clearance = landingClearanceStatus(snapshot, parsed.command.callsign, activeWorld);
-      if (!clearance.ok) {
-        setFeedback({ type: 'error', message: clearance.message });
-        return false;
-      }
-    }
+    const callsign = parsed.commands[0].callsign;
     setState((current) => ({
-      ...queueInstruction(current, parsed.command, parsed.normalized),
-      selectedCallsign: parsed.command.callsign,
+      ...queueInstructions(current, parsed.commands, parsed.normalized),
+      selectedCallsign: callsign,
     }));
     setFeedback({
       type: 'success',
-      message: parsed.command.kind === 'approach'
-        ? `${parsed.normalized} · pilot readback verdi; kısa süre sonra ILS silahlanacak.`
-        : parsed.command.kind === 'direct'
-          ? `${parsed.normalized} · pilot readback verdi; doğrudan rota birazdan uygulanacak.`
-        : parsed.command.kind === 'hold'
-            ? `${parsed.normalized} · pilot readback verdi; hold talimatı birazdan uygulanacak.`
-          : parsed.command.kind === 'land'
-              ? `${parsed.normalized} · iniş izni readback ile onaylandı.`
-              : `${parsed.normalized} · pilot readback verdi; uçak talimatı kademeli uygulayacak.`,
+      message: `${parsed.normalized.join(' · ')} · tek readback içinde sıraya alındı.`,
     });
     return true;
   }, [activeArrivalRunways, activeWorld]);
+
+  const selectNextAircraft = useCallback(() => {
+    const snapshot = stateRef.current;
+    const priority = [...snapshot.aircraft].sort((first, second) => {
+      const rank = (callsign: string) => {
+        const aircraft = snapshot.aircraft.find((item) => item.callsign === callsign);
+        if (snapshot.conflicts.some((item) => item.pair.includes(callsign) && item.severity === 'loss')) return 0;
+        if (aircraft?.priority && !aircraft.priority.alertRaised) return 1;
+        if (snapshot.pendingInstructions.some((item) => item.command.callsign === callsign)) return 2;
+        if (aircraft?.phase === 'arrival' && !aircraft.approach) return 3;
+        if (aircraft?.approach?.status === 'armed' || aircraft?.approach?.status === 'localizer') return 4;
+        return 5;
+      };
+      return rank(first.callsign) - rank(second.callsign) || first.callsign.localeCompare(second.callsign);
+    });
+    const currentIndex = priority.findIndex((item) => item.callsign === snapshot.selectedCallsign);
+    const next = priority[(currentIndex + 1) % Math.max(1, priority.length)];
+    if (next) selectAircraft(next.callsign);
+  }, [selectAircraft]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
+      event.preventDefault();
+      selectNextAircraft();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectNextAircraft]);
 
   const submitCommand = useCallback(() => {
     if (issueCommand(command)) setCommand('');
@@ -223,6 +260,7 @@ export function App() {
           <span><i className="status-dot" /> SİSTEM AKTİF</span>
           <span>AKTİF PİSTLER <b>{activeWorld.runways.filter((item) => item.active).map((item) => item.id).join(' · ')}</b></span>
           <span>SAAT <b>{formatClock(state.elapsedSeconds)}</b></span>
+          <span>SKILL <b>{state.skill.toFixed(1)}</b> / PEAK <b>{state.peakSkill.toFixed(1)}</b></span>
         </div>
         <div className="session-actions">
           {scenarioCatalog.map((item) => (
@@ -230,6 +268,7 @@ export function App() {
           ))}
           <button type="button" onClick={togglePause}>{state.paused ? 'DEVAM' : 'DURAKLAT'}</button>
           <button type="button" onClick={cycleSpeed}>{state.timeScale}×</button>
+          <button type="button" className={radioEnabled ? 'is-active' : ''} onClick={() => setRadioEnabled((current) => !current)}>{radioEnabled ? 'RADYO AÇIK' : 'RADYO'}</button>
           <button type="button" onClick={endShift}>BİTİR</button>
           <button type="button" onClick={reset}>YENİLE</button>
         </div>
@@ -258,6 +297,9 @@ export function App() {
           landed={state.landed}
           handoffs={state.handoffs}
           trafficLevel={state.trafficLevel}
+          skill={state.skill}
+          peakSkill={state.peakSkill}
+          targetAircraft={state.targetAircraft}
           bestScore={career.bestScore}
           bestLandings={career.bestLandings}
           trainingCallsign={trainingAircraft?.callsign ?? null}
@@ -303,6 +345,7 @@ export function App() {
         onChange={setCommand}
         onSubmit={submitCommand}
         onSelect={selectAircraft}
+        onNext={selectNextAircraft}
       />
       {debriefOpen ? <DebriefPanel report={buildDebrief(state)} state={state} onRestart={reset} onContinue={continueShift} /> : null}
     </main>

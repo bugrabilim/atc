@@ -11,6 +11,7 @@ describe('radio instructions', () => {
 
     expect(next.aircraft[0].targetHeading).toBe(state.aircraft[0].targetHeading);
     expect(next.pendingInstructions).toHaveLength(1);
+    expect(next.commandHistory.at(-1)?.normalized).toBe('AR101 HDG 180');
   });
 
   it('applies a queued instruction after the pilot readback delay', () => {

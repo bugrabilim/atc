@@ -13,6 +13,7 @@
   --cyan: #67e8c4;
   --danger: #ff6868;
   --warning: #ffb648;
+  --warn: #ffb648;
 }
 
 * { box-sizing: border-box; }
@@ -24,7 +25,7 @@ button { touch-action: manipulation; }
 .app-shell {
   height: 100dvh;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   background:
     radial-gradient(circle at 38% 30%, rgba(33, 117, 82, 0.08), transparent 35%),
     #030907;
@@ -84,13 +85,19 @@ button { touch-action: manipulation; }
 .mission-score { display: flex; gap: 14px; color: var(--muted); font: 600 9px IBM Plex Mono, monospace; }
 .mission-score b { margin-left: 5px; color: var(--green); font-size: 12px; }
 .mission-event { color: #9dc7b0; font: 500 9px/1.35 IBM Plex Mono, monospace; text-align: right; }
-.tutorial-guide { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid rgba(103,232,196,.32); border-radius: 7px; background: rgba(7, 39, 29, .52); }
+.assistant-drawer { grid-column: 1 / -1; min-width: 0; }
+.assistant-drawer summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 26px; padding: 4px 8px; color: var(--cyan); border: 1px solid rgba(103,232,196,.18); border-radius: 5px; background: rgba(6,28,20,.52); cursor: pointer; font: 700 8px IBM Plex Mono, monospace; list-style: none; }
+.assistant-drawer summary::-webkit-details-marker { display: none; }
+.assistant-drawer summary span { min-width: 0; color: #9dc7b0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assistant-drawer[open] summary { border-radius: 5px 5px 0 0; }
+.assistant-drawer__content { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; padding-top: 7px; }
+.tutorial-guide { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid rgba(103,232,196,.32); border-radius: 7px; background: rgba(7, 39, 29, .52); }
 .tutorial-guide__step { padding: 5px 6px; color: #032218; border-radius: 4px; background: var(--cyan); font: 700 8px IBM Plex Mono, monospace; white-space: nowrap; }
 .tutorial-guide strong, .tutorial-guide small { display: block; font-family: IBM Plex Mono, monospace; }
 .tutorial-guide strong { color: var(--cyan); font-size: 9px; }
 .tutorial-guide small { margin-top: 3px; color: #a8cbb9; font-size: 8px; line-height: 1.35; }
 .tutorial-guide button { min-height: 34px; padding: 0 10px; color: #04120c; border: 1px solid var(--cyan); border-radius: 6px; background: var(--cyan); font: 700 8px IBM Plex Mono, monospace; cursor: pointer; white-space: nowrap; }
-.coach-guide { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid rgba(116, 191, 156, .24); border-radius: 7px; background: rgba(8, 28, 20, .68); }
+.coach-guide { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid rgba(116, 191, 156, .24); border-radius: 7px; background: rgba(8, 28, 20, .68); }
 .coach-guide__label { padding: 5px 6px; border-radius: 4px; color: var(--green); background: var(--green-deep); font: 700 8px IBM Plex Mono, monospace; white-space: nowrap; }
 .coach-guide strong, .coach-guide small { display: block; font-family: IBM Plex Mono, monospace; }
 .coach-guide strong { color: #dcf6e8; font-size: 9px; }
@@ -111,6 +118,9 @@ button { touch-action: manipulation; }
 .workspace { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 260px; }
 .radar-frame { position: relative; min-height: 0; overflow: hidden; border-right: 1px solid var(--line); }
 .radar-canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+.radar-tools { position: absolute; z-index: 4; top: 10px; right: 10px; display: flex; gap: 5px; }
+.radar-tools button { min-width: 38px; min-height: 34px; padding: 0 8px; color: #a9d8c2; border: 1px solid rgba(110,243,176,.25); border-radius: 5px; background: rgba(3,14,10,.88); font: 700 8px IBM Plex Mono, monospace; cursor: pointer; }
+.radar-tools button.is-active { color: #03140d; border-color: var(--green); background: var(--green); }
 .scope-corner { position: absolute; z-index: 2; width: 28px; height: 28px; pointer-events: none; }
 .scope-corner--top-left { top: 12px; left: 12px; border-top: 1px solid rgba(110,243,176,.5); border-left: 1px solid rgba(110,243,176,.5); }
 .scope-corner--bottom-right { right: 12px; bottom: 12px; border-right: 1px solid rgba(110,243,176,.5); border-bottom: 1px solid rgba(110,243,176,.5); }
@@ -132,6 +142,13 @@ button { touch-action: manipulation; }
 .eyebrow { color: var(--muted); font: 600 8px IBM Plex Mono, monospace; letter-spacing: .08em; }
 .selected-aircraft__metrics { display: flex; gap: 12px; color: var(--muted); font: 500 9px IBM Plex Mono, monospace; }
 .selected-aircraft__metrics b { color: #dff8ec; }
+.next-aircraft { min-height: 36px; padding: 0 9px; color: var(--green); border: 1px solid rgba(110,243,176,.28); border-radius: 6px; background: #0a1a14; font: 700 8px IBM Plex Mono, monospace; }
+.vector-control { display: none; gap: 5px; margin-bottom: 7px; }
+.vector-control > div { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.vector-control span { width: 58px; color: var(--muted); font: 700 7px IBM Plex Mono, monospace; }
+.vector-control b { min-width: 48px; color: #e7fff4; text-align: center; font: 700 9px IBM Plex Mono, monospace; }
+.vector-control button { min-height: 38px; min-width: 50px; padding: 0 7px; color: #cce9dc; border: 1px solid var(--line); border-radius: 6px; background: #0a1a14; font: 700 8px IBM Plex Mono, monospace; }
+.vector-control button:disabled { opacity: .35; }
 .quick-command-row { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; scrollbar-width: none; }
 .quick-command-row::-webkit-scrollbar { display: none; }
 .quick-command { min-width: 84px; padding: 0 10px; font: 600 9px IBM Plex Mono, monospace; white-space: nowrap; }
@@ -155,7 +172,7 @@ button { touch-action: manipulation; }
 .debrief-grade--b { color: var(--cyan); background: rgba(103,232,196,.08); }
 .debrief-grade--c { color: var(--warning); background: rgba(255,182,72,.08); }
 .debrief-grade--d { color: var(--danger); background: rgba(255,104,104,.08); }
-.debrief-metrics { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+.debrief-metrics { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
 .debrief-metrics span { padding: 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); font: 600 8px IBM Plex Mono, monospace; }
 .debrief-metrics b { display: block; margin-top: 5px; color: var(--green); font-size: 18px; }
 .debrief-columns { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
@@ -179,6 +196,7 @@ button { touch-action: manipulation; }
   .flight-panel { display: none; }
   .radar-frame { border-right: 0; }
   .selected-aircraft { display: flex; }
+  .vector-control { display: grid; grid-template-columns: 1fr; }
   .command-panel { padding-inline: 10px; }
   .command-feedback { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .mission-panel { grid-template-columns: minmax(0, 1fr) auto; gap: 9px 14px; padding: 8px 10px; }
@@ -187,16 +205,20 @@ button { touch-action: manipulation; }
   .tutorial-guide button { grid-column: 1 / -1; width: 100%; }
   .coach-guide { grid-template-columns: auto minmax(0, 1fr); }
   .coach-guide button { grid-column: 1 / -1; width: 100%; }
+  .assistant-drawer__content { grid-template-columns: 1fr; max-height: 180px; overflow-y: auto; }
 }
 
 @media (max-width: 520px) {
-  .app-shell { grid-template-rows: auto auto minmax(260px, 1fr) auto; }
+  .app-shell { grid-template-rows: auto auto auto minmax(220px, 1fr) auto; }
   .brand-lockup strong { font-size: 11px; }
   .brand-lockup small { max-width: 145px; font-size: 7px; }
   .brand-mark { font-size: 19px; }
   .session-actions button { min-width: 44px; min-height: 44px; padding-inline: 7px; font-size: 7px; }
   .session-actions button:first-child { min-width: 58px; }
   .selected-aircraft__metrics { gap: 8px; font-size: 8px; }
+  .selected-aircraft__metrics span:nth-child(4) { display: none; }
+  .vector-control button { min-height: 42px; flex: 1; }
+  .vector-control > div { justify-content: stretch; }
   .quick-command { min-height: 44px; min-width: 88px; }
   .command-entry { height: 50px; }
   .send-command { height: 40px; min-width: 78px; }
@@ -217,6 +239,7 @@ button { touch-action: manipulation; }
   .session-actions button { min-height: 36px; }
   .command-panel { padding-top: 6px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
   .selected-aircraft { display: none; }
+  .vector-control { display: none; }
   .quick-command-row { margin-bottom: 5px; }
   .quick-command { min-height: 34px; }
   .command-entry { height: 40px; }

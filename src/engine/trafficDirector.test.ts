@@ -9,7 +9,7 @@ describe('traffic director', () => {
 
     expect(plan.aircraft.phase).toBe('arrival');
     expect(plan.aircraft.assignedRunway).toBe('35R');
-    expect(plan.aircraft.navigation?.procedure).toBe('GATE2-BRAVO');
+    expect(plan.aircraft.navigation).toBeUndefined();
   });
 
   it('uses only the configured active runway in a single-runway flow', () => {
@@ -17,12 +17,18 @@ describe('traffic director', () => {
     const plan = planTraffic(1, [], singleRunwayWorld);
 
     expect(plan.aircraft.assignedRunway).toBe('34L');
-    expect(plan.aircraft.navigation?.procedure).not.toBe('GATE2-BRAVO');
+    expect(plan.aircraft.navigation).toBeUndefined();
   });
 
   it('reduces capacity for a single-runway operation', () => {
     const singleRunwayWorld = worldWithFlow(world, 'north-single');
 
     expect(flowCapacity(singleRunwayWorld)).toMatchObject({ intervalAdjustment: 4, aircraftAdjustment: -1 });
+  });
+
+  it('repeats the same traffic plan for the same seed', () => {
+    const first = planTraffic(6, [], world, 73421);
+    const replay = planTraffic(6, [], world, 73421);
+    expect(replay.aircraft).toEqual(first.aircraft);
   });
 });

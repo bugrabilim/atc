@@ -1,5 +1,4 @@
 import { arrivalAdvice } from './arrivalAdvisor';
-import { landingClearanceStatus } from './simulation';
 import type { GameState, RadarWorld } from './types';
 
 export interface CoachAdvice {
@@ -64,17 +63,6 @@ export function controllerCoach(state: GameState, world: RadarWorld): CoachAdvic
         command: `ILS ${priority.assignedRunway}`,
       };
     }
-    if (priority.approach?.status === 'captured' && !priority.approach.landingCleared) {
-      const clearance = landingClearanceStatus(state, priority.callsign, world);
-      return {
-        tone: clearance.ok ? 'warning' : 'info',
-        label: 'ÖNCELİKLİ TRAFİK',
-        title: clearance.ok ? `${priority.callsign} İNİŞE HAZIR` : `${priority.callsign} FİNALDE BEKLİYOR`,
-        message: clearance.ok ? `${remaining} sn kaldı. Pist serbest; iniş izni verebilirsin.` : clearance.message,
-        callsign: priority.callsign,
-        command: clearance.ok ? 'LAND' : undefined,
-      };
-    }
     return {
       tone: 'warning',
       label: 'ÖNCELİKLİ TRAFİK',
@@ -92,9 +80,9 @@ export function controllerCoach(state: GameState, world: RadarWorld): CoachAdvic
         tone: 'info',
         label: 'YAKLAŞMA KOÇU',
         title: `${selected.callsign} İÇİN ALÇALMA`,
-        message: `${arrival.runwayId} pistinde sıra ${arrival.sequence}. Yaklaşma profiline girmek için ${flightLevel(arrival.recommendedAltitude)} öneriliyor.`,
+        message: `${arrival.runwayId} pistinde sıra ${arrival.sequence}. Final girişine yönelmek ve alçalmak için birleşik talimat hazır.`,
         callsign: selected.callsign,
-        command: flightLevel(arrival.recommendedAltitude),
+        command: `H${String(arrival.recommendedHeading).padStart(3, '0')} ${flightLevel(arrival.recommendedAltitude)} I${arrival.runwayId}`,
       };
     }
     if (!selected.approach && selected.assignedRunway) {
@@ -102,7 +90,7 @@ export function controllerCoach(state: GameState, world: RadarWorld): CoachAdvic
         tone: 'info',
         label: 'YAKLAŞMA KOÇU',
         title: `${selected.callsign} İÇİN ILS`,
-        message: `${selected.assignedRunway} planlı pist. Uçak uygun geometriye geldiğinde localizer ve glideslope'u kendisi yakalayacak.`,
+        message: `${selected.assignedRunway} planlı pist. ILS'i şimdi silahlandır; heading komutları silahlı yaklaşmayı iptal etmez.`,
         callsign: selected.callsign,
         command: `ILS ${selected.assignedRunway}`,
       };
@@ -116,15 +104,22 @@ export function controllerCoach(state: GameState, world: RadarWorld): CoachAdvic
         callsign: selected.callsign,
       };
     }
-    if (selected.approach?.status === 'captured' && !selected.approach.landingCleared) {
-      const clearance = landingClearanceStatus(state, selected.callsign, world);
+    if (selected.approach?.status === 'localizer') {
       return {
-        tone: clearance.ok ? 'success' : 'info',
+        tone: 'info',
         label: 'YAKLAŞMA KOÇU',
-        title: clearance.ok ? `${selected.callsign} İNİŞE HAZIR` : `${selected.callsign} FİNALDE`,
-        message: clearance.ok ? `${selected.approach.runwayId} serbest. Final aralığı emniyetli; iniş izni ver.` : clearance.message,
+        title: `${selected.callsign} LOCALIZER ÜZERİNDE`,
+        message: 'Glideslope aşağıdan yakalanmalı. İrtifa yüksekse hemen alçal; finalde normal hız otomasyonu için RN kullanabilirsin.',
         callsign: selected.callsign,
-        command: clearance.ok ? 'LAND' : undefined,
+      };
+    }
+    if (selected.approach?.status === 'glideslope' || selected.approach?.status === 'tower') {
+      return {
+        tone: 'success',
+        label: 'YAKLAŞMA KOÇU',
+        title: selected.approach.status === 'tower' ? `${selected.callsign} KULEYE DEVREDİLDİ` : `${selected.callsign} ESTABLISHED`,
+        message: 'Yaklaşma stabil. Bir sonraki gelişin final aralığı ve wake kategorisine geç.',
+        callsign: selected.callsign,
       };
     }
   }

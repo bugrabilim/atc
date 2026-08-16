@@ -1,62 +1,42 @@
-import { distance, moveToward, turnToward } from './math';
+import { approachGeometry, completedLanding, guideApproach, initiateGoAround } from './approach';
+import { stepAircraftDynamics } from './aircraftDynamics';
 import { applyCommand } from './commands';
+import { distance } from './math';
 import { guideNavigation } from './navigation';
-import { planTraffic, flowCapacity } from './trafficDirector';
-import { approachLateralToleranceNm, stabilizedApproachSpeedKt } from './weather';
-import type { Aircraft, Conflict, GameEvent, GameState, RadarWorld, Runway, Trend, Vector2 } from './types';
+import { detectConflicts as detectOperationalConflicts } from './separation';
+import { profileForSkill, updateSkill } from './skill';
+import { flowCapacity, planTraffic } from './trafficDirector';
+import { requiredWakeSeparationNm } from './wake';
+import type { Aircraft, Conflict, GameEvent, GameState, RadarWorld, Trend } from './types';
 
-const SECONDS_PER_HOUR = 3600;
-const SECONDS_PER_MINUTE = 60;
-const GLIDESLOPE_FEET_PER_NM = 318;
-const APPROACH_CAPTURE_DISTANCE_NM = 16;
-const APPROACH_CAPTURE_LATERAL_NM = 2.2;
+const FIXED_STEP_SECONDS = 0.05;
 const RUNWAY_TURNAROUND_SECONDS = 45;
 
-interface ApproachGeometry {
-  distanceToThreshold: number;
-  lateralDistance: number;
-}
-
 export function aircraftTrend(aircraft: Aircraft): Trend {
-  if (aircraft.targetAltitude > aircraft.altitude + 50) return 'climb';
-  if (aircraft.targetAltitude < aircraft.altitude - 50) return 'descend';
+  if (aircraft.verticalSpeed > 100 || aircraft.targetAltitude > aircraft.altitude + 50) return 'climb';
+  if (aircraft.verticalSpeed < -100 || aircraft.targetAltitude < aircraft.altitude - 50) return 'descend';
   return 'level';
 }
 
-function inboundVector(heading: number): Vector2 {
-  const radians = (heading * Math.PI) / 180;
-  return { x: Math.sin(radians), y: -Math.cos(radians) };
-}
-
-function angularDifference(first: number, second: number) {
-  return Math.abs(((first - second + 540) % 360) - 180);
-}
-
-function getApproachGeometry(aircraft: Aircraft, runway: Runway): ApproachGeometry {
-  const inbound = inboundVector(runway.heading);
-  const relative = {
-    x: aircraft.position.x - runway.center.x,
-    y: aircraft.position.y - runway.center.y,
-  };
-  const distanceToThreshold = -(relative.x * inbound.x + relative.y * inbound.y);
-  const lateralDistance = Math.abs(relative.x * inbound.y - relative.y * inbound.x);
-  return { distanceToThreshold, lateralDistance };
-}
-
-export function trafficProfile(spawned: number, world?: RadarWorld) {
-  const level = Math.min(5, 1 + Math.floor(spawned / 3));
+export function trafficProfile(skill: number, world?: RadarWorld) {
   const capacity = world ? flowCapacity(world) : { intervalAdjustment: 0, aircraftAdjustment: 0 };
+  const profile = profileForSkill(skill, capacity.aircraftAdjustment);
   return {
-    level,
-    spawnInterval: [18, 16, 13, 11, 9][level - 1] + capacity.intervalAdjustment,
-    maxAircraft: Math.max(3, [5, 6, 7, 8, 9][level - 1] + capacity.aircraftAdjustment),
+    ...profile,
+    spawnInterval: Math.max(6.5, profile.spawnInterval + capacity.intervalAdjustment),
   };
 }
 
-export function requiredFinalSeparationNm(leadingAircraft: Aircraft) {
-  if (['B77W', 'A330'].includes(leadingAircraft.type)) return 5.5;
-  if (['A321', 'A21N', 'B738', 'B39M'].includes(leadingAircraft.type)) return 4.5;
-  return 4;
+export function requiredFinalSeparationNm(leadingAircraft: Aircraft, followingAircraft?: Aircraft) {
+  return requiredWakeSeparationNm(leadingAircraft, followingAircraft ?? { wakeCategory: 'E' });
+}
+
+/** Kept for old callers; landing clearance is intentionally automatic in approach-control mode. */
+export function landingClearanceStatus() {
+  return {
+    ok: false,
+    message: 'LAND komutu kullanılmıyor. Localizer ve glideslope established olduğunda uçak kuleye otomatik devredilir.',
+  };
 }
 
 function createPriorityTraffic(aircraft: Aircraft, elapsedSeconds: number): Aircraft {
@@ -66,195 +46,69 @@ function createPriorityTraffic(aircraft: Aircraft, elapsedSeconds: number): Airc
     ...aircraft,
     priority: {
       kind,
-      deadlineAt: elapsedSeconds + (kind === 'minimumFuel' ? 155 : 210),
+      deadlineAt: elapsedSeconds + (kind === 'minimumFuel' ? 210 : 260),
       alertRaised: false,
     },
   };
 }
 
-export function landingClearanceStatus(state: GameState, callsign: string, world: RadarWorld) {
-  const aircraft = state.aircraft.find((item) => item.callsign === callsign);
-  if (!aircraft?.approach) return { ok: false, message: 'Önce bir ILS yaklaşması başlatmalısın.' };
-  const runway = world.runways.find((item) => item.id === aircraft.approach?.runwayId);
-  if (!runway) return { ok: false, message: 'Atanmış pist bulunamadı.' };
-  const availableAt = state.runwayAvailableAt[runway.id] ?? 0;
-  if (availableAt > state.elapsedSeconds) {
-    return { ok: false, message: `${runway.id} pist işgali nedeniyle ${Math.ceil(availableAt - state.elapsedSeconds)} sn daha müsait değil.` };
-  }
-
-  const candidateDistance = getApproachGeometry(aircraft, runway).distanceToThreshold;
-  const leadOnFinal = state.aircraft.find((item) => {
-    if (item.callsign === aircraft.callsign || item.approach?.runwayId !== runway.id || !item.approach.landingCleared) return false;
-    const leadDistance = getApproachGeometry(item, runway).distanceToThreshold;
-    return leadDistance >= 0
-      && leadDistance < candidateDistance
-      && candidateDistance - leadDistance < requiredFinalSeparationNm(item);
-  });
-  if (leadOnFinal) {
-    return { ok: false, message: `${leadOnFinal.callsign} aynı pistte önde. Bu ${leadOnFinal.type} için en az ${requiredFinalSeparationNm(leadOnFinal)} NM final aralığı bırak.` };
-  }
-  return { ok: true, message: `${runway.id} iniş izni verilebilir.` };
-}
-
-function guideApproach(aircraft: Aircraft, world: RadarWorld): Aircraft {
-  if (!aircraft.approach) return aircraft;
-  const runway = world.runways.find((item) => item.id === aircraft.approach?.runwayId);
-  if (!runway || runway.operation === 'inactive') return { ...aircraft, approach: undefined };
-
-  const geometry = getApproachGeometry(aircraft, runway);
-  const canCapture = geometry.distanceToThreshold > 0
-    && geometry.distanceToThreshold <= APPROACH_CAPTURE_DISTANCE_NM
-    && geometry.lateralDistance <= Math.min(APPROACH_CAPTURE_LATERAL_NM, approachLateralToleranceNm(world, runway))
-    && angularDifference(aircraft.heading, runway.heading) <= 35;
-
-  if (aircraft.approach.status === 'armed' && !canCapture) return aircraft;
-  const glideslopeAltitude = Math.max(0, geometry.distanceToThreshold * GLIDESLOPE_FEET_PER_NM + 40);
-  const targetAltitude = aircraft.approach.landingCleared ? glideslopeAltitude : Math.max(1200, glideslopeAltitude);
-  const targetSpeed = stabilizedApproachSpeedKt(world, runway, aircraft.performance.minSpeed);
-  return {
-    ...aircraft,
-    approach: { ...aircraft.approach, status: 'captured' },
-    targetHeading: runway.heading,
-    targetAltitude,
-    targetSpeed,
-    turnDirection: 'shortest',
-  };
-}
-
-function stepAircraft(aircraft: Aircraft, dt: number): Aircraft {
-  const heading = turnToward(
-    aircraft.heading,
-    aircraft.targetHeading,
-    aircraft.performance.turnRateDegPerSecond * dt,
-    aircraft.turnDirection,
-  );
-  const altitudeRate = aircraft.targetAltitude >= aircraft.altitude
-    ? aircraft.performance.climbRateFpm
-    : aircraft.performance.descentRateFpm;
-  const altitude = moveToward(aircraft.altitude, aircraft.targetAltitude, (altitudeRate / SECONDS_PER_MINUTE) * dt);
-  const speed = moveToward(
-    aircraft.speed,
-    aircraft.targetSpeed,
-    aircraft.performance.accelerationKtPerSecond * dt,
-  );
-  const radians = (heading * Math.PI) / 180;
-  const distanceNm = (speed * dt) / SECONDS_PER_HOUR;
-  const position = {
-    x: aircraft.position.x + Math.sin(radians) * distanceNm,
-    y: aircraft.position.y - Math.cos(radians) * distanceNm,
-  };
-  return { ...aircraft, heading, altitude, speed, position };
-}
-
-function completedLanding(aircraft: Aircraft, world: RadarWorld) {
-  if (aircraft.approach?.status !== 'captured') return false;
-  const runway = world.runways.find((item) => item.id === aircraft.approach?.runwayId);
-  if (!runway) return false;
-  const geometry = getApproachGeometry(aircraft, runway);
-  return aircraft.approach.landingCleared
-    && geometry.distanceToThreshold <= 0.18
-    && geometry.distanceToThreshold >= -0.65
-    && geometry.lateralDistance <= 0.22
-    && aircraft.altitude <= 160
-    && angularDifference(aircraft.heading, runway.heading) <= 5;
-}
-
-function missedApproach(aircraft: Aircraft, world: RadarWorld) {
-  if (aircraft.approach?.status !== 'captured' || aircraft.approach.landingCleared) return false;
-  const runway = world.runways.find((item) => item.id === aircraft.approach?.runwayId);
-  return runway ? getApproachGeometry(aircraft, runway).distanceToThreshold < -0.25 : false;
-}
-
-function initiateGoAround(aircraft: Aircraft): Aircraft {
-  return {
-    ...aircraft,
-    approach: undefined,
-    targetHeading: (aircraft.heading + 180) % 360,
-    targetAltitude: Math.max(3000, aircraft.altitude),
-    targetSpeed: Math.max(210, aircraft.speed),
-    turnDirection: 'shortest',
-  };
-}
-
 function appendEvent(events: GameEvent[], event: GameEvent) {
-  return [...events, event].slice(-4);
+  return [...events, event].slice(-5);
 }
 
-export function detectConflicts(aircraft: readonly Aircraft[]): Conflict[] {
-  const conflicts: Conflict[] = [];
-  for (let i = 0; i < aircraft.length; i += 1) {
-    for (let j = i + 1; j < aircraft.length; j += 1) {
-      const first = aircraft[i];
-      const second = aircraft[j];
-      const horizontalNm = distance(first.position, second.position);
-      const verticalFt = Math.abs(first.altitude - second.altitude);
-      if (horizontalNm < 5 && verticalFt < 1500) {
-        conflicts.push({
-          pair: [first.callsign, second.callsign],
-          horizontalNm,
-          verticalFt,
-          severity: horizontalNm < 3 && verticalFt < 1000 ? 'loss' : 'warning',
-        });
-        continue;
-      }
-
-      const firstHeading = (first.heading * Math.PI) / 180;
-      const secondHeading = (second.heading * Math.PI) / 180;
-      const firstVelocity = { x: Math.sin(firstHeading) * first.speed / SECONDS_PER_HOUR, y: -Math.cos(firstHeading) * first.speed / SECONDS_PER_HOUR };
-      const secondVelocity = { x: Math.sin(secondHeading) * second.speed / SECONDS_PER_HOUR, y: -Math.cos(secondHeading) * second.speed / SECONDS_PER_HOUR };
-      const relativePosition = { x: first.position.x - second.position.x, y: first.position.y - second.position.y };
-      const relativeVelocity = { x: firstVelocity.x - secondVelocity.x, y: firstVelocity.y - secondVelocity.y };
-      const relativeSpeedSquared = relativeVelocity.x ** 2 + relativeVelocity.y ** 2;
-      if (relativeSpeedSquared === 0) continue;
-      const timeSeconds = -((relativePosition.x * relativeVelocity.x) + (relativePosition.y * relativeVelocity.y)) / relativeSpeedSquared;
-      if (timeSeconds <= 0 || timeSeconds > 120) continue;
-      const closestHorizontal = Math.hypot(
-        relativePosition.x + relativeVelocity.x * timeSeconds,
-        relativePosition.y + relativeVelocity.y * timeSeconds,
-      );
-      const firstVerticalRate = first.targetAltitude > first.altitude ? first.performance.climbRateFpm / SECONDS_PER_MINUTE : first.targetAltitude < first.altitude ? -first.performance.descentRateFpm / SECONDS_PER_MINUTE : 0;
-      const secondVerticalRate = second.targetAltitude > second.altitude ? second.performance.climbRateFpm / SECONDS_PER_MINUTE : second.targetAltitude < second.altitude ? -second.performance.descentRateFpm / SECONDS_PER_MINUTE : 0;
-      const closestVertical = Math.abs((first.altitude + firstVerticalRate * timeSeconds) - (second.altitude + secondVerticalRate * timeSeconds));
-      if (closestHorizontal < 3 && closestVertical < 1000) {
-        conflicts.push({
-          pair: [first.callsign, second.callsign],
-          horizontalNm,
-          verticalFt,
-          severity: 'warning',
-          predicted: { timeSeconds, horizontalNm: closestHorizontal },
-        });
-      }
-    }
-  }
-  return conflicts;
+export function detectConflicts(aircraft: readonly Aircraft[], world?: RadarWorld, elapsedSeconds = 0): Conflict[] {
+  return detectOperationalConflicts(aircraft, world, elapsedSeconds);
 }
 
-export function stepGame(state: GameState, _world: RadarWorld, dt: number): GameState {
-  if (state.paused) return state;
-  const boundedDt = Math.min(dt, 0.1) * state.timeScale;
-  const elapsedSeconds = state.elapsedSeconds + boundedDt;
+function stepFixed(state: GameState, world: RadarWorld, dt: number): GameState {
+  const elapsedSeconds = state.elapsedSeconds + dt;
   const acknowledgedInstructions = state.pendingInstructions.filter((item) => item.executeAt <= elapsedSeconds);
   const pendingInstructions = state.pendingInstructions.filter((item) => item.executeAt > elapsedSeconds);
-  const instructedAircraft = acknowledgedInstructions.reduce((aircraft, instruction) => (
-    applyCommand(aircraft, instruction.command)
-  ), state.aircraft);
-  const navigationResults = instructedAircraft.map((item) => guideNavigation(guideApproach(item, _world), _world));
-  const movedAircraft = navigationResults.map((item) => stepAircraft(item.aircraft, boundedDt));
-  const landedAircraft = movedAircraft.filter((item) => completedLanding(item, _world));
-  const missedAircraft = movedAircraft.filter((item) => missedApproach(item, _world));
-  const recoveredAircraft = movedAircraft.map((item) => missedAircraft.includes(item) ? initiateGoAround(item) : item);
-  const leavingAircraft = recoveredAircraft.filter((item) => (
-    item.phase === 'departure'
-    && distance(item.position, { x: 0, y: 0 }) > _world.rangeNm + 2
+  const instructedAircraft = acknowledgedInstructions.reduce(
+    (aircraft, instruction) => applyCommand(aircraft, instruction.command),
+    state.aircraft,
+  );
+
+  const approachResults = instructedAircraft.map((item) => guideApproach(item, world, elapsedSeconds));
+  const guidanceGoAroundAircraft = approachResults.filter((item) => item.goAround).map((item) => item.aircraft);
+  const guidedResults = approachResults.map((result) => {
+    const aircraft = result.goAround ? initiateGoAround(result.aircraft, world, elapsedSeconds) : result.aircraft;
+    return guideNavigation(aircraft, world);
+  });
+  const initiallyMovedAircraft = guidedResults.map((item) => stepAircraftDynamics(item.aircraft, world, dt));
+  const operationalGoAroundAircraft = initiallyMovedAircraft.filter((candidate) => {
+    if (!candidate.approach || candidate.approach.status === 'armed' || candidate.approach.status === 'localizer') return false;
+    const runway = world.runways.find((item) => item.id === candidate.approach?.runwayId);
+    if (!runway) return false;
+    const candidateDistance = approachGeometry(candidate, runway).distanceToThreshold;
+    if (candidateDistance > 3.2 || candidateDistance < 0) return false;
+    if ((state.runwayAvailableAt[runway.id] ?? 0) > elapsedSeconds) return true;
+    return initiallyMovedAircraft.some((leader) => {
+      if (leader.callsign === candidate.callsign || leader.approach?.runwayId !== runway.id || leader.approach.status === 'armed') return false;
+      const leaderDistance = approachGeometry(leader, runway).distanceToThreshold;
+      return leaderDistance >= 0
+        && leaderDistance < candidateDistance
+        && candidateDistance - leaderDistance < requiredWakeSeparationNm(leader, candidate);
+    });
+  });
+  const operationalGoAroundCallsigns = new Set(operationalGoAroundAircraft.map((item) => item.callsign));
+  const movedAircraft = initiallyMovedAircraft.map((item) => (
+    operationalGoAroundCallsigns.has(item.callsign) ? initiateGoAround(item, world, elapsedSeconds) : item
+  ));
+  const goAroundAircraft = [...guidanceGoAroundAircraft, ...operationalGoAroundAircraft];
+  const landedAircraft = movedAircraft.filter((item) => completedLanding(item, world));
+  const leavingAircraft = movedAircraft.filter((item) => (
+    item.phase === 'departure' && distance(item.position, { x: 0, y: 0 }) > world.rangeNm + 2
   ));
   const handedOffAircraft = leavingAircraft.filter((item) => item.handoffCleared);
   const missedHandoffAircraft = leavingAircraft.filter((item) => !item.handoffCleared);
-  const unmanagedArrivalAircraft = recoveredAircraft.filter((item) => (
+  const unmanagedArrivalAircraft = movedAircraft.filter((item) => (
     item.phase === 'arrival'
-    && item.approach?.status !== 'captured'
-    && distance(item.position, { x: 0, y: 0 }) > _world.rangeNm + 2
+    && item.approach?.status !== 'tower'
+    && distance(item.position, { x: 0, y: 0 }) > world.rangeNm + 2
   ));
-  let aircraft = recoveredAircraft.filter((item) => (
+
+  let aircraft = movedAircraft.filter((item) => (
     !landedAircraft.includes(item)
     && !leavingAircraft.includes(item)
     && !unmanagedArrivalAircraft.includes(item)
@@ -262,95 +116,56 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
   let spawned = state.spawned;
   let nextTrafficAt = state.nextTrafficAt;
   let runwayAvailableAt = state.runwayAvailableAt;
-  let eventLog = navigationResults.reduce<GameEvent[]>((events, result) => (
-    result.event ? appendEvent(events, result.event) : events
-  ), state.eventLog);
-  if (acknowledgedInstructions.length > 0) {
-    eventLog = acknowledgedInstructions.reduce((events, instruction) => appendEvent(events, {
+  let eventLog = state.eventLog;
+
+  for (const result of approachResults) if (result.event) eventLog = appendEvent(eventLog, result.event);
+  for (const result of guidedResults) if (result.event) eventLog = appendEvent(eventLog, result.event);
+  for (const instruction of acknowledgedInstructions) {
+    eventLog = appendEvent(eventLog, {
       id: `readback-${instruction.id}`,
       type: 'info',
       message: `${instruction.command.callsign} · readback onaylandı: ${instruction.normalized}`,
-    }), eventLog);
+    });
   }
-  const priorityLanded = landedAircraft.filter((item) => item.priority);
 
+  const towerHandoffs = approachResults.filter((item) => item.towerHandoff).length;
   if (landedAircraft.length > 0) {
     runwayAvailableAt = { ...runwayAvailableAt };
     for (const item of landedAircraft) {
       if (item.approach) runwayAvailableAt[item.approach.runwayId] = elapsedSeconds + RUNWAY_TURNAROUND_SECONDS;
     }
     eventLog = appendEvent(eventLog, {
-      id: `landing-${Math.round(elapsedSeconds * 10)}`,
+      id: `landing-${Math.round(elapsedSeconds * 20)}`,
       type: 'success',
-      message: `${landedAircraft.map((item) => item.callsign).join(', ')} · iniş tamamlandı (+${100 + (priorityLanded.length > 0 ? 150 : 0)})`,
+      message: `${landedAircraft.map((item) => item.callsign).join(', ')} · touchdown, pist terk ediliyor`,
     });
   }
-
-  if (priorityLanded.length > 0) {
+  if (goAroundAircraft.length > 0) {
     eventLog = appendEvent(eventLog, {
-      id: `priority-landing-${Math.round(elapsedSeconds * 10)}`,
-      type: 'success',
-      message: `${priorityLanded.map((item) => item.callsign).join(', ')} · öncelikli trafik güvenle indirildi (+150)`,
-    });
-  }
-
-  if (missedAircraft.length > 0) {
-    eventLog = appendEvent(eventLog, {
-      id: `go-around-${Math.round(elapsedSeconds * 10)}`,
+      id: `go-around-${Math.round(elapsedSeconds * 20)}`,
       type: 'warning',
-      message: `${missedAircraft.map((item) => item.callsign).join(', ')} · iniş izni yok, go-around`,
+      message: `${goAroundAircraft.map((item) => item.callsign).join(', ')} · yaklaşma stabil değil, go-around`,
     });
   }
-
   if (handedOffAircraft.length > 0) {
     eventLog = appendEvent(eventLog, {
-      id: `handoff-${Math.round(elapsedSeconds * 10)}`,
+      id: `handoff-${Math.round(elapsedSeconds * 20)}`,
       type: 'success',
-      message: `${handedOffAircraft.map((item) => item.callsign).join(', ')} · sahadan çıktı, handoff tamamlandı (+50)`,
+      message: `${handedOffAircraft.map((item) => item.callsign).join(', ')} · sektör handoff tamamlandı`,
     });
   }
-
   if (missedHandoffAircraft.length > 0) {
     eventLog = appendEvent(eventLog, {
-      id: `missed-handoff-${Math.round(elapsedSeconds * 10)}`,
+      id: `missed-handoff-${Math.round(elapsedSeconds * 20)}`,
       type: 'danger',
-      message: `${missedHandoffAircraft.map((item) => item.callsign).join(', ')} · koordinasyonsuz sektör çıkışı (-100)`,
+      message: `${missedHandoffAircraft.map((item) => item.callsign).join(', ')} · koordinasyonsuz sektör çıkışı`,
     });
   }
-
   if (unmanagedArrivalAircraft.length > 0) {
     eventLog = appendEvent(eventLog, {
-      id: `unmanaged-arrival-${Math.round(elapsedSeconds * 10)}`,
+      id: `unmanaged-arrival-${Math.round(elapsedSeconds * 20)}`,
       type: 'warning',
-      message: `${unmanagedArrivalAircraft.map((item) => item.callsign).join(', ')} · yaklaşma yönetilmeden sektörden çıktı (-75)`,
-    });
-  }
-
-  const profile = trafficProfile(spawned, _world);
-  if (elapsedSeconds >= nextTrafficAt && aircraft.length < profile.maxAircraft) {
-    const plannedTraffic = planTraffic(spawned, aircraft, _world);
-    const incoming = plannedTraffic.aircraft;
-    const scheduledIncoming = spawned > 0 && spawned % 6 === 0 ? createPriorityTraffic(incoming, elapsedSeconds) : incoming;
-    if (!aircraft.some((item) => item.callsign === scheduledIncoming.callsign)) {
-      aircraft = [...aircraft, scheduledIncoming];
-      spawned += 1;
-      eventLog = appendEvent(eventLog, {
-        id: `traffic-${spawned}`,
-        type: scheduledIncoming.priority ? 'warning' : 'info',
-        message: scheduledIncoming.priority
-          ? `${scheduledIncoming.callsign} ÖNCELİKLİ · ${scheduledIncoming.priority.kind === 'minimumFuel' ? 'minimum yakıt' : 'tıbbi uçuş'} · inişe öncelik ver`
-          : plannedTraffic.message,
-      });
-    }
-    nextTrafficAt += profile.spawnInterval;
-  }
-
-  const nextTrafficLevel = trafficProfile(spawned, _world).level;
-  if (nextTrafficLevel > state.trafficLevel) {
-    eventLog = appendEvent(eventLog, {
-      id: `traffic-level-${nextTrafficLevel}`,
-      type: 'warning',
-      message: `SEKTÖR YOĞUNLUĞU ${nextTrafficLevel}/5 · daha sık trafik ve daha dar kapasite`,
+      message: `${unmanagedArrivalAircraft.map((item) => item.callsign).join(', ')} · yaklaşma yönetilmeden sektörden çıktı`,
     });
   }
 
@@ -362,25 +177,71 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
         : item
     ));
     eventLog = appendEvent(eventLog, {
-      id: `priority-expired-${Math.round(elapsedSeconds * 10)}`,
+      id: `priority-expired-${Math.round(elapsedSeconds * 20)}`,
       type: 'danger',
-      message: `${expiredPriority.map((item) => item.callsign).join(', ')} · öncelik süresi aşıldı (-150)`,
+      message: `${expiredPriority.map((item) => item.callsign).join(', ')} · öncelik süresi aşıldı`,
     });
   }
 
-  const conflicts = detectConflicts(aircraft);
-  const lossPairs = conflicts
+  const conflictsBeforeSpawn = detectOperationalConflicts(aircraft, world, elapsedSeconds);
+  const lossKeys = conflictsBeforeSpawn
     .filter((item) => item.severity === 'loss')
-    .map((item) => [...item.pair].sort().join('-'));
-  const newLossPairs = lossPairs.filter((item) => !state.activeLossPairs.includes(item));
-  if (newLossPairs.length > 0) {
+    .map((item) => `${[...item.pair].sort().join('-')}:${item.reason ?? 'separation'}`);
+  const newLossKeys = lossKeys.filter((item) => !state.activeLossPairs.includes(item));
+  const newWakeLosses = newLossKeys.filter((item) => item.endsWith(':wake')).length;
+  if (newLossKeys.length > 0) {
     eventLog = appendEvent(eventLog, {
-      id: `loss-${Math.round(elapsedSeconds * 10)}`,
+      id: `loss-${Math.round(elapsedSeconds * 20)}`,
       type: 'danger',
-      message: `AYIRMA KAYBI · ${newLossPairs.join(', ')} (-250)`,
+      message: newWakeLosses > 0 ? `WAKE / AYIRMA KAYBI · ${newLossKeys.join(', ')}` : `AYIRMA KAYBI · ${newLossKeys.join(', ')}`,
     });
   }
 
+  const skill = updateSkill(state.skill, {
+    towerHandoffs,
+    departureHandoffs: handedOffAircraft.length,
+    separationLosses: newLossKeys.length,
+    wakeViolations: newWakeLosses,
+    goArounds: goAroundAircraft.length,
+    missedHandoffs: missedHandoffAircraft.length,
+    unmanagedArrivals: unmanagedArrivalAircraft.length,
+    expiredPriorities: expiredPriority.length,
+  });
+  const peakSkill = Math.max(state.peakSkill, skill);
+  const profile = trafficProfile(skill, world);
+
+  if (elapsedSeconds >= nextTrafficAt) {
+    if (aircraft.length < profile.targetAircraft) {
+      const plannedTraffic = planTraffic(spawned, aircraft, world, state.seed);
+      const incoming = spawned > 0 && spawned % 7 === 0
+        ? createPriorityTraffic(plannedTraffic.aircraft, elapsedSeconds)
+        : plannedTraffic.aircraft;
+      if (!aircraft.some((item) => item.callsign === incoming.callsign)) {
+        aircraft = [...aircraft, incoming];
+        spawned += 1;
+        eventLog = appendEvent(eventLog, {
+          id: `traffic-${spawned}`,
+          type: incoming.priority ? 'warning' : 'info',
+          message: incoming.priority
+            ? `${incoming.callsign} ÖNCELİKLİ · ${incoming.priority.kind === 'minimumFuel' ? 'minimum yakıt' : 'tıbbi uçuş'}`
+            : plannedTraffic.message,
+        });
+      }
+      nextTrafficAt = elapsedSeconds + profile.spawnInterval;
+    } else {
+      nextTrafficAt = elapsedSeconds + 2;
+    }
+  }
+
+  if (profile.level !== state.trafficLevel) {
+    eventLog = appendEvent(eventLog, {
+      id: `traffic-level-${profile.level}-${Math.round(elapsedSeconds)}`,
+      type: profile.level > state.trafficLevel ? 'warning' : 'info',
+      message: `İŞ YÜKÜ ${profile.level}/5 · canlı skill ${skill.toFixed(1)} · hedef trafik ${profile.targetAircraft}`,
+    });
+  }
+
+  const conflicts = detectOperationalConflicts(aircraft, world, elapsedSeconds);
   const shouldSampleTrack = elapsedSeconds - state.lastTrackAt >= 1;
   const trackHistory = shouldSampleTrack
     ? Object.fromEntries(aircraft.map((item) => [
@@ -389,31 +250,52 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
     ]))
     : state.trackHistory;
   const timelineUpdates = eventLog.filter((event) => !state.eventLog.some((previous) => previous.id === event.id));
+  const activeCallsigns = new Set(aircraft.map((item) => item.callsign));
+  const selectedCallsign = state.selectedCallsign && activeCallsigns.has(state.selectedCallsign)
+    ? state.selectedCallsign
+    : aircraft[0]?.callsign ?? null;
 
   return {
     ...state,
     elapsedSeconds,
     aircraft,
     conflicts,
+    selectedCallsign,
+    skill,
+    peakSkill,
+    targetAircraft: profile.targetAircraft,
+    score: Math.round(peakSkill * 10),
     landed: state.landed + landedAircraft.length,
-    score: Math.max(0, state.score + landedAircraft.length * 100 + priorityLanded.length * 150 + handedOffAircraft.length * 50 - missedHandoffAircraft.length * 100 - unmanagedArrivalAircraft.length * 75 - newLossPairs.length * 250 - expiredPriority.length * 150),
     spawned,
-    trafficLevel: nextTrafficLevel,
+    trafficLevel: profile.level,
     nextTrafficAt,
     runwayAvailableAt,
     eventLog,
-    activeLossPairs: lossPairs,
+    activeLossPairs: lossKeys,
     handoffs: state.handoffs + handedOffAircraft.length,
     trackHistory,
     lastTrackAt: shouldSampleTrack ? elapsedSeconds : state.lastTrackAt,
     pendingInstructions,
     metrics: {
-      separationLosses: state.metrics.separationLosses + newLossPairs.length,
-      goArounds: state.metrics.goArounds + missedAircraft.length,
+      separationLosses: state.metrics.separationLosses + newLossKeys.length,
+      wakeViolations: state.metrics.wakeViolations + newWakeLosses,
+      goArounds: state.metrics.goArounds + goAroundAircraft.length,
       missedHandoffs: state.metrics.missedHandoffs + missedHandoffAircraft.length,
       expiredPriorities: state.metrics.expiredPriorities + expiredPriority.length,
       unmanagedArrivals: state.metrics.unmanagedArrivals + unmanagedArrivalAircraft.length,
     },
-    eventTimeline: [...state.eventTimeline, ...timelineUpdates].slice(-40),
+    eventTimeline: [...state.eventTimeline, ...timelineUpdates].slice(-60),
   };
+}
+
+export function stepGame(state: GameState, world: RadarWorld, dt: number): GameState {
+  if (state.paused || dt <= 0) return state;
+  let next = state;
+  let remaining = Math.min(dt, 0.25) * state.timeScale;
+  while (remaining > 0.0001) {
+    const step = Math.min(FIXED_STEP_SECONDS, remaining);
+    next = stepFixed(next, world, step);
+    remaining -= step;
+  }
+  return next;
 }

@@ -10,14 +10,13 @@ describe('controller coach', () => {
     expect(advice.command).toBe('ILS 34L');
   });
 
-  it('only offers a landing clearance after the simulator marks it safe', () => {
+  it('explains glideslope capture instead of offering a landing clearance', () => {
     const state = structuredClone(initialState);
-    state.aircraft[0].approach = { runwayId: '34L', status: 'captured', landingCleared: false };
+    state.aircraft[0].approach = { runwayId: '34L', status: 'localizer' };
     const advice = controllerCoach(state, world);
 
-    expect(advice.command).toBe('LAND');
-    state.runwayAvailableAt['34L'] = 50;
-    expect(controllerCoach(state, world).command).toBeUndefined();
+    expect(advice.command).toBeUndefined();
+    expect(advice.title).toContain('LOCALIZER');
   });
 
   it('puts a separation loss ahead of normal task advice', () => {

@@ -1,7 +1,7 @@
 {
-  "name": "İstanbul Radar",
-  "short_name": "İST Radar",
-  "description": "Klasik radar görünümünde yaklaşma kontrol simülasyonu.",
+  "name": "Airspace Control",
+  "short_name": "Airspace",
+  "description": "Klasik radar görünümünde sonsuz yaklaşma kontrol oyunu.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#030907",
@@ -16,4 +16,3 @@
     }
   ]
 }
-

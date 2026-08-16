@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseCommandLine } from './commands';
+import { parseCommandBatch, parseCommandLine } from './commands';
 
 const callsigns = ['AR101', 'NX204'];
 
@@ -42,12 +42,28 @@ describe('parseCommandLine', () => {
     });
   });
 
-  it('accepts a landing clearance without a numeric argument', () => {
-    expect(parseCommandLine('AR LAND', callsigns, null)).toEqual({
+  it('explains that tower handoff replaces a manual landing clearance', () => {
+    const result = parseCommandLine('AR LAND', callsigns, null);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain('otomatik');
+  });
+
+  it('parses terse chained clearances in one transmission', () => {
+    expect(parseCommandBatch('AR H090 A30 S180 I34L', callsigns, null, ['34L'])).toMatchObject({
       ok: true,
-      command: { kind: 'land', callsign: 'AR101' },
-      normalized: 'AR101 CLEARED TO LAND',
+      commands: [
+        { kind: 'heading', callsign: 'AR101', value: 90 },
+        { kind: 'altitude', callsign: 'AR101', value: 3000 },
+        { kind: 'speed', callsign: 'AR101', value: 180 },
+        { kind: 'approach', callsign: 'AR101', runwayId: '34L' },
+      ],
     });
+  });
+
+  it('supports localizer-only, expedite and resume-normal-speed commands', () => {
+    expect(parseCommandLine('AR L34L', callsigns, null, ['34L'])).toMatchObject({ ok: true, command: { kind: 'localizer' } });
+    expect(parseCommandLine('AR X', callsigns, null)).toMatchObject({ ok: true, command: { kind: 'expedite' } });
+    expect(parseCommandLine('AR RN', callsigns, null)).toMatchObject({ ok: true, command: { kind: 'resumeSpeed' } });
   });
 
   it('accepts a departure handoff clearance', () => {
