@@ -58,6 +58,31 @@ function appendEvent(events: GameEvent[], event: GameEvent) {
   return [...events, event].slice(-5);
 }
 
+function operationalFlowChange(state: GameState, world: RadarWorld, elapsedSeconds: number) {
+  const config = difficultyConfig(state.mode);
+  // Higher difficulties deliberately disrupt a comfortable runway setup once
+  // per shift. This creates a real controller decision: preserve a sequence,
+  // then absorb a reduced-capacity flow instead of repeating one static board.
+  if (!config.showAdvancedCommands || elapsedSeconds < 210) return null;
+  if (state.eventTimeline.some((event) => event.id.startsWith('flow-change-'))) return null;
+  const current = world.flowConfigurations.find((item) => item.id === state.flowId);
+  const alternatives = world.flowConfigurations.filter((item) => item.id !== state.flowId);
+  const next = [...alternatives].sort((first, second) => {
+    const firstCapacity = first.arrivalRunwayIds.length + first.departureRunwayIds.length;
+    const secondCapacity = second.arrivalRunwayIds.length + second.departureRunwayIds.length;
+    return firstCapacity - secondCapacity || first.visibilityNm - second.visibilityNm;
+  })[0];
+  if (!next || !current) return null;
+  return {
+    flowId: next.id,
+    event: {
+      id: `flow-change-${state.mode}-${Math.round(elapsedSeconds)}`,
+      type: 'warning' as const,
+      message: `OPERASYON DEĞİŞİKLİĞİ · ${current.label} → ${next.label} · yeni trafik ve pist kapasitesi bu akışa geçti`,
+    },
+  };
+}
+
 export function detectConflicts(aircraft: readonly Aircraft[], world?: RadarWorld, elapsedSeconds = 0): Conflict[] {
   return detectOperationalConflicts(aircraft, world, elapsedSeconds);
 }
@@ -124,6 +149,7 @@ function stepFixed(state: GameState, world: RadarWorld, dt: number): GameState {
   let nextTrafficAt = state.nextTrafficAt;
   let runwayAvailableAt = state.runwayAvailableAt;
   let eventLog = state.eventLog;
+  let flowId = state.flowId;
 
   for (const result of approachResults) if (result.event) eventLog = appendEvent(eventLog, result.event);
   for (const result of guidedResults) if (result.event) eventLog = appendEvent(eventLog, result.event);
@@ -248,6 +274,12 @@ function stepFixed(state: GameState, world: RadarWorld, dt: number): GameState {
     });
   }
 
+  const flowChange = operationalFlowChange(state, world, elapsedSeconds);
+  if (flowChange) {
+    flowId = flowChange.flowId;
+    eventLog = appendEvent(eventLog, flowChange.event);
+  }
+
   const conflicts = detectOperationalConflicts(aircraft, world, elapsedSeconds);
   const shouldSampleTrack = elapsedSeconds - state.lastTrackAt >= 1;
   const trackHistory = shouldSampleTrack
@@ -275,6 +307,7 @@ function stepFixed(state: GameState, world: RadarWorld, dt: number): GameState {
     landed: state.landed + landedAircraft.length,
     spawned,
     trafficLevel: profile.level,
+    flowId,
     nextTrafficAt,
     runwayAvailableAt,
     eventLog,
