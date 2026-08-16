@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ACHIEVEMENTS, ACHIEVEMENT_TOTAL, buildDebrief, controllerRank, earnedAwards, isAchievementId, nextMission, trainingGuide } from './progression';
+import { ACHIEVEMENTS, ACHIEVEMENT_TOTAL, CAREER_UNLOCKS, buildDebrief, careerProgression, controllerRank, earnedAwards, isAchievementId, nextMission, trainingGuide } from './progression';
 import { initialState } from './scenario';
 
 describe('controller progression', () => {
@@ -56,6 +56,31 @@ describe('debrief', () => {
 
     expect(report.grade).toBe('D');
     expect(report.improvements[0]).toContain('2 ayırma kaybı');
+  });
+});
+
+describe('career progression', () => {
+  it('starts with an immediately playable training sector and no artificial wait gate', () => {
+    const career = careerProgression([]);
+    expect(career.unlockedScenarioIds).toEqual(['alpha']);
+    expect(career.unlockedModeIds).toEqual(['beginner']);
+    expect(career.nextUnlock?.id).toBe('mode:normal');
+  });
+
+  it('unlocks content through demonstrated safety and procedure skill', () => {
+    const career = careerProgression(['beginner-complete', 'landing-trio', 'clean-start', 'wake-keeper', 'normal-complete', 'procedure-pilot', 'holding-strategist']);
+    expect(career.unlockedScenarioIds).toEqual(expect.arrayContaining(['alpha', 'coastal', 'metro']));
+    expect(career.unlockedModeIds).toEqual(expect.arrayContaining(['beginner', 'normal', 'advanced']));
+    expect(career.unlockedOperationIds).toContain('wake-advisor');
+    expect(career.rank).toBe('YAKLAŞMA KONTROLÖRÜ');
+  });
+
+  it('keeps every unlock backed by achievement requirements and reaches full completion', () => {
+    expect(CAREER_UNLOCKS.every((unlock) => unlock.requiredAchievementIds.every(isAchievementId))).toBe(true);
+    const career = careerProgression(ACHIEVEMENTS.map((achievement) => achievement.id));
+    expect(career.completionPercent).toBe(100);
+    expect(career.nextUnlock).toBeNull();
+    expect(career.unlockedScenarioIds).toHaveLength(8);
   });
 });
 
