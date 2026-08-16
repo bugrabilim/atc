@@ -7,6 +7,30 @@ export type NavigationMode = 'route' | 'direct' | 'hold';
 export type SpeedMode = 'normal' | 'assigned';
 export type WakeCategory = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
 export type GameMode = 'beginner' | 'normal' | 'advanced' | 'expert';
+export type ScenarioId = 'alpha' | 'coastal' | 'metro' | 'highland' | 'strait' | 'nordic' | 'desert' | 'river';
+export type CareerUnlockKind = 'scenario' | 'mode' | 'operation';
+
+/**
+ * Platform-neutral career output. The UI, PWA and native wrappers can consume
+ * this shape without duplicating progression rules.
+ */
+export interface CareerUnlock {
+  id: string;
+  kind: CareerUnlockKind;
+  label: string;
+  description: string;
+  requiredAchievementIds: string[];
+}
+
+export interface CareerProgression {
+  rank: string;
+  unlockedScenarioIds: ScenarioId[];
+  unlockedModeIds: GameMode[];
+  unlockedOperationIds: string[];
+  unlocked: CareerUnlock[];
+  nextUnlock: CareerUnlock | null;
+  completionPercent: number;
+}
 
 export interface AircraftPerformance {
   climbRateFpm: number;
