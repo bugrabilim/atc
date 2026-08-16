@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { applyCommand, parseCommandLine } from '../engine/commands';
-import { initialState, world } from '../engine/scenario';
+import { createInitialState, defaultScenario, scenarioCatalog } from '../engine/scenario';
 import { landingClearanceStatus, stepGame } from '../engine/simulation';
 import type { GameState } from '../engine/types';
+import type { GameScenario } from '../engine/scenario';
 import { CommandPanel } from './CommandPanel';
 import { FlightStripList } from './FlightStripList';
 import { MissionPanel } from './MissionPanel';
@@ -36,7 +37,8 @@ function formatClock(seconds: number) {
 }
 
 export function App() {
-  const [state, setState] = useState<GameState>(() => structuredClone(initialState));
+  const [scenario, setScenario] = useState<GameScenario>(defaultScenario);
+  const [state, setState] = useState<GameState>(() => createInitialState(defaultScenario));
   const [career, setCareer] = useState<CareerStats>(loadCareerStats);
   const stateRef = useRef(state);
   const [command, setCommand] = useState('');
@@ -44,6 +46,9 @@ export function App() {
     type: 'info',
     message: 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. Çağrı kodunun ilk harflerini yazıp Tab ile tamamlayabilirsin.',
   });
+  const activeWorld = scenario.world;
+  const activeArrivalRunways = activeWorld.runways.filter((item) => item.active && (item.operation === 'arrival' || item.operation === 'mixed'));
+  const trainingAircraft = scenario.initialAircraft.find((item) => item.phase === 'arrival');
 
   useEffect(() => {
     stateRef.current = state;
@@ -67,10 +72,10 @@ export function App() {
       const now = performance.now();
       const dt = (now - previous) / 1000;
       previous = now;
-      setState((current) => stepGame(current, world, dt));
+      setState((current) => stepGame(current, activeWorld, dt));
     }, 33);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [activeWorld]);
 
   const selectAircraft = useCallback((callsign: string) => {
     setState((current) => ({ ...current, selectedCallsign: callsign }));
@@ -83,15 +88,15 @@ export function App() {
       command,
       snapshot.aircraft.map((item) => item.callsign),
       snapshot.selectedCallsign,
-      world.runways.filter((item) => item.active && (item.operation === 'arrival' || item.operation === 'mixed')).map((item) => item.id),
-      world.fixes.map((item) => item.id),
+      activeArrivalRunways.map((item) => item.id),
+      activeWorld.fixes.map((item) => item.id),
     );
     if (!parsed.ok) {
       setFeedback({ type: 'error', message: parsed.error });
       return;
     }
     if (parsed.command.kind === 'land') {
-      const clearance = landingClearanceStatus(snapshot, parsed.command.callsign, world);
+      const clearance = landingClearanceStatus(snapshot, parsed.command.callsign, activeWorld);
       if (!clearance.ok) {
         setFeedback({ type: 'error', message: clearance.message });
         return;
@@ -115,14 +120,20 @@ export function App() {
             ? `${parsed.normalized} · Pist sıralaması doğrulandı; yaklaşmayı sürdür.`
           : `${parsed.normalized} · Talimat alındı, uçak kademeli uyguluyor.`,
     });
-  }, [command]);
+  }, [activeArrivalRunways, activeWorld, command]);
 
   const togglePause = () => setState((current) => ({ ...current, paused: !current.paused }));
   const cycleSpeed = () => setState((current) => ({ ...current, timeScale: current.timeScale === 1 ? 2 : current.timeScale === 2 ? 4 : 1 }));
   const reset = () => {
-    setState(structuredClone(initialState));
+    setState(createInitialState(scenario));
     setCommand('');
     setFeedback({ type: 'info', message: 'Senaryo yeniden başlatıldı.' });
+  };
+  const selectScenario = (nextScenario: GameScenario) => {
+    setScenario(nextScenario);
+    setState(createInitialState(nextScenario));
+    setCommand('');
+    setFeedback({ type: 'info', message: `${nextScenario.label} sektörü yüklendi.` });
   };
   const severeConflicts = state.conflicts.filter((item) => item.severity === 'loss').length;
 
@@ -133,15 +144,18 @@ export function App() {
           <span className="brand-mark" aria-hidden="true">◉</span>
           <div>
             <strong>AIRSPACE CONTROL</strong>
-            <small>{world.sectorName}</small>
+            <small>{activeWorld.sectorName}</small>
           </div>
         </div>
         <div className="top-status">
           <span><i className="status-dot" /> SİSTEM AKTİF</span>
-          <span>AKTİF PİSTLER <b>34L · 35R · 36</b></span>
+          <span>AKTİF PİSTLER <b>{activeWorld.runways.filter((item) => item.active).map((item) => item.id).join(' · ')}</b></span>
           <span>SAAT <b>{formatClock(state.elapsedSeconds)}</b></span>
         </div>
         <div className="session-actions">
+          {scenarioCatalog.map((item) => (
+            <button key={item.id} type="button" className={item.id === scenario.id ? 'is-active' : ''} onClick={() => selectScenario(item)}>{item.id === 'alpha' ? 'ALPHA' : 'COASTAL'}</button>
+          ))}
           <button type="button" onClick={togglePause}>{state.paused ? 'DEVAM' : 'DURAKLAT'}</button>
           <button type="button" onClick={cycleSpeed}>{state.timeScale}×</button>
           <button type="button" onClick={reset}>YENİLE</button>
@@ -160,6 +174,8 @@ export function App() {
           trafficLevel={state.trafficLevel}
           bestScore={career.bestScore}
           bestLandings={career.bestLandings}
+          trainingCallsign={trainingAircraft?.callsign ?? null}
+          trainingRunway={trainingAircraft?.assignedRunway ?? null}
           priorityTraffic={state.aircraft.filter((item) => item.priority)}
           events={state.eventLog}
         />
@@ -167,7 +183,7 @@ export function App() {
 
       <div className="workspace">
         <RadarScope
-          world={world}
+          world={activeWorld}
           aircraft={state.aircraft}
           conflicts={state.conflicts}
           selectedCallsign={state.selectedCallsign}
@@ -184,6 +200,8 @@ export function App() {
 
       <CommandPanel
         aircraft={state.aircraft}
+        runwayIds={activeArrivalRunways.map((item) => item.id)}
+        fixIds={activeWorld.fixes.map((item) => item.id)}
         selectedCallsign={state.selectedCallsign}
         value={command}
         feedback={feedback}

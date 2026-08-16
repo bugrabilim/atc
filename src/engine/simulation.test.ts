@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { initialState, spawnTraffic, world } from './scenario';
+import { createInitialState, initialState, scenarioCatalog, spawnTraffic, world } from './scenario';
 import { detectConflicts, landingClearanceStatus, stepGame, trafficProfile } from './simulation';
 
 describe('stepGame', () => {
@@ -67,6 +67,17 @@ describe('stepGame', () => {
     expect(earlyArrival.callsign).not.toBe(laterArrival.callsign);
     expect(earlyArrival.navigation?.procedure).not.toBe(laterArrival.navigation?.procedure);
     expect(departure.phase).toBe('departure');
+  });
+
+  it('uses the selected sector runway flow when generating traffic', () => {
+    const coastal = scenarioCatalog.find((scenario) => scenario.id === 'coastal');
+    if (!coastal) throw new Error('Coastal scenario is missing');
+
+    const state = createInitialState(coastal);
+    const incoming = spawnTraffic(0, coastal.world);
+
+    expect(state.selectedCallsign).toBe('CF101');
+    expect(['09L', '09R']).toContain(incoming.assignedRunway);
   });
 
   it('warns about an approaching loss before aircraft are already too close', () => {

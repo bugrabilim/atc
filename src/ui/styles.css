@@ -60,6 +60,7 @@ button { touch-action: manipulation; }
   background: #0a1a14;
   cursor: pointer;
 }
+.session-actions button.is-active { color: #04120c; border-color: var(--green); background: var(--green); }
 .session-actions button { min-width: 54px; padding: 0 10px; font: 600 9px IBM Plex Mono, monospace; }
 .session-actions button:hover, .quick-command:hover { border-color: rgba(110, 243, 176, 0.5); background: #10271d; }
 

@@ -3,6 +3,8 @@ import type { Aircraft } from '../engine/types';
 
 interface CommandPanelProps {
   aircraft: Aircraft[];
+  runwayIds: string[];
+  fixIds: string[];
   selectedCallsign: string | null;
   value: string;
   feedback: { type: 'success' | 'error' | 'info'; message: string };
@@ -11,23 +13,21 @@ interface CommandPanelProps {
   onSelect: (callsign: string) => void;
 }
 
-const quickCommands = [
+const baseQuickCommands = [
   { label: 'HDG 090', command: 'HDG 090' },
   { label: 'HDG 180', command: 'HDG 180' },
   { label: 'FL060', command: 'FL060' },
   { label: 'FL100', command: 'FL100' },
   { label: 'SPD 220', command: 'SPD 220' },
   { label: 'SPD 180', command: 'SPD 180' },
-  { label: 'DCT FINAL1', command: 'DCT FINAL1' },
-  { label: 'HOLD FINAL1', command: 'HOLD FINAL1' },
-  { label: 'ILS 34L', command: 'ILS 34L' },
-  { label: 'ILS 35R', command: 'ILS 35R' },
   { label: 'CLEARED LAND', command: 'LAND' },
   { label: 'HANDOFF', command: 'HANDOFF' },
 ];
 
 export function CommandPanel({
   aircraft,
+  runwayIds,
+  fixIds,
   selectedCallsign,
   value,
   feedback,
@@ -37,6 +37,13 @@ export function CommandPanel({
 }: CommandPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const selected = aircraft.find((item) => item.callsign === selectedCallsign) ?? null;
+  const primaryFix = fixIds.find((item) => item.startsWith('FINAL')) ?? fixIds[0];
+  const quickCommands = [
+    ...baseQuickCommands.slice(0, 6),
+    ...(primaryFix ? [{ label: `DCT ${primaryFix}`, command: `DCT ${primaryFix}` }, { label: `HOLD ${primaryFix}`, command: `HOLD ${primaryFix}` }] : []),
+    ...runwayIds.slice(0, 2).map((runwayId) => ({ label: `ILS ${runwayId}`, command: `ILS ${runwayId}` })),
+    ...baseQuickCommands.slice(6),
+  ];
 
   const useQuickCommand = (command: string) => {
     if (!selectedCallsign) return;
@@ -102,7 +109,7 @@ export function CommandPanel({
           autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}
-        placeholder={selectedCallsign ? `${selectedCallsign} HDG 090 · ILS 34L` : 'Uçağa dokun veya çağrı kodunu yaz'}
+        placeholder={selectedCallsign ? `${selectedCallsign} HDG 090 · ILS ${runwayIds[0] ?? '---'}` : 'Uçağa dokun veya çağrı kodunu yaz'}
           aria-label="Komut satırı"
         />
         <button type="button" className="send-command" onClick={onSubmit}>UYGULA</button>

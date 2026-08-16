@@ -289,7 +289,7 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
 
   const profile = trafficProfile(spawned);
   if (elapsedSeconds >= nextTrafficAt && aircraft.length < profile.maxAircraft) {
-    const incoming = spawnTraffic(spawned);
+    const incoming = spawnTraffic(spawned, _world);
     const scheduledIncoming = spawned > 0 && spawned % 6 === 0 ? createPriorityTraffic(incoming, elapsedSeconds) : incoming;
     if (!aircraft.some((item) => item.callsign === scheduledIncoming.callsign)) {
       aircraft = [...aircraft, scheduledIncoming];
