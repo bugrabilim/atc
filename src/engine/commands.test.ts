@@ -49,4 +49,12 @@ describe('parseCommandLine', () => {
       normalized: 'TK1953 CLEARED TO LAND',
     });
   });
+
+  it('accepts a departure handoff clearance', () => {
+    expect(parseCommandLine('PGT HANDOFF', callsigns, null)).toEqual({
+      ok: true,
+      command: { kind: 'handoff', callsign: 'PGT7KM' },
+      normalized: 'PGT7KM HANDOFF',
+    });
+  });
 });

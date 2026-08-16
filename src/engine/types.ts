@@ -29,6 +29,7 @@ export interface Aircraft {
   performance: AircraftPerformance;
   /** Suggested arrival runway from the traffic flow. The controller may still assign another active runway. */
   assignedRunway?: string;
+  handoffCleared?: boolean;
   priority?: {
     kind: 'medical' | 'minimumFuel';
     deadlineAt: number;
@@ -109,6 +110,7 @@ export type AircraftCommand =
   | { kind: 'speed'; callsign: string; value: number }
   | { kind: 'approach'; callsign: string; runwayId: string }
   | { kind: 'land'; callsign: string }
+  | { kind: 'handoff'; callsign: string }
   | { kind: 'direct'; callsign: string; fixId: string }
   | { kind: 'hold'; callsign: string; fixId: string };
 

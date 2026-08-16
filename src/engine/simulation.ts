@@ -199,11 +199,13 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
   const landedAircraft = movedAircraft.filter((item) => completedLanding(item, _world));
   const missedAircraft = movedAircraft.filter((item) => missedApproach(item, _world));
   const recoveredAircraft = movedAircraft.map((item) => missedAircraft.includes(item) ? initiateGoAround(item) : item);
-  const handedOffAircraft = recoveredAircraft.filter((item) => (
+  const leavingAircraft = recoveredAircraft.filter((item) => (
     item.phase === 'departure'
     && distance(item.position, { x: 0, y: 0 }) > _world.rangeNm + 2
   ));
-  let aircraft = recoveredAircraft.filter((item) => !landedAircraft.includes(item) && !handedOffAircraft.includes(item));
+  const handedOffAircraft = leavingAircraft.filter((item) => item.handoffCleared);
+  const missedHandoffAircraft = leavingAircraft.filter((item) => !item.handoffCleared);
+  let aircraft = recoveredAircraft.filter((item) => !landedAircraft.includes(item) && !leavingAircraft.includes(item));
   let spawned = state.spawned;
   let nextTrafficAt = state.nextTrafficAt;
   let runwayAvailableAt = state.runwayAvailableAt;
@@ -246,6 +248,14 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
       id: `handoff-${Math.round(elapsedSeconds * 10)}`,
       type: 'success',
       message: `${handedOffAircraft.map((item) => item.callsign).join(', ')} · sahadan çıktı, handoff tamamlandı (+50)`,
+    });
+  }
+
+  if (missedHandoffAircraft.length > 0) {
+    eventLog = appendEvent(eventLog, {
+      id: `missed-handoff-${Math.round(elapsedSeconds * 10)}`,
+      type: 'danger',
+      message: `${missedHandoffAircraft.map((item) => item.callsign).join(', ')} · koordinasyonsuz sektör çıkışı (-100)`,
     });
   }
 
@@ -311,7 +321,7 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
     aircraft,
     conflicts,
     landed: state.landed + landedAircraft.length,
-    score: Math.max(0, state.score + landedAircraft.length * 100 + priorityLanded.length * 150 + handedOffAircraft.length * 50 - newLossPairs.length * 250 - expiredPriority.length * 150),
+    score: Math.max(0, state.score + landedAircraft.length * 100 + priorityLanded.length * 150 + handedOffAircraft.length * 50 - missedHandoffAircraft.length * 100 - newLossPairs.length * 250 - expiredPriority.length * 150),
     spawned,
     trafficLevel: nextTrafficLevel,
     nextTrafficAt,

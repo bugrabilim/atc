@@ -183,6 +183,10 @@ function drawRadar(
       ctx.fillStyle = '#ffb648';
       ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';
       ctx.fillText(item.priority.alertRaised ? 'ÖNCELİK GECİKTİ' : 'ÖNCELİK', leaderEnd.x + 3, leaderEnd.y + 21);
+    } else if (item.handoffCleared) {
+      ctx.fillStyle = '#79b9ff';
+      ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';
+      ctx.fillText('HANDOFF', leaderEnd.x + 3, leaderEnd.y + 21);
     } else if (item.approach) {
       ctx.fillStyle = '#67e8c4';
       ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';

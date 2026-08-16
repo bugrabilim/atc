@@ -9,6 +9,7 @@ const APPROACH_ALIASES = new Set(['APP', 'ILS']);
 const DIRECT_ALIASES = new Set(['DCT', 'DIRECT']);
 const HOLD_ALIASES = new Set(['HOLD']);
 const LAND_ALIASES = new Set(['LAND', 'CLEARED']);
+const HANDOFF_ALIASES = new Set(['HANDOFF', 'HOF']);
 
 function resolveCallsign(token: string, callsigns: string[]): string | null {
   const upper = token.toUpperCase();
@@ -44,6 +45,9 @@ export function parseCommandLine(
   const rawValue = body[1];
   if (keyword && LAND_ALIASES.has(keyword)) {
     return { ok: true, command: { kind: 'land', callsign }, normalized: `${callsign} CLEARED TO LAND` };
+  }
+  if (keyword && HANDOFF_ALIASES.has(keyword)) {
+    return { ok: true, command: { kind: 'handoff', callsign }, normalized: `${callsign} HANDOFF` };
   }
   if (!keyword || !rawValue) {
     return { ok: false, error: `${callsign} için örnek: HDG 090, FL100, SPD 220 veya ILS 34L.` };
@@ -124,6 +128,9 @@ export function applyCommand(stateAircraft: readonly import('./types').Aircraft[
       return aircraft.approach
         ? { ...aircraft, approach: { ...aircraft.approach, landingCleared: true } }
         : aircraft;
+    }
+    if (command.kind === 'handoff') {
+      return aircraft.phase === 'departure' ? { ...aircraft, handoffCleared: true } : aircraft;
     }
     if (command.kind === 'direct') {
       return {

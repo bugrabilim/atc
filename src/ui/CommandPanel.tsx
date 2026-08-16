@@ -23,6 +23,7 @@ const quickCommands = [
   { label: 'ILS 34L', command: 'ILS 34L' },
   { label: 'ILS 35R', command: 'ILS 35R' },
   { label: 'CLEARED LAND', command: 'LAND' },
+  { label: 'HANDOFF', command: 'HANDOFF' },
 ];
 
 export function CommandPanel({
