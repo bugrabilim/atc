@@ -226,4 +226,26 @@ describe('stepGame', () => {
 
     expect(next.eventTimeline.some((event) => event.id.startsWith('runway-reopen-34L'))).toBe(true);
   });
+
+  it('meters a saturated terminal arrival bank and announces capacity recovery', () => {
+    const state = createInitialState(undefined, 'advanced');
+    state.elapsedSeconds = 255;
+    state.nextTrafficAt = 0;
+    const template = structuredClone(state.aircraft.find((item) => item.phase === 'arrival')!);
+    state.aircraft = Array.from({ length: 6 }, (_, index) => ({
+      ...structuredClone(template),
+      callsign: `BK${101 + index}`,
+      position: { x: -12 + index, y: 11 + index },
+      assignedRunway: index % 2 === 0 ? '34L' : '35R',
+    }));
+    const saturated = stepGame(state, worldWithFlow(world, state.flowId, state.peakSkill), 0.1);
+
+    expect(saturated.eventTimeline.some((event) => event.id.startsWith('terminal-metering-'))).toBe(true);
+    expect(saturated.nextTrafficAt).toBeGreaterThan(255);
+
+    saturated.elapsedSeconds = 270;
+    saturated.aircraft = saturated.aircraft.slice(0, 2);
+    const recovered = stepGame(saturated, worldWithFlow(world, saturated.flowId, saturated.peakSkill), 0.1);
+    expect(recovered.eventTimeline.some((event) => event.id.startsWith('terminal-recovery-'))).toBe(true);
+  });
 });
