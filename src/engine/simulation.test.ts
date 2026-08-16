@@ -182,8 +182,30 @@ describe('stepGame', () => {
     state.flowId = 'north-parallel';
     const next = stepGame(state, worldWithFlow(world, state.flowId, state.peakSkill), 0.1);
 
-    expect(next.flowId).toBe('north-single');
+    expect(next.flowId).not.toBe('north-parallel');
+    expect(worldWithFlow(world, next.flowId).runways.filter((item) => item.operation === 'arrival')).toHaveLength(1);
     expect(next.eventLog.at(-1)?.message).toContain('OPERASYON DEĞİŞİKLİĞİ');
+  });
+
+  it('adds one deterministic demand pulse before the runway-flow change', () => {
+    const state = createInitialState(undefined, 'advanced');
+    state.elapsedSeconds = 145;
+    state.nextTrafficAt = 999;
+    const next = stepGame(state, worldWithFlow(world, state.flowId, state.peakSkill), 0.1);
+
+    expect(next.nextTrafficAt).toBeLessThanOrEqual(147);
+    expect(next.eventTimeline.some((event) => event.id.startsWith('demand-pulse-'))).toBe(true);
+  });
+
+  it('recovers the higher-capacity flow after an operational disruption', () => {
+    const state = createInitialState(undefined, 'advanced');
+    state.elapsedSeconds = 420;
+    state.flowId = 'north-single';
+    state.eventTimeline.push({ id: 'flow-change-advanced-210', type: 'warning', message: 'fixture' });
+    const next = stepGame(state, worldWithFlow(world, state.flowId, state.peakSkill), 0.1);
+
+    expect(next.flowId).toBe('north-parallel');
+    expect(next.eventTimeline.some((event) => event.id.startsWith('flow-recovery-'))).toBe(true);
   });
 
   it('closes an expert arrival runway temporarily for an operational inspection', () => {
@@ -193,5 +215,15 @@ describe('stepGame', () => {
 
     expect(next.runwayAvailableAt['34L']).toBeGreaterThan(390);
     expect(next.eventLog.at(-1)?.message).toContain('PİST KONTROLÜ');
+  });
+
+  it('announces that a completed runway inspection has reopened the runway', () => {
+    const state = createInitialState(undefined, 'expert');
+    state.elapsedSeconds = 405;
+    state.runwayAvailableAt['34L'] = 400;
+    state.eventTimeline.push({ id: 'runway-inspection-330', type: 'danger', message: 'PİST KONTROLÜ · 34L 70 sn inişe kapalı' });
+    const next = stepGame(state, worldWithFlow(world, state.flowId, state.peakSkill), 0.1);
+
+    expect(next.eventTimeline.some((event) => event.id.startsWith('runway-reopen-34L'))).toBe(true);
   });
 });
