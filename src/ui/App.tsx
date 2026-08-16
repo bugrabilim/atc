@@ -19,6 +19,8 @@ import { DIFFICULTY_MODES, difficultyConfig, worldForMode } from '../engine/diff
 interface CareerStats {
   bestScore: number;
   bestLandings: number;
+  completedShifts: number;
+  completedObjectives: number;
 }
 
 const CAREER_STORAGE_KEY = 'airspace-control-career-v1';
@@ -27,11 +29,13 @@ const SESSION_STORAGE_KEY = 'airspace-control-session-v1';
 function loadCareerStats(): CareerStats {
   try {
     const value = window.localStorage.getItem(CAREER_STORAGE_KEY);
-    if (!value) return { bestScore: 0, bestLandings: 0 };
+    if (!value) return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0 };
     const parsed = JSON.parse(value) as Partial<CareerStats>;
     return {
       bestScore: typeof parsed.bestScore === 'number' ? parsed.bestScore : 0,
       bestLandings: typeof parsed.bestLandings === 'number' ? parsed.bestLandings : 0,
+      completedShifts: typeof parsed.completedShifts === 'number' ? parsed.completedShifts : 0,
+      completedObjectives: typeof parsed.completedObjectives === 'number' ? parsed.completedObjectives : 0,
     };
   } catch {
     return { bestScore: 0, bestLandings: 0 };
@@ -68,6 +72,7 @@ export function App() {
   const [audioEnabled, setAudioEnabled] = useState(true);
   const lastSpokenEvent = useRef<string | null>(null);
   const lastCuedEvent = useRef<string | null>(null);
+  const shiftRecorded = useRef(false);
   const audioPlayer = useRef<AudioCuePlayer | null>(null);
   const activeWorld = useMemo(() => worldWithFlow(worldForMode(scenario.world, state.mode), state.flowId, state.peakSkill), [scenario.world, state.flowId, state.mode, state.peakSkill]);
   const activeFlow = activeWorld.flowConfigurations.find((item) => item.id === state.flowId) ?? activeWorld.flowConfigurations[0];
@@ -112,6 +117,21 @@ export function App() {
       return next;
     });
   }, [state.landed, state.score]);
+
+  useEffect(() => {
+    if (!debriefOpen || shiftRecorded.current) return;
+    shiftRecorded.current = true;
+    const objectiveComplete = goalComplete(state, goal);
+    setCareer((current) => {
+      const next = {
+        ...current,
+        completedShifts: current.completedShifts + 1,
+        completedObjectives: current.completedObjectives + (objectiveComplete ? 1 : 0),
+      };
+      window.localStorage.setItem(CAREER_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, [debriefOpen, goal, state]);
 
   useEffect(() => {
     let previous = performance.now();
@@ -263,6 +283,7 @@ export function App() {
     });
   };
   const reset = () => {
+    shiftRecorded.current = false;
     setState(createInitialState(scenario, stateRef.current.mode));
     setCommand('');
     setFeedback({ type: 'info', message: 'Senaryo yeniden başlatıldı.' });
@@ -270,6 +291,7 @@ export function App() {
     try { window.localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* storage unavailable */ }
   };
   const selectScenario = (nextScenario: GameScenario) => {
+    shiftRecorded.current = false;
     setScenario(nextScenario);
     setState(createInitialState(nextScenario, stateRef.current.mode));
     setCommand('');
@@ -284,6 +306,7 @@ export function App() {
     setFeedback({ type: 'info', message: `${flow.label} operasyonu aktif. Yeni trafik bu pist akışına göre planlanacak.` });
   };
   const selectMode = (mode: GameMode) => {
+    shiftRecorded.current = false;
     const config = difficultyConfig(mode);
     setState(createInitialState(scenario, mode));
     setCommand('');
@@ -374,6 +397,8 @@ export function App() {
           targetAircraft={state.targetAircraft}
           bestScore={career.bestScore}
           bestLandings={career.bestLandings}
+          completedShifts={career.completedShifts}
+          completedObjectives={career.completedObjectives}
           trainingCallsign={trainingAircraft?.callsign ?? null}
           trainingRunway={trainingAircraft?.assignedRunway ?? null}
           priorityTraffic={state.aircraft.filter((item) => item.priority)}
