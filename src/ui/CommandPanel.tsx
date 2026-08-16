@@ -45,6 +45,7 @@ export function CommandPanel({
     ...runwayIds.slice(0, 2).map((runwayId) => ({ label: `ILS ${runwayId}`, command: `ILS ${runwayId}` })),
     ...(mode !== 'beginner' ? runwayIds.slice(0, 2).map((runwayId) => ({ label: `LOC ${runwayId}`, command: `LOC ${runwayId}` })) : []),
     ...(modeConfig.showAdvancedCommands && primaryFix ? [{ label: `DCT ${primaryFix}`, command: `DCT ${primaryFix}` }, { label: `HOLD ${primaryFix}`, command: `HOLD ${primaryFix}` }] : []),
+    ...(selected?.approach ? [{ label: 'GO-AROUND', command: 'GA' }] : []),
     ...(mode !== 'beginner' ? baseQuickCommands : [{ label: 'NORMAL SPD', command: 'RN' }]),
   ];
 
