@@ -1,5 +1,60 @@
 import type { AircraftCommand, GameState, PendingInstruction } from './types';
 
+const NATO_ALPHABET: Record<string, string> = {
+  A: 'Alfa', B: 'Bravo', C: 'Charlie', D: 'Delta', E: 'Echo', F: 'Foxtrot', G: 'Golf',
+  H: 'Hotel', I: 'India', J: 'Juliett', K: 'Kilo', L: 'Lima', M: 'Mike', N: 'November',
+  O: 'Oscar', P: 'Papa', Q: 'Quebec', R: 'Romeo', S: 'Sierra', T: 'Tango', U: 'Uniform',
+  V: 'Victor', W: 'Whiskey', X: 'X-ray', Y: 'Yankee', Z: 'Zulu',
+};
+
+const DIGIT_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'niner'];
+
+function spokenDigits(value: string) {
+  return [...value].map((character) => DIGIT_WORDS[Number(character)] ?? character).join(' ');
+}
+
+/** Formats an airline-style callsign for English ATC speech, e.g. CF101 → Charlie Foxtrot one zero one. */
+export function spokenCallsign(callsign: string) {
+  const match = callsign.toUpperCase().match(/^([A-Z]+)(\d+)$/);
+  if (!match) return callsign;
+  const [, letters, digits] = match;
+  return `${[...letters].map((letter) => NATO_ALPHABET[letter] ?? letter).join(' ')} ${spokenDigits(digits)}`;
+}
+
+function spokenRunway(runway: string) {
+  const match = runway.toUpperCase().match(/^(\d{1,2})([LRC])?$/);
+  if (!match) return runway;
+  const side = match[2] === 'L' ? ' left' : match[2] === 'R' ? ' right' : match[2] === 'C' ? ' center' : '';
+  return `${spokenDigits(match[1].padStart(2, '0'))}${side}`;
+}
+
+function spokenClearance(normalized: string) {
+  const [, command = '', value = '', direction = ''] = normalized.trim().split(/\s+/);
+  if (command === 'HDG') return `heading ${spokenDigits(value)}${direction === 'L' ? ' left' : direction === 'R' ? ' right' : ''}`;
+  if (command === 'FL') return `flight level ${spokenDigits(value)}`;
+  if (command === 'ALT') return `altitude ${spokenDigits(value)} feet`;
+  if (command === 'SPD') return `speed ${spokenDigits(value)} knots`;
+  if (command === 'ILS') return `ILS runway ${spokenRunway(value)}`;
+  if (command === 'LOC') return `localizer runway ${spokenRunway(value)}`;
+  if (command === 'DCT') return `direct ${value}`;
+  if (command === 'HOLD') return `hold at ${value}`;
+  if (command === 'HANDOFF') return 'handoff approved';
+  if (command === 'EXPEDITE') return 'expedite';
+  if (command === 'RESUME') return 'resume normal speed';
+  return normalized;
+}
+
+/** Produces a speech-only English transmission while UI captions remain Turkish. */
+export function spokenRadioMessage(message: string) {
+  const readback = message.match(/^([A-Z]+\d+)\s·\sreadback onaylandı:\s(.+)$/i);
+  if (readback) return `${spokenCallsign(readback[1])}, readback. ${spokenClearance(readback[2])}.`;
+
+  const tower = message.match(/^([A-Z]+\d+)\s·\s(\d{1,2}[LRC]?) üzerinde established, kuleye devredildi$/i);
+  if (tower) return `${spokenCallsign(tower[1])}, established ILS runway ${spokenRunway(tower[2])}, contact tower.`;
+
+  return message.replace(/\b[A-Z]{2,3}\d{1,4}\b/g, (callsign) => spokenCallsign(callsign)).replace(/·/g, ',');
+}
+
 function callsignSeed(callsign: string) {
   return [...callsign].reduce((total, character) => total + character.charCodeAt(0), 0);
 }
