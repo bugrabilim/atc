@@ -387,7 +387,7 @@ export function App() {
   }
 
   return (
-    <main className="app-shell">
+    <main className="app-shell app-shell--mobile-v2">
       <header className="top-bar">
         <div className="brand-lockup">
           <span className="brand-mark" aria-hidden="true">◉</span>
