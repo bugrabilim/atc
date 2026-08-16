@@ -25,4 +25,19 @@ describe('guideNavigation', () => {
     expect(result.aircraft.navigation?.holding).toBe(true);
     expect(result.event?.message).toContain('hold başladı');
   });
+
+  it('orbits a holding fix instead of steering directly back to it', () => {
+    const aircraft = structuredClone(initialState.aircraft[1]);
+    const fix = world.fixes.find((item) => item.id === 'FINAL1');
+    if (!fix) throw new Error('Test fix is missing');
+    aircraft.position = { x: fix.position.x + 1.6, y: fix.position.y };
+    aircraft.heading = 90;
+    aircraft.navigation = { mode: 'hold', fixIds: ['FINAL1'], currentLegIndex: 0, procedure: 'HOLD FINAL1', holding: true };
+
+    const result = guideNavigation(aircraft, world);
+
+    // From the eastern edge of a right-hand hold, the tangential target is south.
+    expect(result.aircraft.targetHeading).toBeGreaterThan(165);
+    expect(result.aircraft.targetHeading).toBeLessThan(195);
+  });
 });
