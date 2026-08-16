@@ -2,5 +2,17 @@
   "appId": "com.bugrabilim.airspacecontrol",
   "appName": "Airspace Control",
   "webDir": "dist",
-  "bundledWebRuntime": false
+  "bundledWebRuntime": false,
+  "backgroundColor": "#030907",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "launchShowDuration": 0,
+      "backgroundColor": "#030907",
+      "showSpinner": false
+    }
+  }
 }
