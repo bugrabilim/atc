@@ -277,18 +277,24 @@ function drawRadar(
     const trendSymbol = trend === 'climb' ? '↑' : trend === 'descend' ? '↓' : '—';
     const currentFlightLevel = String(Math.round(item.altitude / 100)).padStart(3, '0');
     const targetFlightLevel = String(Math.round(item.targetAltitude / 100)).padStart(3, '0');
-    const boxWidth = 174;
-    const boxHeight = conflict?.predicted ? 66 : arrival ? 56 : 43;
+    // On a phone, keeping every desktop-sized data block makes the tactical
+    // picture unreadable. The selected or hazardous target stays expanded;
+    // routine traffic gets an intentionally compact, still-readable label.
+    const compactScope = viewport.width < 600;
+    const expandedLabel = !compactScope || selected || Boolean(conflict) || pendingReadback;
+    const boxWidth = expandedLabel ? (compactScope ? 154 : 174) : 116;
+    const boxHeight = expandedLabel ? (conflict?.predicted ? 66 : arrival ? 56 : 43) : 34;
     ctx.fillStyle = 'rgba(1, 10, 7, .84)';
     ctx.fillRect(label.x, label.y - 13, boxWidth, boxHeight);
     ctx.strokeStyle = `${color}66`;
     ctx.strokeRect(label.x, label.y - 13, boxWidth, boxHeight);
     labelBoxes.set(item.callsign, { callsign: item.callsign, x: label.x, y: label.y - 13, width: boxWidth, height: boxHeight });
-    ctx.font = `${selected ? '700' : '600'} 12px IBM Plex Mono, ui-monospace, monospace`;
+    ctx.font = `${selected ? '700' : '600'} ${expandedLabel ? 12 : 11}px IBM Plex Mono, ui-monospace, monospace`;
     ctx.fillStyle = color;
     ctx.textAlign = 'left';
     ctx.fillText(`${item.callsign}  ${item.wakeCategory}`, label.x + 4, label.y - 2);
     ctx.fillText(`${currentFlightLevel}${trendSymbol}${targetFlightLevel}  ${Math.round(item.speed)}/${Math.round(item.groundSpeed)}`, label.x + 4, label.y + 10);
+    if (!expandedLabel) continue;
     ctx.font = '700 10px IBM Plex Mono, ui-monospace, monospace';
     ctx.fillStyle = pendingReadback ? '#ffb648' : item.approach?.status === 'tower' ? '#8cffc5' : color;
     ctx.fillText(`${pendingReadback ? 'READBACK · ' : ''}${statusText(item)}`, label.x + 4, label.y + 21);
