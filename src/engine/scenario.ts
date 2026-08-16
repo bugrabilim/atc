@@ -25,23 +25,29 @@ const alphaWorld: RadarWorld = {
   fixes: [
     { id: 'GATE1', position: { x: -24, y: -19 } }, { id: 'GATE2', position: { x: 24, y: -17 } },
     { id: 'GATE3', position: { x: -29, y: 13 } }, { id: 'EXIT1', position: { x: 27, y: 16 } },
-    { id: 'FINAL1', position: { x: -8, y: -13 } }, { id: 'FINAL2', position: { x: 8, y: -13 } },
+    { id: 'GATE4', position: { x: 29, y: 12 } }, { id: 'STACK1', position: { x: -17, y: -8 } },
+    { id: 'STACK2', position: { x: 16, y: -7 } }, { id: 'FINAL1', position: { x: -8, y: -13 } },
+    { id: 'FINAL2', position: { x: 8, y: -13 } },
   ],
   procedures: [
     { id: 'GATE1-ALPHA', kind: 'arrival', runwayId: '34L', fixIds: ['GATE1', 'FINAL1'] },
     { id: 'GATE2-BRAVO', kind: 'arrival', runwayId: '35R', fixIds: ['GATE2', 'FINAL2'] },
     { id: 'GATE3-ALPHA', kind: 'arrival', runwayId: '34L', fixIds: ['GATE3', 'FINAL1'] },
+    { id: 'GATE4-BRAVO', kind: 'arrival', runwayId: '35R', fixIds: ['GATE4', 'STACK2', 'FINAL2'] },
+    { id: 'GATE1-STACK', kind: 'arrival', runwayId: '34L', fixIds: ['GATE1', 'STACK1', 'FINAL1'] },
     { id: 'EXIT1-DEPARTURE', kind: 'departure', fixIds: ['EXIT1'] },
   ],
   trafficEntries: [
     { id: 'GATE1', position: { x: -25, y: -19 }, procedureId: 'GATE1-ALPHA', compatibleRunwayIds: ['34L'] },
     { id: 'GATE2', position: { x: 25, y: -17 }, procedureId: 'GATE2-BRAVO', compatibleRunwayIds: ['35R'] },
     { id: 'GATE3', position: { x: -29, y: 13 }, procedureId: 'GATE3-ALPHA', compatibleRunwayIds: ['34L'] },
+    { id: 'GATE4', position: { x: 29, y: 12 }, procedureId: 'GATE4-BRAVO', compatibleRunwayIds: ['35R'] },
   ],
   trafficExits: [{ id: 'EXIT1', procedureId: 'EXIT1-DEPARTURE' }],
   flowConfigurations: [
     { id: 'north-parallel', label: 'KUZEY · PARALEL', arrivalRunwayIds: ['34L', '35R'], departureRunwayIds: ['36'], windDirection: 350, windSpeedKt: 10, visibilityNm: 10, qnh: 1016 },
     { id: 'north-single', label: 'KUZEY · TEK PİST', arrivalRunwayIds: ['34L'], departureRunwayIds: ['36'], windDirection: 340, windSpeedKt: 18, visibilityNm: 7, qnh: 1009 },
+    { id: 'north-lowvis', label: 'KUZEY · LOW VIS', arrivalRunwayIds: ['35R'], departureRunwayIds: ['36'], windDirection: 2, windSpeedKt: 21, visibilityNm: 4, qnh: 1003 },
   ],
 };
 
@@ -55,23 +61,29 @@ const coastalWorld: RadarWorld = {
   fixes: [
     { id: 'GATE1', position: { x: -23, y: -18 } }, { id: 'GATE2', position: { x: 22, y: -20 } },
     { id: 'GATE3', position: { x: -25, y: 15 } }, { id: 'EXIT1', position: { x: 21, y: 23 } },
-    { id: 'FINAL1', position: { x: -12, y: -5 } }, { id: 'FINAL2', position: { x: -12, y: 5 } },
+    { id: 'GATE4', position: { x: 24, y: 14 } }, { id: 'COAST1', position: { x: -16, y: -10 } },
+    { id: 'COAST2', position: { x: -15, y: 9 } }, { id: 'FINAL1', position: { x: -12, y: -5 } },
+    { id: 'FINAL2', position: { x: -12, y: 5 } },
   ],
   procedures: [
     { id: 'GATE1-COAST', kind: 'arrival', runwayId: '09L', fixIds: ['GATE1', 'FINAL1'] },
     { id: 'GATE2-COAST', kind: 'arrival', runwayId: '09R', fixIds: ['GATE2', 'FINAL2'] },
     { id: 'GATE3-COAST', kind: 'arrival', runwayId: '09L', fixIds: ['GATE3', 'FINAL1'] },
+    { id: 'GATE4-COAST', kind: 'arrival', runwayId: '09R', fixIds: ['GATE4', 'COAST2', 'FINAL2'] },
+    { id: 'GATE1-COAST-ARC', kind: 'arrival', runwayId: '09L', fixIds: ['GATE1', 'COAST1', 'FINAL1'] },
     { id: 'EXIT1-COAST', kind: 'departure', fixIds: ['EXIT1'] },
   ],
   trafficEntries: [
     { id: 'GATE1', position: { x: -23, y: -18 }, procedureId: 'GATE1-COAST', compatibleRunwayIds: ['09L'] },
     { id: 'GATE2', position: { x: 22, y: -20 }, procedureId: 'GATE2-COAST', compatibleRunwayIds: ['09R'] },
     { id: 'GATE3', position: { x: -25, y: 15 }, procedureId: 'GATE3-COAST', compatibleRunwayIds: ['09L'] },
+    { id: 'GATE4', position: { x: 24, y: 14 }, procedureId: 'GATE4-COAST', compatibleRunwayIds: ['09R'] },
   ],
   trafficExits: [{ id: 'EXIT1', procedureId: 'EXIT1-COAST' }],
   flowConfigurations: [
     { id: 'east-crosswind', label: 'DOĞU · ÇAPRAZ RÜZGÂR', arrivalRunwayIds: ['09L', '09R'], departureRunwayIds: ['18'], windDirection: 145, windSpeedKt: 16, visibilityNm: 8, qnh: 1012 },
     { id: 'east-single', label: 'DOĞU · TEK PİST', arrivalRunwayIds: ['09L'], departureRunwayIds: ['18'], windDirection: 95, windSpeedKt: 9, visibilityNm: 10, qnh: 1018 },
+    { id: 'east-weather', label: 'DOĞU · HAVA KAÇIŞI', arrivalRunwayIds: ['09R'], departureRunwayIds: ['18'], windDirection: 128, windSpeedKt: 23, visibilityNm: 5, qnh: 1006 },
   ],
 };
 
@@ -84,23 +96,28 @@ const metroWorld: RadarWorld = {
   fixes: [
     { id: 'NORTH', position: { x: -8, y: -25 } }, { id: 'EAST', position: { x: 24, y: 8 } },
     { id: 'SOUTH', position: { x: 9, y: 24 } }, { id: 'WEST', position: { x: -24, y: 6 } },
+    { id: 'CITY', position: { x: 15, y: 16 } }, { id: 'RIVER', position: { x: -16, y: -9 } },
     { id: 'FINAL22', position: { x: 11, y: -10 } }, { id: 'EXIT27', position: { x: -22, y: -2 } },
   ],
   procedures: [
     { id: 'NORTH-METRO', kind: 'arrival', runwayId: '22', fixIds: ['NORTH', 'FINAL22'] },
     { id: 'EAST-METRO', kind: 'arrival', runwayId: '22', fixIds: ['EAST', 'FINAL22'] },
     { id: 'SOUTH-METRO', kind: 'arrival', runwayId: '22', fixIds: ['SOUTH', 'FINAL22'] },
+    { id: 'WEST-METRO', kind: 'arrival', runwayId: '22', fixIds: ['WEST', 'RIVER', 'FINAL22'] },
+    { id: 'EAST-CITY-METRO', kind: 'arrival', runwayId: '22', fixIds: ['EAST', 'CITY', 'FINAL22'] },
     { id: 'EXIT27-METRO', kind: 'departure', fixIds: ['EXIT27'] },
   ],
   trafficEntries: [
     { id: 'NORTH', position: { x: -8, y: -25 }, procedureId: 'NORTH-METRO', compatibleRunwayIds: ['22'] },
     { id: 'EAST', position: { x: 24, y: 8 }, procedureId: 'EAST-METRO', compatibleRunwayIds: ['22'] },
     { id: 'SOUTH', position: { x: 9, y: 24 }, procedureId: 'SOUTH-METRO', compatibleRunwayIds: ['22'] },
+    { id: 'WEST', position: { x: -24, y: 6 }, procedureId: 'WEST-METRO', compatibleRunwayIds: ['22'] },
   ],
   trafficExits: [{ id: 'EXIT27', procedureId: 'EXIT27-METRO' }],
   flowConfigurations: [
     { id: 'metro-standard', label: 'METRO · STANDART', arrivalRunwayIds: ['22'], departureRunwayIds: ['27'], windDirection: 225, windSpeedKt: 8, visibilityNm: 10, qnh: 1017 },
     { id: 'metro-lowvis', label: 'METRO · DÜŞÜK GÖRÜŞ', arrivalRunwayIds: ['22'], departureRunwayIds: ['27'], windDirection: 215, windSpeedKt: 16, visibilityNm: 4, qnh: 1005 },
+    { id: 'metro-night', label: 'METRO · GECE AKIŞI', arrivalRunwayIds: ['22'], departureRunwayIds: ['27'], windDirection: 235, windSpeedKt: 13, visibilityNm: 6, qnh: 1010 },
   ],
 };
 
@@ -113,23 +130,27 @@ const highlandWorld: RadarWorld = {
   fixes: [
     { id: 'RIDGE', position: { x: -23, y: -15 } }, { id: 'VALLEY', position: { x: 24, y: -12 } },
     { id: 'PASS', position: { x: -17, y: 18 } }, { id: 'FINAL14', position: { x: -10, y: 10 } },
+    { id: 'SADDLE', position: { x: 16, y: 17 } }, { id: 'GLEN', position: { x: -15, y: 4 } },
     { id: 'EXIT15', position: { x: 23, y: 17 } },
   ],
   procedures: [
     { id: 'RIDGE-HIGH', kind: 'arrival', runwayId: '14', fixIds: ['RIDGE', 'FINAL14'] },
     { id: 'VALLEY-HIGH', kind: 'arrival', runwayId: '14', fixIds: ['VALLEY', 'FINAL14'] },
     { id: 'PASS-HIGH', kind: 'arrival', runwayId: '14', fixIds: ['PASS', 'FINAL14'] },
+    { id: 'SADDLE-HIGH', kind: 'arrival', runwayId: '14', fixIds: ['SADDLE', 'GLEN', 'FINAL14'] },
     { id: 'EXIT15-HIGH', kind: 'departure', fixIds: ['EXIT15'] },
   ],
   trafficEntries: [
     { id: 'RIDGE', position: { x: -23, y: -15 }, procedureId: 'RIDGE-HIGH', compatibleRunwayIds: ['14'] },
     { id: 'VALLEY', position: { x: 24, y: -12 }, procedureId: 'VALLEY-HIGH', compatibleRunwayIds: ['14'] },
     { id: 'PASS', position: { x: -17, y: 18 }, procedureId: 'PASS-HIGH', compatibleRunwayIds: ['14'] },
+    { id: 'SADDLE', position: { x: 16, y: 17 }, procedureId: 'SADDLE-HIGH', compatibleRunwayIds: ['14'] },
   ],
   trafficExits: [{ id: 'EXIT15', procedureId: 'EXIT15-HIGH' }],
   flowConfigurations: [
     { id: 'highland-calm', label: 'HIGHLAND · SAKİN HAVA', arrivalRunwayIds: ['14'], departureRunwayIds: ['15'], windDirection: 135, windSpeedKt: 7, visibilityNm: 12, qnh: 1019 },
     { id: 'highland-front', label: 'HIGHLAND · HAVA CEPHESİ', arrivalRunwayIds: ['14'], departureRunwayIds: ['15'], windDirection: 185, windSpeedKt: 24, visibilityNm: 5, qnh: 997 },
+    { id: 'highland-ridge', label: 'HIGHLAND · DAĞ DALGASI', arrivalRunwayIds: ['14'], departureRunwayIds: ['15'], windDirection: 205, windSpeedKt: 29, visibilityNm: 4, qnh: 992 },
   ],
 };
 
