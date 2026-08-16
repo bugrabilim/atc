@@ -420,7 +420,7 @@ export function createInitialState(scenario: GameScenario = defaultScenario, mod
   return {
     mode, elapsedSeconds: 0, paused: false, timeScale: config.timeScale, aircraft: initialAircraft, conflicts: [],
     selectedCallsign: trainingAircraft?.callsign ?? null, skill: config.initialSkill, peakSkill: config.initialSkill, targetAircraft: initialProfile.targetAircraft,
-    score: Math.round(config.initialSkill * 10), landed: 0, spawned: 0, trafficLevel: initialProfile.level, nextTrafficAt: initialProfile.spawnInterval,
+    score: Math.round(config.initialSkill * 15), landed: 0, spawned: 0, trafficLevel: initialProfile.level, nextTrafficAt: initialProfile.spawnInterval,
     runwayAvailableAt: {}, eventLog: [welcome],
     activeLossPairs: [], handoffs: 0, flowId,
     trackHistory: Object.fromEntries(initialAircraft.map((item) => [item.callsign, [{ ...item.position }]])),
