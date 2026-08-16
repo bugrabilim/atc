@@ -175,4 +175,14 @@ describe('stepGame', () => {
     expect(next.aircraft[0].approach).toBeUndefined();
     expect(next.metrics.goArounds).toBe(1);
   });
+
+  it('moves advanced shifts to a reduced-capacity operational flow', () => {
+    const state = createInitialState(undefined, 'advanced');
+    state.elapsedSeconds = 210;
+    state.flowId = 'north-parallel';
+    const next = stepGame(state, worldWithFlow(world, state.flowId, state.peakSkill), 0.1);
+
+    expect(next.flowId).toBe('north-single');
+    expect(next.eventLog.at(-1)?.message).toContain('OPERASYON DEĞİŞİKLİĞİ');
+  });
 });
