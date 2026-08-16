@@ -58,13 +58,36 @@ function appendEvent(events: GameEvent[], event: GameEvent) {
   return [...events, event].slice(-5);
 }
 
+function hasOperationalEvent(state: GameState, prefix: string) {
+  return state.eventTimeline.some((event) => event.id.startsWith(prefix));
+}
+
+/**
+ * A short, deterministic demand pulse prevents every session from settling
+ * into the same comfortable cadence.  It is deliberately advisory first,
+ * then advances the next boundary hand-off instead of creating aircraft out
+ * of thin air.
+ */
+function trafficCompression(state: GameState, elapsedSeconds: number) {
+  if (!difficultyConfig(state.mode).showAdvancedCommands || elapsedSeconds < 145) return null;
+  if (hasOperationalEvent(state, 'demand-pulse-')) return null;
+  return {
+    nextTrafficAt: Math.min(state.nextTrafficAt, elapsedSeconds + 1),
+    event: {
+      id: `demand-pulse-${state.mode}-${Math.round(elapsedSeconds)}`,
+      type: 'warning' as const,
+      message: 'TALEP DARBESİ · sınır girişleri sıklaştı · sırayı erken kur, hız ve HOLD ile kapasiteyi koru',
+    },
+  };
+}
+
 function operationalFlowChange(state: GameState, world: RadarWorld, elapsedSeconds: number) {
   const config = difficultyConfig(state.mode);
   // Higher difficulties deliberately disrupt a comfortable runway setup once
   // per shift. This creates a real controller decision: preserve a sequence,
   // then absorb a reduced-capacity flow instead of repeating one static board.
   if (!config.showAdvancedCommands || elapsedSeconds < 210) return null;
-  if (state.eventTimeline.some((event) => event.id.startsWith('flow-change-'))) return null;
+  if (hasOperationalEvent(state, 'flow-change-')) return null;
   const current = world.flowConfigurations.find((item) => item.id === state.flowId);
   const alternatives = world.flowConfigurations.filter((item) => item.id !== state.flowId);
   const next = [...alternatives].sort((first, second) => {
@@ -83,9 +106,30 @@ function operationalFlowChange(state: GameState, world: RadarWorld, elapsedSecon
   };
 }
 
+/** Restores a higher-capacity configuration after the disruption window. */
+function operationalFlowRecovery(state: GameState, world: RadarWorld, elapsedSeconds: number) {
+  if (!difficultyConfig(state.mode).showAdvancedCommands || elapsedSeconds < 420) return null;
+  if (!hasOperationalEvent(state, 'flow-change-') || hasOperationalEvent(state, 'flow-recovery-')) return null;
+  const current = world.flowConfigurations.find((item) => item.id === state.flowId);
+  const recovered = [...world.flowConfigurations].sort((first, second) => {
+    const firstCapacity = first.arrivalRunwayIds.length + first.departureRunwayIds.length;
+    const secondCapacity = second.arrivalRunwayIds.length + second.departureRunwayIds.length;
+    return secondCapacity - firstCapacity || second.visibilityNm - first.visibilityNm || first.id.localeCompare(second.id);
+  })[0];
+  if (!current || !recovered || recovered.id === current.id) return null;
+  return {
+    flowId: recovered.id,
+    event: {
+      id: `flow-recovery-${state.mode}-${Math.round(elapsedSeconds)}`,
+      type: 'success' as const,
+      message: `AKIŞ TOPARLANDI · ${current.label} → ${recovered.label} · ek pist kapasitesi yeniden kullanılabilir`,
+    },
+  };
+}
+
 function runwayInspection(state: GameState, world: RadarWorld, elapsedSeconds: number) {
   if (state.mode !== 'expert' || elapsedSeconds < 330) return null;
-  if (state.eventTimeline.some((event) => event.id.startsWith('runway-inspection-'))) return null;
+  if (hasOperationalEvent(state, 'runway-inspection-')) return null;
   const arrivalRunway = world.runways.find((runway) => runway.active && (runway.operation === 'arrival' || runway.operation === 'mixed'));
   if (!arrivalRunway) return null;
   return {
@@ -96,6 +140,18 @@ function runwayInspection(state: GameState, world: RadarWorld, elapsedSeconds: n
       type: 'danger' as const,
       message: `PİST KONTROLÜ · ${arrivalRunway.id} 70 sn inişe kapalı · yaklaşan trafiği HOLD / hız / go-around ile yönet`,
     },
+  };
+}
+
+function runwayReopen(state: GameState, elapsedSeconds: number) {
+  const inspection = state.eventTimeline.find((event) => event.id.startsWith('runway-inspection-'));
+  const runwayId = inspection?.message.match(/PİST KONTROLÜ · ([^ ]+)/)?.[1];
+  if (!runwayId || (state.runwayAvailableAt[runwayId] ?? Infinity) > elapsedSeconds) return null;
+  if (hasOperationalEvent(state, `runway-reopen-${runwayId}`)) return null;
+  return {
+    id: `runway-reopen-${runwayId}-${Math.round(elapsedSeconds)}`,
+    type: 'success' as const,
+    message: `PİST AÇILDI · ${runwayId} yeniden iniş akışına hazır`,
   };
 }
 
@@ -166,6 +222,12 @@ function stepFixed(state: GameState, world: RadarWorld, dt: number): GameState {
   let runwayAvailableAt = state.runwayAvailableAt;
   let eventLog = state.eventLog;
   let flowId = state.flowId;
+
+  const compression = trafficCompression(state, elapsedSeconds);
+  if (compression) {
+    nextTrafficAt = compression.nextTrafficAt;
+    eventLog = appendEvent(eventLog, compression.event);
+  }
 
   for (const result of approachResults) if (result.event) eventLog = appendEvent(eventLog, result.event);
   for (const result of guidedResults) if (result.event) eventLog = appendEvent(eventLog, result.event);
@@ -296,11 +358,20 @@ function stepFixed(state: GameState, world: RadarWorld, dt: number): GameState {
     eventLog = appendEvent(eventLog, flowChange.event);
   }
 
+  const flowRecovery = operationalFlowRecovery(state, world, elapsedSeconds);
+  if (flowRecovery) {
+    flowId = flowRecovery.flowId;
+    eventLog = appendEvent(eventLog, flowRecovery.event);
+  }
+
   const inspection = runwayInspection(state, world, elapsedSeconds);
   if (inspection) {
     runwayAvailableAt = { ...runwayAvailableAt, [inspection.runwayId]: inspection.availableAt };
     eventLog = appendEvent(eventLog, inspection.event);
   }
+
+  const reopened = runwayReopen(state, elapsedSeconds);
+  if (reopened) eventLog = appendEvent(eventLog, reopened);
 
   const conflicts = detectOperationalConflicts(aircraft, world, elapsedSeconds);
   const shouldSampleTrack = elapsedSeconds - state.lastTrackAt >= 1;
