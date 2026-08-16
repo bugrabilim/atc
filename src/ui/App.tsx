@@ -10,6 +10,7 @@ import { DebriefPanel } from './DebriefPanel';
 import { FlightStripList } from './FlightStripList';
 import { MissionPanel } from './MissionPanel';
 import { RadarScope } from './RadarScope';
+import { LandingPage } from './LandingPage';
 import { ACHIEVEMENT_TOTAL, buildDebrief, careerProgression, earnedAwards, goalComplete, isAchievementId, shiftGoal, trainingGuide, type TrainingGuide } from '../engine/progression';
 import { controllerCoach, type CoachAdvice } from '../engine/controllerCoach';
 import { restoreSession, serializeSession, type SavedSession } from '../engine/session';
@@ -76,6 +77,7 @@ export function App() {
     message: savedSession ? 'Kaydedilmiş vardiya duraklatıldı. Devam ile aynı trafikten sürdürebilirsin.' : 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. Çağrı kodunun ilk harflerini yazıp Tab ile tamamlayabilirsin.',
   });
   const [debriefOpen, setDebriefOpen] = useState(false);
+  const [landingOpen, setLandingOpen] = useState(true);
   const [newAchievementIds, setNewAchievementIds] = useState<string[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const lastSpokenEvent = useRef<string | null>(null);
@@ -358,6 +360,31 @@ export function App() {
     setState((current) => ({ ...current, paused: false }));
     setDebriefOpen(false);
   };
+
+  const startFromLanding = (nextScenario: GameScenario) => {
+    if (nextScenario.id !== scenario.id) {
+      shiftRecorded.current = false;
+      setScenario(nextScenario);
+      setState(createInitialState(nextScenario, stateRef.current.mode));
+      setCommand('');
+      try { window.localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* storage unavailable */ }
+    }
+    setLandingOpen(false);
+  };
+
+  const resumeFromLanding = () => setLandingOpen(false);
+
+  if (landingOpen) {
+    return <LandingPage
+      scenarios={scenarioCatalog}
+      selectedScenario={scenario}
+      unlockedScenarioIds={progression.unlockedScenarioIds}
+      scenarioBestScores={career.scenarioBestScores}
+      savedSession={Boolean(savedSession)}
+      onStart={startFromLanding}
+      onResume={resumeFromLanding}
+    />;
+  }
 
   return (
     <main className="app-shell">
