@@ -31,4 +31,13 @@ describe('traffic director', () => {
     const replay = planTraffic(6, [], world, 73421);
     expect(replay.aircraft).toEqual(first.aircraft);
   });
+
+  it('mixes arrival wake categories so sequencing decisions stay meaningful', () => {
+    const arrivals = Array.from({ length: 10 }, (_, index) => planTraffic(index, [], world, 0).aircraft);
+    const categories = new Set(arrivals.map((item) => item.wakeCategory));
+
+    expect(categories.has('A')).toBe(true);
+    expect(categories.has('B')).toBe(true);
+    expect(categories.has('D')).toBe(true);
+  });
 });
