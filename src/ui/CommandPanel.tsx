@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { difficultyConfig } from '../engine/difficulty';
 import type { Aircraft, GameMode } from '../engine/types';
+import type { CoachAdvice } from '../engine/controllerCoach';
 
 interface CommandPanelProps {
   aircraft: Aircraft[];
@@ -8,11 +9,13 @@ interface CommandPanelProps {
   fixIds: string[];
   selectedCallsign: string | null;
   mode: GameMode;
+  coach: CoachAdvice;
   value: string;
   feedback: { type: 'success' | 'error' | 'info'; message: string };
   onChange: (value: string) => void;
   onSubmit: () => void;
   onQuickCommand: (command: string) => boolean;
+  onCoachCommand: (advice: CoachAdvice) => void;
   onSelect: (callsign: string) => void;
   onNext: () => void;
 }
@@ -29,11 +32,13 @@ export function CommandPanel({
   fixIds,
   selectedCallsign,
   mode,
+  coach,
   value,
   feedback,
   onChange,
   onSubmit,
   onQuickCommand,
+  onCoachCommand,
   onSelect,
   onNext,
 }: CommandPanelProps) {
@@ -106,6 +111,14 @@ export function CommandPanel({
         <div><span>ALTITUDE</span><button type="button" disabled={!selected} onClick={() => relativeCommand('altitude', -1000)}>−1000</button><b>{selected ? `FL${String(Math.round(selected.targetAltitude / 100)).padStart(3, '0')}` : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('altitude', 1000)}>+1000</button></div>
         <div><span>SPEED</span><button type="button" disabled={!selected} onClick={() => relativeCommand('speed', -20)}>−20</button><b>{selected ? Math.round(selected.targetSpeed) : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('speed', 20)}>+20</button></div>
       </div>
+
+      {coach.command && coach.callsign === selectedCallsign ? (
+        <button type="button" className={`coach-command coach-command--${coach.tone}`} onClick={() => onCoachCommand(coach)}>
+          <span>KOÇ · {coach.label}</span>
+          <b>{coach.command}</b>
+          <small>{coach.title}</small>
+        </button>
+      ) : null}
 
       <div className="quick-command-row" aria-label="Hızlı komutlar">
         {quickCommands.map((item) => (
