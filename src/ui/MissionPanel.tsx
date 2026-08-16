@@ -37,10 +37,11 @@ interface MissionPanelProps {
 }
 
 export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, scenarioFocus, goal, score, landed, handoffs, trafficLevel, skill, peakSkill, targetAircraft, bestScore, bestLandings, completedShifts, completedObjectives, badgeCount, achievementTotal, achievementIds, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
-  // Radar alanı ilk açılışta öncelikli. Yardım, oyuncunun isteğiyle açılır.
-  const [helpOpen, setHelpOpen] = useState(mode === 'beginner');
+  // Radar ilk ekranda her zaman öncelikli. Yardım ve ayrıntılar isteğe bağlı
+  // çekmecelerdedir; özellikle telefonda taktik alanı sıkıştırmazlar.
+  const [helpOpen, setHelpOpen] = useState(false);
   useEffect(() => {
-    setHelpOpen(mode === 'beginner');
+    setHelpOpen(false);
   }, [mode]);
   const trainingAircraft = aircraft.find((item) => item.callsign === trainingCallsign);
   const priorityMission = priorityTraffic.find((item) => item.priority && !item.priority.alertRaised);
@@ -70,15 +71,8 @@ export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, 
       </div>
       <div className="mission-score" aria-label={`Skill ${skill}, tamamlanan iniş ${landed}, handoff ${handoffs}`}>
         <span>SKILL <b>{skill.toFixed(1)}</b></span>
-        <span>PEAK <b>{peakSkill.toFixed(1)}</b></span>
-        <span>HEDEF <b>{aircraft.length}/{targetAircraft}</b></span>
         <span>İNİŞ <b>{landed}</b></span>
         <span>HANDOFF <b>{handoffs}</b></span>
-        <span>VARDİYA <b>{landed}/{goal.targetLandings} · {handoffs}/{goal.targetHandoffs}</b></span>
-        <span>YOĞUNLUK <b>{trafficLevel}/5</b></span>
-        <span>AKIŞ <b>{activeFlowLabel}</b></span>
-        {pendingInstructionCount > 0 ? <span>READBACK <b>{pendingInstructionCount}</b></span> : null}
-        <span>KARİYER <b>{controllerRank(bestScore)} · {bestLandings} İNİŞ · {completedObjectives}/{completedShifts} HEDEF · {badgeCount}/{achievementTotal} BAŞARIM</b></span>
       </div>
       <div className="mission-event" aria-live="polite">
         {events.at(-1)?.message ?? 'Radar sahası izleniyor.'}
@@ -90,6 +84,18 @@ export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, 
             const unlocked = achievementIds.includes(achievement.id);
             return <p key={achievement.id}><b>{unlocked ? '✓' : '○'} {achievement.label}</b> · {achievement.description}</p>;
           })}
+        </div>
+      </details>
+      <details className="operations-drawer">
+        <summary>OPERASYON DETAYI</summary>
+        <div className="operations-drawer__content">
+          <span>PEAK <b>{peakSkill.toFixed(1)}</b></span>
+          <span>HEDEF <b>{aircraft.length}/{targetAircraft}</b></span>
+          <span>VARDİYA <b>{landed}/{goal.targetLandings} iniş · {handoffs}/{goal.targetHandoffs} handoff</b></span>
+          <span>YOĞUNLUK <b>{trafficLevel}/5</b></span>
+          <span>AKIŞ <b>{activeFlowLabel}</b></span>
+          {pendingInstructionCount > 0 ? <span>READBACK <b>{pendingInstructionCount}</b></span> : null}
+          <span>KARİYER <b>{controllerRank(bestScore)} · {bestLandings} iniş · {completedObjectives}/{completedShifts} hedef · {badgeCount}/{achievementTotal} başarım</b></span>
         </div>
       </details>
       <details className="assistant-drawer" open={helpOpen} onToggle={(event) => setHelpOpen(event.currentTarget.open)}>
