@@ -8,6 +8,27 @@ import { FlightStripList } from './FlightStripList';
 import { MissionPanel } from './MissionPanel';
 import { RadarScope } from './RadarScope';
 
+interface CareerStats {
+  bestScore: number;
+  bestLandings: number;
+}
+
+const CAREER_STORAGE_KEY = 'istanbul-radar-career-v1';
+
+function loadCareerStats(): CareerStats {
+  try {
+    const value = window.localStorage.getItem(CAREER_STORAGE_KEY);
+    if (!value) return { bestScore: 0, bestLandings: 0 };
+    const parsed = JSON.parse(value) as Partial<CareerStats>;
+    return {
+      bestScore: typeof parsed.bestScore === 'number' ? parsed.bestScore : 0,
+      bestLandings: typeof parsed.bestLandings === 'number' ? parsed.bestLandings : 0,
+    };
+  } catch {
+    return { bestScore: 0, bestLandings: 0 };
+  }
+}
+
 function formatClock(seconds: number) {
   const minutes = Math.floor(seconds / 60);
   const remainder = Math.floor(seconds % 60);
@@ -16,6 +37,7 @@ function formatClock(seconds: number) {
 
 export function App() {
   const [state, setState] = useState<GameState>(() => structuredClone(initialState));
+  const [career, setCareer] = useState<CareerStats>(loadCareerStats);
   const stateRef = useRef(state);
   const [command, setCommand] = useState('');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string }>({
@@ -26,6 +48,18 @@ export function App() {
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    setCareer((current) => {
+      const next = {
+        bestScore: Math.max(current.bestScore, state.score),
+        bestLandings: Math.max(current.bestLandings, state.landed),
+      };
+      if (next.bestScore === current.bestScore && next.bestLandings === current.bestLandings) return current;
+      window.localStorage.setItem(CAREER_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, [state.landed, state.score]);
 
   useEffect(() => {
     let previous = performance.now();
@@ -49,7 +83,7 @@ export function App() {
       command,
       snapshot.aircraft.map((item) => item.callsign),
       snapshot.selectedCallsign,
-      world.runways.map((item) => item.id),
+      world.runways.filter((item) => item.active && (item.operation === 'arrival' || item.operation === 'mixed')).map((item) => item.id),
       world.fixes.map((item) => item.id),
     );
     if (!parsed.ok) {
@@ -124,6 +158,8 @@ export function App() {
           landed={state.landed}
           handoffs={state.handoffs}
           trafficLevel={state.trafficLevel}
+          bestScore={career.bestScore}
+          bestLandings={career.bestLandings}
           events={state.eventLog}
         />
       </div>

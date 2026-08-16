@@ -1,4 +1,5 @@
 import type { Aircraft, GameEvent } from '../engine/types';
+import { controllerRank, nextMission } from '../engine/progression';
 
 interface MissionPanelProps {
   aircraft: Aircraft[];
@@ -6,15 +7,17 @@ interface MissionPanelProps {
   landed: number;
   handoffs: number;
   trafficLevel: number;
+  bestScore: number;
+  bestLandings: number;
   events: GameEvent[];
 }
 
-export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, events }: MissionPanelProps) {
+export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, bestScore, bestLandings, events }: MissionPanelProps) {
   const trainingAircraft = aircraft.find((item) => item.callsign === 'TK1953');
   const approachCaptured = trainingAircraft?.approach?.status === 'captured';
   const landingCleared = trainingAircraft?.approach?.landingCleared;
   const mission = landed > 0
-    ? 'Trafiği ayır, gelişleri ILS yaklaşmasına yönlendir.'
+    ? nextMission(landed, score)
     : approachCaptured && !landingCleared
       ? 'TK1953 ILS üzerinde. Pist geçmeden LAND komutuyla iniş izni ver.'
     : approachCaptured
@@ -32,6 +35,7 @@ export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, 
         <span>İNİŞ <b>{landed}</b></span>
         <span>HANDOFF <b>{handoffs}</b></span>
         <span>YOĞUNLUK <b>{trafficLevel}/5</b></span>
+        <span>KARİYER <b>{controllerRank(bestScore)} · {bestLandings} İNİŞ</b></span>
       </div>
       <div className="mission-event" aria-live="polite">
         {events.at(-1)?.message ?? 'Radar sahası izleniyor.'}

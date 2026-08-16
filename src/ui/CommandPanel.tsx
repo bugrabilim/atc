@@ -21,6 +21,7 @@ const quickCommands = [
   { label: 'DCT FM001', command: 'DCT FM001' },
   { label: 'HOLD FM001', command: 'HOLD FM001' },
   { label: 'ILS 34L', command: 'ILS 34L' },
+  { label: 'ILS 35R', command: 'ILS 35R' },
   { label: 'CLEARED LAND', command: 'LAND' },
 ];
 
