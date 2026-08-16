@@ -319,7 +319,7 @@ export function App() {
           <div className="session-menu__panel">
             <span>SENARYO</span>
           {scenarioCatalog.map((item) => (
-            <button key={item.id} type="button" className={item.id === scenario.id ? 'is-active' : ''} onClick={() => selectScenario(item)}>{item.id === 'alpha' ? 'ALPHA' : 'COASTAL'}</button>
+            <button key={item.id} type="button" className={item.id === scenario.id ? 'is-active' : ''} onClick={() => selectScenario(item)}>{item.label}</button>
           ))}
           <button type="button" onClick={endShift}>BİTİR</button>
           <button type="button" onClick={reset}>YENİLE</button>
