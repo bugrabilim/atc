@@ -92,6 +92,113 @@ function statusText(aircraft: Aircraft) {
   return aircraft.phase === 'arrival' ? `VECT ${aircraft.assignedRunway ?? ''}` : 'DEPARTURE';
 }
 
+function pointAtBearing(bearing: number, distance: number): Vector2 {
+  const radians = bearing * Math.PI / 180;
+  return { x: Math.sin(radians) * distance, y: -Math.cos(radians) * distance };
+}
+
+function drawGeographicContext(ctx: CanvasRenderingContext2D, viewport: Viewport, world: RadarWorld) {
+  const { width, height, scale } = viewport;
+  const environment = world.environment;
+  const terrainColor = environment?.terrain === 'desert' ? '#0e1008'
+    : environment?.terrain === 'mountain' || environment?.terrain === 'highland' ? '#07100b'
+      : environment?.terrain === 'coastal' || environment?.terrain === 'island' ? '#03100e'
+        : '#04100b';
+  ctx.fillStyle = terrainColor;
+  ctx.fillRect(0, 0, width, height);
+
+  // A chart grid reads like a terminal-area map rather than a decorative
+  // circular scope, while still preserving instant distance orientation.
+  ctx.save();
+  ctx.strokeStyle = 'rgba(91, 160, 126, .08)';
+  ctx.lineWidth = 1;
+  const gridStep = Math.max(56, 10 * scale);
+  for (let x = (width / 2) % gridStep; x < width; x += gridStep) drawLine(ctx, { x, y: 0 }, { x, y: height }, 'rgba(91, 160, 126, .08)');
+  for (let y = (height / 2) % gridStep; y < height; y += gridStep) drawLine(ctx, { x: 0, y }, { x: width, y }, 'rgba(91, 160, 126, .08)');
+  ctx.restore();
+
+  if (!environment) return;
+  const airport = worldToScreen({ x: 0, y: 0 }, viewport);
+
+  if (environment.waterBearing !== undefined) {
+    const waterCenter = worldToScreen(pointAtBearing(environment.waterBearing, world.rangeNm * .82), viewport);
+    ctx.save();
+    ctx.translate(waterCenter.x, waterCenter.y);
+    ctx.rotate(environment.waterBearing * Math.PI / 180);
+    ctx.fillStyle = 'rgba(5, 42, 48, .62)';
+    ctx.strokeStyle = 'rgba(91, 183, 181, .26)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, world.rangeNm * scale * .78, world.rangeNm * scale * .48, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    for (let offset = -2; offset <= 2; offset += 1) {
+      ctx.beginPath();
+      ctx.ellipse(offset * 25, offset * 9, world.rangeNm * scale * (.52 + offset * .035), world.rangeNm * scale * (.25 + offset * .018), 0, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(91, 183, 181, .09)';
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  if (environment.mountainBearing !== undefined || environment.terrain === 'mountain' || environment.terrain === 'highland') {
+    const bearing = environment.mountainBearing ?? 315;
+    const ridge = worldToScreen(pointAtBearing(bearing, world.rangeNm * .63), viewport);
+    ctx.save();
+    ctx.translate(ridge.x, ridge.y);
+    ctx.rotate(bearing * Math.PI / 180);
+    ctx.strokeStyle = 'rgba(188, 164, 103, .27)';
+    ctx.fillStyle = 'rgba(99, 83, 45, .12)';
+    for (let layer = 0; layer < 4; layer += 1) {
+      ctx.beginPath();
+      const span = (13 + layer * 4) * scale;
+      ctx.moveTo(-span, layer * 12);
+      for (let peak = -3; peak <= 3; peak += 1) {
+        ctx.lineTo(peak * span / 3, layer * 12 - (5 + ((peak + layer) % 3) * 3) * scale);
+      }
+      ctx.lineTo(span, layer * 12);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  const cityCenter = worldToScreen(pointAtBearing(environment.cityBearing, world.rangeNm * .52), viewport);
+  const cityRadius = (environment.urbanDensity === 'metropolis' ? 12 : 8) * scale;
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(cityCenter.x, cityCenter.y, cityRadius * 1.45, cityRadius, environment.cityBearing * Math.PI / 180, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = 'rgba(81, 111, 96, .12)';
+  ctx.fillRect(cityCenter.x - cityRadius * 1.6, cityCenter.y - cityRadius * 1.2, cityRadius * 3.2, cityRadius * 2.4);
+  ctx.translate(cityCenter.x, cityCenter.y);
+  ctx.rotate((environment.cityBearing + 22) * Math.PI / 180);
+  for (let offset = -cityRadius * 1.5; offset <= cityRadius * 1.5; offset += Math.max(14, scale * 2.4)) {
+    drawLine(ctx, { x: offset, y: -cityRadius * 1.2 }, { x: offset, y: cityRadius * 1.2 }, 'rgba(143, 181, 160, .16)');
+    drawLine(ctx, { x: -cityRadius * 1.6, y: offset }, { x: cityRadius * 1.6, y: offset }, 'rgba(143, 181, 160, .12)');
+  }
+  ctx.restore();
+
+  ctx.fillStyle = 'rgba(147, 205, 177, .5)';
+  ctx.font = '700 11px IBM Plex Mono, ui-monospace, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(environment.city.toUpperCase(), cityCenter.x, cityCenter.y - cityRadius - 8);
+  ctx.fillStyle = 'rgba(110, 243, 176, .72)';
+  ctx.fillRect(airport.x - 3, airport.y - 3, 6, 6);
+  ctx.textAlign = 'left';
+  ctx.fillText(`${environment.icao} · ELEV ${environment.elevationFt}FT`, airport.x + 9, airport.y - 9);
+
+  // Compact scale instead of range rings; on phones it remains readable and
+  // does not cover aircraft labels.
+  const scaleLength = 10 * scale;
+  const scaleY = height - 30;
+  drawLine(ctx, { x: 16, y: scaleY }, { x: 16 + scaleLength, y: scaleY }, 'rgba(110, 243, 176, .55)', 2);
+  drawLine(ctx, { x: 16, y: scaleY - 4 }, { x: 16, y: scaleY + 4 }, 'rgba(110, 243, 176, .55)', 2);
+  drawLine(ctx, { x: 16 + scaleLength, y: scaleY - 4 }, { x: 16 + scaleLength, y: scaleY + 4 }, 'rgba(110, 243, 176, .55)', 2);
+  ctx.fillStyle = 'rgba(110, 243, 176, .55)';
+  ctx.font = '700 10px IBM Plex Mono, ui-monospace, monospace';
+  ctx.fillText('10 NM', 16, scaleY - 8);
+}
+
 function drawRadar(
   ctx: CanvasRenderingContext2D,
   viewport: Viewport,
@@ -108,8 +215,7 @@ function drawRadar(
 ) {
   const { width, height, scale } = viewport;
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = '#020807';
-  ctx.fillRect(0, 0, width, height);
+  drawGeographicContext(ctx, viewport, world);
 
   const airport = worldToScreen({ x: 0, y: 0 }, viewport);
   const glow = ctx.createRadialGradient(airport.x, airport.y, 5, airport.x, airport.y, Math.max(width, height) * 0.7);
@@ -118,19 +224,6 @@ function drawRadar(
   glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, width, height);
-
-  ctx.strokeStyle = 'rgba(68, 148, 111, 0.2)';
-  ctx.lineWidth = 1;
-  ctx.font = '12px IBM Plex Mono, ui-monospace, monospace';
-  ctx.fillStyle = 'rgba(100, 184, 144, 0.46)';
-  for (let radiusNm = 10; radiusNm <= world.rangeNm; radiusNm += 10) {
-    ctx.beginPath();
-    ctx.arc(airport.x, airport.y, radiusNm * scale, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.fillText(`${radiusNm}`, airport.x + 5, airport.y - radiusNm * scale + 12);
-  }
-  drawLine(ctx, { x: airport.x, y: 0 }, { x: airport.x, y: height }, 'rgba(68, 148, 111, 0.1)');
-  drawLine(ctx, { x: 0, y: airport.y }, { x: width, y: airport.y }, 'rgba(68, 148, 111, 0.1)');
 
   for (const runway of world.runways) {
     const midpoint = worldToScreen(runway.center, viewport);
@@ -329,7 +422,7 @@ function drawRadar(
   ctx.fillStyle = 'rgba(110, 243, 176, 0.45)';
   ctx.font = '11px IBM Plex Mono, ui-monospace, monospace';
   ctx.textAlign = 'left';
-  ctx.fillText(`RANGE ${Math.round(Math.min(width, height) / scale / 2)}NM · ${world.airport}`, 14, height - 14);
+  ctx.fillText(`TACTICAL CHART · ${Math.round(Math.min(width, height) / scale / 2)}NM · ${world.airport} · GAME ONLY`, 14, height - 14);
 }
 
 export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCallsigns, selectedCallsign, coach, onSelect, onApplyCoach }: RadarScopeProps) {

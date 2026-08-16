@@ -89,15 +89,15 @@ describe('stepGame', () => {
   });
 
   it('uses the selected sector runway flow when generating traffic', () => {
-    const coastal = scenarioCatalog.find((scenario) => scenario.id === 'coastal');
-    if (!coastal) throw new Error('Coastal scenario is missing');
+    const atlanta = scenarioCatalog.find((scenario) => scenario.id === 'atl');
+    if (!atlanta) throw new Error('Atlanta scenario is missing');
 
-    const state = createInitialState(coastal);
-    const incoming = spawnTraffic(0, coastal.world);
+    const state = createInitialState(atlanta);
+    const incoming = spawnTraffic(0, atlanta.world);
 
-    expect(state.selectedCallsign).toBe('CF101');
+    expect(state.selectedCallsign).toBe('AT101');
     expect(state.timeScale).toBe(2);
-    expect(['09L', '09R']).toContain(incoming.assignedRunway);
+    expect(atlanta.world.flowConfigurations[0]?.arrivalRunwayIds).toContain(incoming.assignedRunway);
   });
 
   it('derives active runways from an airport-pack flow configuration', () => {
@@ -165,7 +165,13 @@ describe('stepGame', () => {
   it('orders an automatic go-around when the runway is occupied on short final', () => {
     const state = structuredClone(initialState);
     const arrival = state.aircraft[0];
-    arrival.position = { x: -1.69, y: 3.69 };
+    const runway = world.runways.find((item) => item.id === '34L');
+    if (!runway) throw new Error('Runway 34L is missing');
+    const radians = runway.heading * Math.PI / 180;
+    arrival.position = {
+      x: runway.center.x - Math.sin(radians) * 2,
+      y: runway.center.y + Math.cos(radians) * 2,
+    };
     arrival.altitude = 680;
     arrival.targetAltitude = 680;
     arrival.approach = { runwayId: '34L', status: 'tower', towerHandoffAt: 1 };

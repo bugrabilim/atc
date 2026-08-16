@@ -613,3 +613,91 @@ button { touch-action: manipulation; }
   .radar-decision { bottom: 10px; }
   .scope-corner--bottom-right { bottom: max(8px, env(safe-area-inset-bottom)); }
 }
+
+/* Real-airport career browser and radar-first phone shell. These rules are
+   intentionally last: they replace the older exploratory phone layouts. */
+.session-menu__panel { max-height: min(72dvh, 620px); overflow-y: auto; overscroll-behavior: contain; }
+.airport-card { content-visibility: auto; contain-intrinsic-size: 150px; }
+.airport-browser { display: grid; grid-template-columns: auto minmax(180px, 360px) auto; align-items: center; gap: 10px; margin: 30px 0 16px; }
+.airport-browser label, .airport-browser span { color: #789b8a; font: 700 9px IBM Plex Mono, monospace; letter-spacing: .08em; }
+.airport-browser input { min-height: 44px; padding: 0 13px; color: #edfff5; border: 1px solid rgba(110,243,176,.25); border-radius: 5px; outline: 0; background: #07130f; font: 600 12px IBM Plex Mono, monospace; }
+.airport-browser input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(110,243,176,.08); }
+.airport-show-all { min-height: 46px; margin: 18px auto 0; display: block; padding: 0 18px; color: var(--green); border: 1px solid rgba(110,243,176,.35); border-radius: 5px; background: #08140f; font: 800 10px IBM Plex Mono, monospace; cursor: pointer; }
+.touch-controls-toggle { display: none; }
+.command-panel__advanced { display: contents; }
+
+@media (max-width: 640px) {
+  html, body, #root { height: 100%; min-height: 0; overflow: hidden; }
+  .landing-page { height: 100dvh; min-height: 0; overflow-y: auto; }
+  .app-shell {
+    height: 100dvh;
+    min-height: 0;
+    grid-template-rows: 54px 42px 42px minmax(0, 1fr) auto;
+    overflow: hidden;
+  }
+  .top-bar { min-height: 0; height: 54px; padding: 6px 9px; }
+  .brand-lockup strong { font-size: 12px; }
+  .session-actions button:nth-child(3) { display: none; }
+  .session-actions button, .session-menu summary { min-height: 40px; height: 40px; }
+  .operation-bar { min-height: 0; height: 42px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 5px 9px; }
+  .operation-bar > .eyebrow, .operation-bar > span:not(.eyebrow) { display: none; }
+  .operation-bar label { display: block; min-width: 0; color: transparent; font-size: 0; }
+  .operation-bar label select { width: 100%; min-width: 0; min-height: 32px; color: #dff8ec; font-size: 10px; }
+  .game-status { height: 42px; min-height: 0; overflow: hidden; }
+  .mission-panel { height: 42px; min-height: 0; display: block; padding: 7px 10px; overflow: hidden; }
+  .mission-primary strong { margin: 0; color: #dff8ec; font-size: 11px; line-height: 28px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mission-primary .eyebrow, .mission-primary__action, .mission-briefing, .mission-score, .mission-event, .career-drawer, .operations-drawer, .assistant-drawer { display: none !important; }
+  .workspace { width: 100%; height: auto; min-height: 0; overflow: hidden; }
+  .radar-frame { width: 100%; height: 100%; min-height: 0; border-right: 0; }
+  .radar-queue { top: 8px; left: 8px; width: 126px; min-width: 0; max-width: 126px; padding: 5px; }
+  .radar-queue__heading { display: none; }
+  .radar-queue__runways { display: block; }
+  .radar-queue__runway:not(:first-child), .radar-queue__items button:not(:first-child) { display: none; }
+  .radar-queue__runway > strong { display: none; }
+  .radar-queue button { width: 100%; min-height: 34px; font-size: 10px; }
+  .radar-decision { display: none; }
+  .radar-tools { top: 8px; right: 8px; gap: 4px; }
+  .radar-tools button { min-width: 40px; min-height: 38px; padding-inline: 5px; font-size: 9px; }
+  .command-panel {
+    position: relative;
+    z-index: 9;
+    bottom: auto;
+    max-height: 33dvh;
+    padding: 7px 9px max(8px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    box-shadow: 0 -10px 26px rgba(0,0,0,.3);
+  }
+  .selected-aircraft { min-height: 34px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; margin-bottom: 5px; }
+  .selected-aircraft .eyebrow { display: none; }
+  .selected-aircraft strong { margin: 0; font-size: 15px; }
+  .selected-aircraft__metrics { min-width: 0; justify-content: end; gap: 8px; font-size: 10px; }
+  .selected-aircraft__metrics span:nth-child(n + 3) { display: none; }
+  .next-aircraft { min-height: 34px; height: 34px; font-size: 8px; }
+  .touch-controls-toggle { width: 100%; min-height: 34px; display: flex; align-items: center; justify-content: space-between; margin: 0 0 6px; padding: 0 10px; color: #a8cbb9; border: 1px solid var(--line); border-radius: 5px; background: #081711; font: 700 9px IBM Plex Mono, monospace; }
+  .touch-controls-toggle span { color: var(--green); font-size: 14px; }
+  .command-panel__advanced { display: none; }
+  .command-panel__advanced.is-open { display: block; }
+  .vector-control { display: grid; grid-template-columns: 1fr; gap: 5px; margin-bottom: 6px; overflow: visible; }
+  .vector-control > div { width: 100%; display: grid; grid-template-columns: 60px repeat(5, minmax(0, 1fr)); gap: 4px; }
+  .vector-control > div:nth-child(2), .vector-control > div:nth-child(3) { grid-template-columns: 60px repeat(3, minmax(0, 1fr)); }
+  .vector-control span, .vector-control b { align-self: center; width: auto; min-width: 0; font-size: 9px; }
+  .vector-control button { width: 100%; min-width: 0; min-height: 40px; padding: 0 3px; font-size: 9px; }
+  .quick-command-row { display: flex; gap: 5px; margin-bottom: 6px; overflow-x: auto; scrollbar-width: none; }
+  .quick-command { flex: 0 0 auto; min-width: 88px; min-height: 38px; font-size: 9px; }
+  .command-entry { height: 46px; }
+  .command-entry input { font-size: 12px; }
+  .command-entry input::placeholder { font-size: 10px; }
+  .send-command { height: 38px; min-width: 74px; font-size: 9px; }
+  .command-feedback { min-height: 16px; padding-top: 4px; font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .airport-browser { grid-template-columns: 1fr auto; margin-top: 24px; }
+  .airport-browser label { grid-column: 1 / -1; }
+  .airport-browser input { min-width: 0; width: 100%; }
+}
+
+@media (max-width: 640px) and (orientation: landscape) and (max-height: 560px) {
+  .app-shell { grid-template-rows: 46px 0 0 minmax(0, 1fr) auto; }
+  .operation-bar, .game-status { display: none; }
+  .top-bar { height: 46px; }
+  .command-panel { max-height: 38dvh; }
+}

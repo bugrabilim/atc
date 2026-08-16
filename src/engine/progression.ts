@@ -1,4 +1,5 @@
 import type { CareerProgression, CareerUnlock, GameMode, GameState, ScenarioId } from './types';
+import { AIRPORT_DEFINITIONS } from './airportCatalog';
 
 export interface ShiftGoal {
   label: string;
@@ -162,27 +163,36 @@ export function isAchievementId(value: string): boolean {
   return ACHIEVEMENT_IDS.has(value);
 }
 
-/**
- * Unlocks deliberately reward demonstrated ATC skills rather than raw play
- * time. This follows the pattern in Endless ATC: safety, endurance and broad
- * airport mastery are the meaningful progression gates.
- */
+function airportScoreGate(index: number) {
+  return 250 + Math.floor((index - 1) / 6) * 100;
+}
+
+/** Mini Metro-style map progression: Istanbul is immediately available and
+ * each following airport is earned by proving mastery at the previous stop. */
+const AIRPORT_UNLOCKS: readonly CareerUnlock[] = AIRPORT_DEFINITIONS.map((airport, index) => {
+  if (index === 0) return {
+    id: `scenario:${airport.id}`, kind: 'scenario', label: `${airport.iata} · ${airport.city.toUpperCase()}`,
+    description: 'Başlangıç yaklaşma sektörü.', requiredAchievementIds: [],
+  };
+  const previous = AIRPORT_DEFINITIONS[index - 1]!;
+  const requiredScore = airportScoreGate(index);
+  return {
+    id: `scenario:${airport.id}`, kind: 'scenario', label: `${airport.iata} · ${airport.city.toUpperCase()}`,
+    description: `${previous.iata} meydanında ${requiredScore.toLocaleString('tr-TR')} puan yaparak aç.`,
+    requiredAchievementIds: [], scoreScenarioId: previous.id, requiredScore,
+  };
+});
+
+/** Skills and tools are achievement-gated; airports are score-gated above. */
 export const CAREER_UNLOCKS: readonly CareerUnlock[] = [
-  { id: 'scenario:alpha', kind: 'scenario', label: 'IST · PARALEL AKIŞ', description: 'Başlangıç yaklaşma sektörü.', requiredAchievementIds: [] },
+  ...AIRPORT_UNLOCKS,
   { id: 'mode:beginner', kind: 'mode', label: 'YENİ BAŞLAYAN', description: 'Yardımlı eğitim vardiyası.', requiredAchievementIds: [] },
   { id: 'operation:basic-radar', kind: 'operation', label: 'TEMEL RADAR', description: 'Heading, irtifa, hız ve ILS araçları.', requiredAchievementIds: [] },
   { id: 'mode:normal', kind: 'mode', label: 'NORMAL', description: 'Dengeli trafik ve standart yardım seviyesi.', requiredAchievementIds: ['beginner-complete'] },
-  { id: 'scenario:coastal', kind: 'scenario', label: 'COASTAL · ÇAPRAZ RÜZGÂR', description: 'İST sektöründe 150 puanla açılır.', requiredAchievementIds: [], scoreScenarioId: 'alpha', requiredScore: 150 },
   { id: 'operation:wake-advisor', kind: 'operation', label: 'WAKE DANIŞMANI', description: 'Lider/takipçi aralığı ve önerilen hız vurgusu.', requiredAchievementIds: ['wake-keeper'] },
   { id: 'mode:advanced', kind: 'mode', label: 'İLERİ', description: 'Daha yoğun akış, prosedür ve öncelikli trafik.', requiredAchievementIds: ['normal-complete', 'procedure-pilot'] },
-  { id: 'scenario:metro', kind: 'scenario', label: 'METRO · TEK PİST', description: 'Coastal sektöründe 300 puanla açılır.', requiredAchievementIds: [], scoreScenarioId: 'coastal', requiredScore: 300 },
-  { id: 'scenario:strait', kind: 'scenario', label: 'STRAIT · DAR KORİDOR', description: 'Metro sektöründe 450 puanla açılır.', requiredAchievementIds: [], scoreScenarioId: 'metro', requiredScore: 450 },
   { id: 'operation:flow-management', kind: 'operation', label: 'AKIŞ YÖNETİMİ', description: 'Pist akışı değişimi ve düşük görüş operasyonları.', requiredAchievementIds: ['landing-six', 'wake-shield'] },
   { id: 'mode:expert', kind: 'mode', label: 'UZMAN', description: 'Pist kontrolleri ve tam operasyon yükü.', requiredAchievementIds: ['advanced-complete', 'clean-shift'] },
-  { id: 'scenario:highland', kind: 'scenario', label: 'HIGHLAND · HAVA CEPHESİ', description: 'Strait sektöründe 600 puanla açılır.', requiredAchievementIds: [], scoreScenarioId: 'strait', requiredScore: 600 },
-  { id: 'scenario:nordic', kind: 'scenario', label: 'NORDIC · LOW VIS', description: 'Highland sektöründe 750 puanla açılır.', requiredAchievementIds: [], scoreScenarioId: 'highland', requiredScore: 750 },
-  { id: 'scenario:desert', kind: 'scenario', label: 'DESERT · HEAVY BANK', description: 'Nordic sektöründe 900 puanla açılır.', requiredAchievementIds: [], scoreScenarioId: 'nordic', requiredScore: 900 },
-  { id: 'scenario:river', kind: 'scenario', label: 'RIVER · ÇİFT FİNAL', description: 'Desert sektöründe 1.100 puanla açılır.', requiredAchievementIds: [], scoreScenarioId: 'desert', requiredScore: 1100 },
   { id: 'operation:master-flow', kind: 'operation', label: 'USTA AKIŞ', description: 'Tam prosedür, wake ve yoğunluk çalışma seti.', requiredAchievementIds: ['expert-complete', 'high-workload'] },
 ];
 

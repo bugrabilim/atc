@@ -55,9 +55,10 @@ describe('traffic director', () => {
   });
 
   it('balances departures across active runways and varies their fleet', () => {
+    const extraDeparture = world.runways.find((runway) => !runway.active);
     const parallelDepartureWorld = {
       ...world,
-      runways: world.runways.map((runway) => runway.id === '35L'
+      runways: world.runways.map((runway) => runway.id === extraDeparture?.id
         ? { ...runway, active: true, operation: 'departure' as const }
         : runway),
     };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ACHIEVEMENTS, ACHIEVEMENT_TOTAL, CAREER_UNLOCKS, buildDebrief, careerProgression, controllerRank, earnedAwards, isAchievementId, nextMission, trainingGuide } from './progression';
-import { initialState } from './scenario';
+import { initialState, scenarioCatalog } from './scenario';
 
 describe('controller progression', () => {
   it('promotes the controller through score thresholds', () => {
@@ -62,17 +62,17 @@ describe('debrief', () => {
 describe('career progression', () => {
   it('starts with an immediately playable training sector and no artificial wait gate', () => {
     const career = careerProgression([]);
-    expect(career.unlockedScenarioIds).toEqual(['alpha']);
+    expect(career.unlockedScenarioIds).toEqual(['ist']);
     expect(career.unlockedModeIds).toEqual(['beginner']);
-    expect(career.nextUnlock?.id).toBe('mode:normal');
+    expect(career.nextUnlock?.id).toBe('scenario:atl');
   });
 
   it('unlocks content through demonstrated safety and procedure skill', () => {
     const career = careerProgression(
       ['beginner-complete', 'landing-trio', 'clean-start', 'wake-keeper', 'normal-complete', 'procedure-pilot', 'holding-strategist'],
-      { alpha: 150, coastal: 300 },
+      { ist: 250, atl: 250 },
     );
-    expect(career.unlockedScenarioIds).toEqual(expect.arrayContaining(['alpha', 'coastal', 'metro']));
+    expect(career.unlockedScenarioIds).toEqual(expect.arrayContaining(['ist', 'atl', 'dxb']));
     expect(career.unlockedModeIds).toEqual(expect.arrayContaining(['beginner', 'normal', 'advanced']));
     expect(career.unlockedOperationIds).toContain('wake-advisor');
     expect(career.rank).toBe('YAKLAŞMA KONTROLÖRÜ');
@@ -80,12 +80,13 @@ describe('career progression', () => {
 
   it('keeps every unlock backed by achievement requirements and reaches full completion', () => {
     expect(CAREER_UNLOCKS.every((unlock) => unlock.requiredAchievementIds.every(isAchievementId))).toBe(true);
-    const career = careerProgression(ACHIEVEMENTS.map((achievement) => achievement.id), {
-      alpha: 150, coastal: 300, metro: 450, strait: 600, highland: 750, nordic: 900, desert: 1100,
-    });
+    const career = careerProgression(
+      ACHIEVEMENTS.map((achievement) => achievement.id),
+      Object.fromEntries(scenarioCatalog.map((scenario) => [scenario.id, 5000])),
+    );
     expect(career.completionPercent).toBe(100);
     expect(career.nextUnlock).toBeNull();
-    expect(career.unlockedScenarioIds).toHaveLength(8);
+    expect(career.unlockedScenarioIds).toHaveLength(50);
   });
 });
 

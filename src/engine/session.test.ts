@@ -7,24 +7,24 @@ describe('session persistence', () => {
     const state = createInitialState(defaultScenario);
     state.elapsedSeconds = 71;
     state.paused = false;
-    const restored = restoreSession(serializeSession('alpha', state), scenarioCatalog);
+    const restored = restoreSession(serializeSession('ist', state), scenarioCatalog);
 
     expect(restored?.state.elapsedSeconds).toBe(71);
     expect(restored?.state.paused).toBe(true);
-    expect(restored?.scenarioId).toBe('alpha');
+    expect(restored?.scenarioId).toBe('ist');
   });
 
   it('rejects sessions with unknown airport flows', () => {
     const state = createInitialState(defaultScenario);
     state.flowId = 'missing-flow';
-    const restored = restoreSession(serializeSession('alpha', state), scenarioCatalog);
+    const restored = restoreSession(serializeSession('ist', state), scenarioCatalog);
 
     expect(restored).toBeNull();
   });
 
   it('accepts an older valid record by seeding a timeline from live events', () => {
     const state = createInitialState(defaultScenario);
-    const record = JSON.parse(serializeSession('alpha', state)) as { state: Record<string, unknown> };
+    const record = JSON.parse(serializeSession('ist', state)) as { state: Record<string, unknown> };
     delete record.state.eventTimeline;
     const restored = restoreSession(JSON.stringify(record), scenarioCatalog);
 

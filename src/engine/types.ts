@@ -7,7 +7,12 @@ export type NavigationMode = 'route' | 'direct' | 'hold';
 export type SpeedMode = 'normal' | 'assigned';
 export type WakeCategory = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
 export type GameMode = 'beginner' | 'normal' | 'advanced' | 'expert';
-export type ScenarioId = 'alpha' | 'coastal' | 'metro' | 'highland' | 'strait' | 'nordic' | 'desert' | 'river';
+export type ScenarioId =
+  | 'ist' | 'atl' | 'dxb' | 'hnd' | 'dfw' | 'pvg' | 'ord' | 'lhr' | 'can' | 'den'
+  | 'del' | 'icn' | 'lax' | 'cdg' | 'pek' | 'sin' | 'ams' | 'mad' | 'szx' | 'kul'
+  | 'fra' | 'bkk' | 'jfk' | 'hkg' | 'mco' | 'bcn' | 'tfu' | 'bom' | 'mia' | 'las'
+  | 'cgk' | 'sfo' | 'doh' | 'clt' | 'pkx' | 'jed' | 'sea' | 'mnl' | 'phx' | 'fco'
+  | 'hgh' | 'sha' | 'ckg' | 'kmg' | 'xiy' | 'saw' | 'iah' | 'tpe' | 'yyz' | 'gru';
 export type CareerUnlockKind = 'scenario' | 'mode' | 'operation';
 
 /**
@@ -150,6 +155,18 @@ export interface RadarWorld {
   trafficExits: TrafficExit[];
   flowConfigurations: FlowConfiguration[];
   activeFlowId?: string;
+  /** Geographic context used by the tactical sector chart. Stylized shapes
+   are game-only and are never a substitute for current aeronautical charts. */
+  environment?: {
+    terrain: 'flat' | 'rolling' | 'highland' | 'mountain' | 'desert' | 'coastal' | 'island';
+    urbanDensity: 'urban' | 'metropolis';
+    cityBearing: number;
+    waterBearing?: number;
+    mountainBearing?: number;
+    elevationFt: number;
+    city: string;
+    icao: string;
+  };
 }
 
 export interface Conflict {

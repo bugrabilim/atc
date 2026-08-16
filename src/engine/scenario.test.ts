@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { planTraffic } from './trafficDirector';
 import { scenarioCatalog, worldWithFlow } from './scenario';
+import { AIRPORT_DEFINITIONS } from './airportCatalog';
 
 describe('airport scenario catalog', () => {
   it('offers distinct airport packages with briefings, procedures and replayable flows', () => {
-    expect(scenarioCatalog).toHaveLength(8);
+    expect(scenarioCatalog).toHaveLength(50);
+    expect(scenarioCatalog).toHaveLength(AIRPORT_DEFINITIONS.length);
+    expect(scenarioCatalog.slice(0, 3).map((scenario) => scenario.id)).toEqual(['ist', 'atl', 'dxb']);
     expect(new Set(scenarioCatalog.map((scenario) => scenario.id)).size).toBe(scenarioCatalog.length);
 
     for (const scenario of scenarioCatalog) {
@@ -15,13 +18,15 @@ describe('airport scenario catalog', () => {
       expect(scenario.world.trafficExits.length).toBeGreaterThanOrEqual(1);
       expect(scenario.world.procedures.some((procedure) => procedure.kind === 'arrival')).toBe(true);
       expect(scenario.world.procedures.some((procedure) => procedure.kind === 'departure')).toBe(true);
+      expect(scenario.world.environment?.icao).toBe(scenario.icao);
+      expect(scenario.runwayCount).toBeGreaterThan(0);
     }
   });
 
   it('keeps every traffic entry, exit and procedure internally resolvable', () => {
     for (const scenario of scenarioCatalog) {
       const fixIds = new Set(scenario.world.fixes.map((fix) => fix.id));
-      const runwayIds = new Set(scenario.world.runways.map((runway) => runway.id));
+      const runwayIds = new Set(scenario.world.runways.flatMap((runway) => [runway.id, runway.reciprocal]));
       const procedures = new Map(scenario.world.procedures.map((procedure) => [procedure.id, procedure]));
 
       for (const procedure of scenario.world.procedures) {

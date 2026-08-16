@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { difficultyConfig } from '../engine/difficulty';
 import type { Aircraft, GameMode, Procedure } from '../engine/types';
 import type { CoachAdvice } from '../engine/controllerCoach';
@@ -45,6 +45,7 @@ export function CommandPanel({
   onNext,
 }: CommandPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [touchControlsOpen, setTouchControlsOpen] = useState(false);
   const selected = aircraft.find((item) => item.callsign === selectedCallsign) ?? null;
   const modeConfig = difficultyConfig(mode);
   const primaryFix = fixIds.find((item) => item.startsWith('FINAL')) ?? fixIds[0];
@@ -110,19 +111,24 @@ export function CommandPanel({
         <button type="button" className="next-aircraft" onClick={onNext}>SONRAKİ · TAB</button>
       </div>
 
-      <div className="vector-control" aria-label="Dokunmatik vektör kontrolleri">
-        <div><span>HEADING</span><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', -30)}>−30°</button><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', -10)}>−10°</button><b>{selected ? String(Math.round(selected.targetHeading)).padStart(3, '0') : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', 10)}>+10°</button><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', 30)}>+30°</button></div>
-        <div><span>ALTITUDE</span><button type="button" disabled={!selected} onClick={() => relativeCommand('altitude', -1000)}>−1000</button><b>{selected ? `FL${String(Math.round(selected.targetAltitude / 100)).padStart(3, '0')}` : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('altitude', 1000)}>+1000</button></div>
-        <div><span>SPEED</span><button type="button" disabled={!selected} onClick={() => relativeCommand('speed', -20)}>−20</button><b>{selected ? Math.round(selected.targetSpeed) : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('speed', 20)}>+20</button></div>
-      </div>
+      <button type="button" className="touch-controls-toggle" aria-expanded={touchControlsOpen} onClick={() => setTouchControlsOpen((current) => !current)}>
+        {touchControlsOpen ? 'VEKTÖRLERİ KAPAT' : 'HEADING · ALTITUDE · SPEED'} <span>{touchControlsOpen ? '⌄' : '⌃'}</span>
+      </button>
+      <div className={`command-panel__advanced${touchControlsOpen ? ' is-open' : ''}`}>
+        <div className="vector-control" aria-label="Dokunmatik vektör kontrolleri">
+          <div><span>HEADING</span><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', -30)}>−30°</button><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', -10)}>−10°</button><b>{selected ? String(Math.round(selected.targetHeading)).padStart(3, '0') : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', 10)}>+10°</button><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', 30)}>+30°</button></div>
+          <div><span>ALTITUDE</span><button type="button" disabled={!selected} onClick={() => relativeCommand('altitude', -1000)}>−1000</button><b>{selected ? `FL${String(Math.round(selected.targetAltitude / 100)).padStart(3, '0')}` : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('altitude', 1000)}>+1000</button></div>
+          <div><span>SPEED</span><button type="button" disabled={!selected} onClick={() => relativeCommand('speed', -20)}>−20</button><b>{selected ? Math.round(selected.targetSpeed) : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('speed', 20)}>+20</button></div>
+        </div>
 
-      {coach.command && coach.callsign === selectedCallsign ? (
-        <button type="button" className={`coach-command coach-command--${coach.tone}`} onClick={() => onCoachCommand(coach)}>
-          <span>KOÇ · {coach.label}</span>
-          <b>{coach.command}</b>
-          <small>{coach.title}</small>
-        </button>
-      ) : null}
+        {coach.command && coach.callsign === selectedCallsign ? (
+          <button type="button" className={`coach-command coach-command--${coach.tone}`} onClick={() => onCoachCommand(coach)}>
+            <span>KOÇ · {coach.label}</span>
+            <b>{coach.command}</b>
+            <small>{coach.title}</small>
+          </button>
+        ) : null}
+      </div>
 
       <div className="quick-command-row" aria-label="Hızlı komutlar">
         {quickCommands.map((item) => (

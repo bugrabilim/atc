@@ -22,6 +22,11 @@ describe('ILS state machine', () => {
     const runway = world.runways.find((item) => item.id === '34L');
     if (!runway) throw new Error('runway missing');
     const glideAtPosition = glideslopeAltitude(3.8);
+    const radians = runway.heading * Math.PI / 180;
+    aircraft.position = {
+      x: runway.center.x - Math.sin(radians) * 3.8,
+      y: runway.center.y + Math.cos(radians) * 3.8,
+    };
 
     aircraft.altitude = glideAtPosition - 50;
     expect(guideApproach(aircraft, world, 2).aircraft.approach?.status).toBe('glideslope');
@@ -38,4 +43,3 @@ describe('ILS state machine', () => {
     expect(result.aircraft.approach?.status).toBe('tower');
   });
 });
-
