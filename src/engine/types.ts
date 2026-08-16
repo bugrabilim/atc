@@ -29,6 +29,11 @@ export interface Aircraft {
   performance: AircraftPerformance;
   /** Suggested arrival runway from the traffic flow. The controller may still assign another active runway. */
   assignedRunway?: string;
+  priority?: {
+    kind: 'medical' | 'minimumFuel';
+    deadlineAt: number;
+    alertRaised: boolean;
+  };
   approach?: {
     runwayId: string;
     status: ApproachStatus;

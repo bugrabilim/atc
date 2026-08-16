@@ -9,14 +9,18 @@ interface MissionPanelProps {
   trafficLevel: number;
   bestScore: number;
   bestLandings: number;
+  priorityTraffic: Aircraft[];
   events: GameEvent[];
 }
 
-export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, bestScore, bestLandings, events }: MissionPanelProps) {
+export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, bestScore, bestLandings, priorityTraffic, events }: MissionPanelProps) {
   const trainingAircraft = aircraft.find((item) => item.callsign === 'TK1953');
   const approachCaptured = trainingAircraft?.approach?.status === 'captured';
   const landingCleared = trainingAircraft?.approach?.landingCleared;
-  const mission = landed > 0
+  const priorityMission = priorityTraffic.find((item) => item.priority && !item.priority.alertRaised);
+  const mission = priorityMission
+    ? `${priorityMission.callsign} öncelikli trafik. ${priorityMission.priority?.kind === 'minimumFuel' ? 'Minimum yakıt' : 'Tıbbi uçuş'}: yaklaşmayı hızlandır ve güvenli ilk iniş sırasına al.`
+    : landed > 0
     ? nextMission(landed, score)
     : approachCaptured && !landingCleared
       ? 'TK1953 ILS üzerinde. Pist geçmeden LAND komutuyla iniş izni ver.'

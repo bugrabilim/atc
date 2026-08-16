@@ -160,6 +160,7 @@ export function App() {
           trafficLevel={state.trafficLevel}
           bestScore={career.bestScore}
           bestLandings={career.bestLandings}
+          priorityTraffic={state.aircraft.filter((item) => item.priority)}
           events={state.eventLog}
         />
       </div>
@@ -170,6 +171,7 @@ export function App() {
           aircraft={state.aircraft}
           conflicts={state.conflicts}
           selectedCallsign={state.selectedCallsign}
+          elapsedSeconds={state.elapsedSeconds}
           onSelect={selectAircraft}
         />
         <FlightStripList

@@ -51,6 +51,19 @@ export function trafficProfile(spawned: number) {
   };
 }
 
+function createPriorityTraffic(aircraft: Aircraft, elapsedSeconds: number): Aircraft {
+  if (aircraft.phase !== 'arrival') return aircraft;
+  const kind = aircraft.callsign.endsWith('2') || aircraft.callsign.endsWith('9') ? 'minimumFuel' : 'medical';
+  return {
+    ...aircraft,
+    priority: {
+      kind,
+      deadlineAt: elapsedSeconds + (kind === 'minimumFuel' ? 155 : 210),
+      alertRaised: false,
+    },
+  };
+}
+
 export function landingClearanceStatus(state: GameState, callsign: string, world: RadarWorld) {
   const aircraft = state.aircraft.find((item) => item.callsign === callsign);
   if (!aircraft?.approach) return { ok: false, message: 'Önce bir ILS yaklaşması başlatmalısın.' };
@@ -198,6 +211,7 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
     result.event ? appendEvent(events, result.event) : events
   ), state.eventLog);
   const elapsedSeconds = state.elapsedSeconds + boundedDt;
+  const priorityLanded = landedAircraft.filter((item) => item.priority);
 
   if (landedAircraft.length > 0) {
     runwayAvailableAt = { ...runwayAvailableAt };
@@ -207,7 +221,15 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
     eventLog = appendEvent(eventLog, {
       id: `landing-${Math.round(elapsedSeconds * 10)}`,
       type: 'success',
-      message: `${landedAircraft.map((item) => item.callsign).join(', ')} · iniş tamamlandı (+100)`,
+      message: `${landedAircraft.map((item) => item.callsign).join(', ')} · iniş tamamlandı (+${100 + (priorityLanded.length > 0 ? 150 : 0)})`,
+    });
+  }
+
+  if (priorityLanded.length > 0) {
+    eventLog = appendEvent(eventLog, {
+      id: `priority-landing-${Math.round(elapsedSeconds * 10)}`,
+      type: 'success',
+      message: `${priorityLanded.map((item) => item.callsign).join(', ')} · öncelikli trafik güvenle indirildi (+150)`,
     });
   }
 
@@ -230,15 +252,18 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
   const profile = trafficProfile(spawned);
   if (elapsedSeconds >= nextTrafficAt && aircraft.length < profile.maxAircraft) {
     const incoming = spawnTraffic(spawned);
-    if (!aircraft.some((item) => item.callsign === incoming.callsign)) {
-      aircraft = [...aircraft, incoming];
+    const scheduledIncoming = spawned > 0 && spawned % 6 === 0 ? createPriorityTraffic(incoming, elapsedSeconds) : incoming;
+    if (!aircraft.some((item) => item.callsign === scheduledIncoming.callsign)) {
+      aircraft = [...aircraft, scheduledIncoming];
       spawned += 1;
       eventLog = appendEvent(eventLog, {
         id: `traffic-${spawned}`,
-        type: 'info',
-        message: incoming.phase === 'arrival'
-          ? `${incoming.callsign} sahaya girdi · planlanan pist ${incoming.assignedRunway ?? 'ATC'}`
-          : `${incoming.callsign} sahaya girdi · kalkış trafiği`,
+        type: scheduledIncoming.priority ? 'warning' : 'info',
+        message: scheduledIncoming.priority
+          ? `${scheduledIncoming.callsign} ÖNCELİKLİ · ${scheduledIncoming.priority.kind === 'minimumFuel' ? 'minimum yakıt' : 'tıbbi uçuş'} · inişe öncelik ver`
+          : scheduledIncoming.phase === 'arrival'
+            ? `${scheduledIncoming.callsign} sahaya girdi · planlanan pist ${scheduledIncoming.assignedRunway ?? 'ATC'}`
+            : `${scheduledIncoming.callsign} sahaya girdi · kalkış trafiği`,
       });
     }
     nextTrafficAt += profile.spawnInterval;
@@ -250,6 +275,20 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
       id: `traffic-level-${nextTrafficLevel}`,
       type: 'warning',
       message: `SEKTÖR YOĞUNLUĞU ${nextTrafficLevel}/5 · daha sık trafik ve daha dar kapasite`,
+    });
+  }
+
+  const expiredPriority = aircraft.filter((item) => item.priority && !item.priority.alertRaised && item.priority.deadlineAt <= elapsedSeconds);
+  if (expiredPriority.length > 0) {
+    aircraft = aircraft.map((item) => (
+      expiredPriority.includes(item) && item.priority
+        ? { ...item, priority: { ...item.priority, alertRaised: true } }
+        : item
+    ));
+    eventLog = appendEvent(eventLog, {
+      id: `priority-expired-${Math.round(elapsedSeconds * 10)}`,
+      type: 'danger',
+      message: `${expiredPriority.map((item) => item.callsign).join(', ')} · öncelik süresi aşıldı (-150)`,
     });
   }
 
@@ -272,7 +311,7 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
     aircraft,
     conflicts,
     landed: state.landed + landedAircraft.length,
-    score: Math.max(0, state.score + landedAircraft.length * 100 + handedOffAircraft.length * 50 - newLossPairs.length * 250),
+    score: Math.max(0, state.score + landedAircraft.length * 100 + priorityLanded.length * 150 + handedOffAircraft.length * 50 - newLossPairs.length * 250 - expiredPriority.length * 150),
     spawned,
     trafficLevel: nextTrafficLevel,
     nextTrafficAt,

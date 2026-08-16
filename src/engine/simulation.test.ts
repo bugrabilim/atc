@@ -49,4 +49,13 @@ describe('stepGame', () => {
     expect(trafficProfile(9)).toMatchObject({ level: 4, maxAircraft: 8 });
     expect(trafficProfile(99)).toMatchObject({ level: 5, maxAircraft: 9 });
   });
+
+  it('introduces a timed priority arrival at higher traffic volume', () => {
+    const state = structuredClone(initialState);
+    state.spawned = 6;
+    state.nextTrafficAt = 0;
+    const next = stepGame(state, world, 0.1);
+
+    expect(next.aircraft.some((item) => item.priority?.deadlineAt)).toBe(true);
+  });
 });

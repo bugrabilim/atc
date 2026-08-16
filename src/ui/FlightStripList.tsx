@@ -6,10 +6,11 @@ interface FlightStripListProps {
   aircraft: Aircraft[];
   conflicts: Conflict[];
   selectedCallsign: string | null;
+  elapsedSeconds: number;
   onSelect: (callsign: string) => void;
 }
 
-export function FlightStripList({ aircraft, conflicts, selectedCallsign, onSelect }: FlightStripListProps) {
+export function FlightStripList({ aircraft, conflicts, selectedCallsign, elapsedSeconds, onSelect }: FlightStripListProps) {
   return (
     <aside className="flight-panel" aria-label="Aktif uçuşlar">
       <div className="panel-heading">
@@ -32,7 +33,7 @@ export function FlightStripList({ aircraft, conflicts, selectedCallsign, onSelec
             >
               <span className="flight-strip__lead">
                 <strong>{item.callsign}</strong>
-                <small>{item.type} · {item.approach ? `ILS ${item.approach.runwayId}` : nextFix ? `${item.navigation?.mode === 'hold' ? 'HOLD' : '→'} ${nextFix}` : item.phase === 'arrival' ? `PLAN ${item.assignedRunway ?? 'ATC'}` : 'KALKIŞ'}</small>
+                <small>{item.type} · {item.priority ? `ÖNCELİK ${Math.max(0, Math.ceil(item.priority.deadlineAt - elapsedSeconds))}sn` : item.approach ? `ILS ${item.approach.runwayId}` : nextFix ? `${item.navigation?.mode === 'hold' ? 'HOLD' : '→'} ${nextFix}` : item.phase === 'arrival' ? `PLAN ${item.assignedRunway ?? 'ATC'}` : 'KALKIŞ'}</small>
               </span>
               <span className="flight-strip__numbers">
                 <b>FL{String(Math.round(item.altitude / 100)).padStart(3, '0')}</b>

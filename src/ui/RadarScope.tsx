@@ -129,7 +129,7 @@ function drawRadar(
     const point = worldToScreen(item.position, viewport);
     const selected = selectedCallsign === item.callsign;
     const conflict = conflictFor(item.callsign, conflicts);
-    const color = conflict?.severity === 'loss' ? '#ff5d5d' : conflict ? '#ffb648' : selected ? '#ffffff' : item.phase === 'arrival' ? '#67e8c4' : '#79b9ff';
+    const color = conflict?.severity === 'loss' ? '#ff5d5d' : conflict ? '#ffb648' : item.priority ? '#ffb648' : selected ? '#ffffff' : item.phase === 'arrival' ? '#67e8c4' : '#79b9ff';
     const headingRadians = (item.heading * Math.PI) / 180;
     const targetRadians = (item.targetHeading * Math.PI) / 180;
     const activeFix = item.navigation?.fixIds[item.navigation.currentLegIndex];
@@ -179,7 +179,11 @@ function drawRadar(
     ctx.textAlign = 'left';
     ctx.fillText(item.callsign, leaderEnd.x + 3, leaderEnd.y - 2);
     ctx.fillText(`${currentFlightLevel}${trendSymbol}${targetFlightLevel}  ${Math.round(item.speed)}`, leaderEnd.x + 3, leaderEnd.y + 10);
-    if (item.approach) {
+    if (item.priority) {
+      ctx.fillStyle = '#ffb648';
+      ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';
+      ctx.fillText(item.priority.alertRaised ? 'ÖNCELİK GECİKTİ' : 'ÖNCELİK', leaderEnd.x + 3, leaderEnd.y + 21);
+    } else if (item.approach) {
       ctx.fillStyle = '#67e8c4';
       ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';
       ctx.fillText(`ILS ${item.approach.runwayId} · ${item.approach.status === 'captured' ? item.approach.landingCleared ? 'LAND' : 'CAPTURED' : 'ARMED'}`, leaderEnd.x + 3, leaderEnd.y + 21);
