@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildDebrief, controllerRank, nextMission, trainingGuide } from './progression';
+import { ACHIEVEMENTS, ACHIEVEMENT_TOTAL, buildDebrief, controllerRank, earnedAwards, isAchievementId, nextMission, trainingGuide } from './progression';
 import { initialState } from './scenario';
 
 describe('controller progression', () => {
@@ -16,6 +16,29 @@ describe('controller progression', () => {
 });
 
 describe('debrief', () => {
+  it('defines a shared catalogue of at least 50 achievements', () => {
+    expect(ACHIEVEMENTS.length).toBeGreaterThanOrEqual(50);
+    expect(ACHIEVEMENT_TOTAL).toBe(ACHIEVEMENTS.length);
+    expect(new Set(ACHIEVEMENTS.map((achievement) => achievement.id)).size).toBe(ACHIEVEMENTS.length);
+    expect(isAchievementId('first-touchdown')).toBe(true);
+    expect(isAchievementId('unknown-achievement')).toBe(false);
+  });
+
+  it('unlocks multiple relevant achievements from a strong session', () => {
+    const state = structuredClone(initialState);
+    state.landed = 6;
+    state.handoffs = 3;
+    state.score = 160;
+    state.peakSkill = 12;
+    state.spawned = 8;
+    state.elapsedSeconds = 600;
+    const ids = earnedAwards(state).map((award) => award.id);
+
+    expect(ids).toContain('landing-six');
+    expect(ids).toContain('wake-keeper');
+    expect(ids).toContain('high-workload');
+  });
+
   it('reports a safety-focused grade from session outcomes', () => {
     const state = structuredClone(initialState);
     state.landed = 3;
