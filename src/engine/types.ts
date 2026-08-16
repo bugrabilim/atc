@@ -141,6 +141,14 @@ export interface GameState {
   lastTrackAt: number;
   /** Instructions acknowledged by a pilot and waiting for execution. */
   pendingInstructions: PendingInstruction[];
+  metrics: SessionMetrics;
+}
+
+export interface SessionMetrics {
+  separationLosses: number;
+  goArounds: number;
+  missedHandoffs: number;
+  expiredPriorities: number;
 }
 
 export interface GameEvent {

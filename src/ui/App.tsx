@@ -6,9 +6,11 @@ import { landingClearanceStatus, stepGame } from '../engine/simulation';
 import type { GameState } from '../engine/types';
 import type { GameScenario } from '../engine/scenario';
 import { CommandPanel } from './CommandPanel';
+import { DebriefPanel } from './DebriefPanel';
 import { FlightStripList } from './FlightStripList';
 import { MissionPanel } from './MissionPanel';
 import { RadarScope } from './RadarScope';
+import { buildDebrief } from '../engine/progression';
 
 interface CareerStats {
   bestScore: number;
@@ -47,6 +49,7 @@ export function App() {
     type: 'info',
     message: 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. Çağrı kodunun ilk harflerini yazıp Tab ile tamamlayabilirsin.',
   });
+  const [debriefOpen, setDebriefOpen] = useState(false);
   const activeWorld = useMemo(() => worldWithFlow(scenario.world, state.flowId), [scenario.world, state.flowId]);
   const activeFlow = activeWorld.flowConfigurations.find((item) => item.id === state.flowId) ?? activeWorld.flowConfigurations[0];
   const activeArrivalRunways = activeWorld.runways.filter((item) => item.active && (item.operation === 'arrival' || item.operation === 'mixed'));
@@ -129,12 +132,14 @@ export function App() {
     setState(createInitialState(scenario));
     setCommand('');
     setFeedback({ type: 'info', message: 'Senaryo yeniden başlatıldı.' });
+    setDebriefOpen(false);
   };
   const selectScenario = (nextScenario: GameScenario) => {
     setScenario(nextScenario);
     setState(createInitialState(nextScenario));
     setCommand('');
     setFeedback({ type: 'info', message: `${nextScenario.label} sektörü yüklendi.` });
+    setDebriefOpen(false);
   };
   const selectFlow = (flowId: string) => {
     const flow = scenario.world.flowConfigurations.find((item) => item.id === flowId);
@@ -143,6 +148,14 @@ export function App() {
     setFeedback({ type: 'info', message: `${flow.label} operasyonu aktif. Yeni trafik bu pist akışına göre planlanacak.` });
   };
   const severeConflicts = state.conflicts.filter((item) => item.severity === 'loss').length;
+  const endShift = () => {
+    setState((current) => ({ ...current, paused: true }));
+    setDebriefOpen(true);
+  };
+  const continueShift = () => {
+    setState((current) => ({ ...current, paused: false }));
+    setDebriefOpen(false);
+  };
 
   return (
     <main className="app-shell">
@@ -165,6 +178,7 @@ export function App() {
           ))}
           <button type="button" onClick={togglePause}>{state.paused ? 'DEVAM' : 'DURAKLAT'}</button>
           <button type="button" onClick={cycleSpeed}>{state.timeScale}×</button>
+          <button type="button" onClick={endShift}>BİTİR</button>
           <button type="button" onClick={reset}>YENİLE</button>
         </div>
       </header>
@@ -233,6 +247,7 @@ export function App() {
         onSubmit={submitCommand}
         onSelect={selectAircraft}
       />
+      {debriefOpen ? <DebriefPanel report={buildDebrief(state)} state={state} onRestart={reset} onContinue={continueShift} /> : null}
     </main>
   );
 }

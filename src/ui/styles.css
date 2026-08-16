@@ -123,6 +123,24 @@ button { touch-action: manipulation; }
 .command-feedback--success { color: var(--green); }
 .command-feedback--error { color: #ff8585; }
 
+.debrief-backdrop { position: fixed; z-index: 10; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(0, 7, 4, .8); backdrop-filter: blur(5px); }
+.debrief-panel { width: min(660px, 100%); display: grid; grid-template-columns: auto 1fr; gap: 16px; padding: 22px; border: 1px solid rgba(110,243,176,.32); border-radius: 14px; background: #07130f; box-shadow: 0 22px 80px rgba(0,0,0,.55); }
+.debrief-panel h2 { margin: 5px 0 7px; color: #e7fff4; font: 700 17px/1.15 IBM Plex Mono, monospace; }
+.debrief-panel p { margin: 0; color: #93b5a4; font: 500 10px/1.45 IBM Plex Mono, monospace; }
+.debrief-grade { width: 68px; height: 68px; display: grid; place-items: center; border: 2px solid; border-radius: 10px; font: 700 38px/1 IBM Plex Mono, monospace; }
+.debrief-grade--a { color: var(--green); background: rgba(110,243,176,.1); }
+.debrief-grade--b { color: var(--cyan); background: rgba(103,232,196,.08); }
+.debrief-grade--c { color: var(--warning); background: rgba(255,182,72,.08); }
+.debrief-grade--d { color: var(--danger); background: rgba(255,104,104,.08); }
+.debrief-metrics { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+.debrief-metrics span { padding: 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); font: 600 8px IBM Plex Mono, monospace; }
+.debrief-metrics b { display: block; margin-top: 5px; color: var(--green); font-size: 18px; }
+.debrief-columns { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.debrief-columns p { margin-top: 8px; }
+.debrief-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
+.debrief-actions button { min-height: 40px; padding: 0 14px; color: #dff8ec; border: 1px solid var(--line); border-radius: 7px; background: #0a1a14; font: 700 9px IBM Plex Mono, monospace; cursor: pointer; }
+.debrief-actions .is-primary { color: #04120c; border-color: var(--green); background: var(--green); }
+
 @media (max-width: 900px) {
   .top-bar { grid-template-columns: 1fr auto; min-height: 58px; padding: 8px 10px; }
   .top-status { display: none; }
@@ -154,6 +172,10 @@ button { touch-action: manipulation; }
   .mission-score { gap: 8px; font-size: 8px; }
   .mission-score span:nth-last-child(2) { display: none; }
   .mission-score b { font-size: 10px; }
+  .debrief-panel { grid-template-columns: 52px 1fr; padding: 16px; gap: 12px; }
+  .debrief-grade { width: 52px; height: 52px; font-size: 27px; }
+  .debrief-panel h2 { font-size: 13px; }
+  .debrief-columns { grid-template-columns: 1fr; gap: 12px; }
 }
 
 @media (orientation: landscape) and (max-height: 560px) {

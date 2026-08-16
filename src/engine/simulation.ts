@@ -388,5 +388,11 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
     trackHistory,
     lastTrackAt: shouldSampleTrack ? elapsedSeconds : state.lastTrackAt,
     pendingInstructions,
+    metrics: {
+      separationLosses: state.metrics.separationLosses + newLossPairs.length,
+      goArounds: state.metrics.goArounds + missedAircraft.length,
+      missedHandoffs: state.metrics.missedHandoffs + missedHandoffAircraft.length,
+      expiredPriorities: state.metrics.expiredPriorities + expiredPriority.length,
+    },
   };
 }
