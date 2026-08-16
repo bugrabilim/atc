@@ -105,6 +105,8 @@ button { touch-action: manipulation; }
 .operations-drawer__content { display: flex; flex-wrap: wrap; gap: 7px; padding: 8px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 6px 6px; background: rgba(3, 12, 8, .82); }
 .operations-drawer__content span { padding: 5px 7px; color: var(--muted); border-radius: 4px; background: rgba(19, 58, 42, .42); font: 600 9px IBM Plex Mono, monospace; }
 .operations-drawer__content b { color: #dff8ec; }
+.career-progress { grid-column: 1 / -1; margin: 0 0 5px; color: #a8cbb9; font: 600 10px/1.4 IBM Plex Mono, monospace; }
+.career-progress b { color: var(--cyan); }
 .assistant-drawer { grid-column: 1 / -1; min-width: 0; }
 .assistant-drawer summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 26px; padding: 4px 8px; color: var(--cyan); border: 1px solid rgba(103,232,196,.18); border-radius: 5px; background: rgba(6,28,20,.52); cursor: pointer; font: 700 8px IBM Plex Mono, monospace; list-style: none; }
 .assistant-drawer summary::-webkit-details-marker { display: none; }
