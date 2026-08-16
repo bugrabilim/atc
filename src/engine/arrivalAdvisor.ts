@@ -3,6 +3,7 @@ import { activeFixId } from './navigation';
 import type { Aircraft, RadarWorld, Runway, Vector2 } from './types';
 import { runwayWindComponents } from './weather';
 import { bearingTo } from './navigation';
+import { requiredWakeSeparationNm } from './wake';
 
 export interface ArrivalAdvice {
   runwayId: string;
@@ -13,6 +14,10 @@ export interface ArrivalAdvice {
   shouldDescend: boolean;
   crosswindKt: number;
   recommendedHeading: number;
+  leaderCallsign?: string;
+  requiredSpacingNm?: number;
+  spacingRisk: boolean;
+  recommendedSpeed?: number;
 }
 
 function routeDistance(aircraft: Aircraft, runway: Runway, world: RadarWorld) {
@@ -50,6 +55,15 @@ export function arrivalAdvice(aircraft: readonly Aircraft[], world: RadarWorld) 
   for (const runwayId of new Set(candidates.map((item) => item.runway.id))) {
     const runwayCandidates = candidates.filter((item) => item.runway.id === runwayId).sort((first, second) => first.etaSeconds - second.etaSeconds);
     runwayCandidates.forEach((item, index) => {
+      const leader = runwayCandidates[index - 1];
+      const requiredSpacingNm = leader ? requiredWakeSeparationNm(leader.aircraft, item.aircraft) : undefined;
+      // At typical terminal speeds one NM is roughly 15–18 seconds. This is a
+      // tactical early warning, deliberately before the hard separation model.
+      const etaGapSeconds = leader ? item.etaSeconds - leader.etaSeconds : Infinity;
+      const spacingRisk = Boolean(requiredSpacingNm && etaGapSeconds < requiredSpacingNm * 16);
+      const recommendedSpeed = spacingRisk && leader
+        ? Math.max(item.aircraft.performance.minSpeed, Math.min(item.aircraft.targetSpeed - 10, leader.aircraft.speed - 8))
+        : undefined;
       advice.set(item.aircraft.callsign, {
         runwayId,
         sequence: index + 1,
@@ -59,6 +73,10 @@ export function arrivalAdvice(aircraft: readonly Aircraft[], world: RadarWorld) 
         shouldDescend: item.aircraft.altitude > item.recommendedAltitude + 600,
         crosswindKt: runwayWindComponents(world, item.runway).crosswindKt,
         recommendedHeading: item.recommendedHeading,
+        leaderCallsign: leader?.aircraft.callsign,
+        requiredSpacingNm,
+        spacingRisk,
+        recommendedSpeed,
       });
     });
   }
