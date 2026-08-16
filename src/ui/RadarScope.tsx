@@ -93,6 +93,14 @@ function drawRadar(
     if (runway.active && runway.operation === 'arrival') {
       const extension = { x: vector.x * 9, y: vector.y * 9 };
       drawLine(ctx, from, { x: from.x - extension.x, y: from.y - extension.y }, 'rgba(110, 243, 176, 0.32)', 1, [6, 7]);
+      const inboundAircraft = aircraft.find((item) => item.approach?.runwayId === runway.id);
+      if (inboundAircraft) {
+        drawLine(ctx, from, { x: from.x - extension.x, y: from.y - extension.y }, '#67e8c4', 2, [4, 4]);
+        ctx.fillStyle = '#67e8c4';
+        ctx.font = '700 9px IBM Plex Mono, ui-monospace, monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`ILS ${runway.id}`, from.x - extension.x + 5, from.y - extension.y - 5);
+      }
     }
     ctx.fillStyle = color;
     ctx.font = '700 10px IBM Plex Mono, ui-monospace, monospace';
@@ -164,6 +172,11 @@ function drawRadar(
     ctx.textAlign = 'left';
     ctx.fillText(item.callsign, leaderEnd.x + 3, leaderEnd.y - 2);
     ctx.fillText(`${currentFlightLevel}${trendSymbol}${targetFlightLevel}  ${Math.round(item.speed)}`, leaderEnd.x + 3, leaderEnd.y + 10);
+    if (item.approach) {
+      ctx.fillStyle = '#67e8c4';
+      ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';
+      ctx.fillText(`ILS ${item.approach.runwayId} · ${item.approach.status === 'captured' ? 'CAPTURED' : 'ARMED'}`, leaderEnd.x + 3, leaderEnd.y + 21);
+    }
   }
 
   ctx.fillStyle = 'rgba(110, 243, 176, 0.48)';

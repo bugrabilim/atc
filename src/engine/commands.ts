@@ -5,6 +5,7 @@ const RE_NUMBER = /^\d{1,5}$/;
 const HEADING_ALIASES = new Set(['HDG', 'H', 'HEADING']);
 const SPEED_ALIASES = new Set(['SPD', 'S', 'SPEED']);
 const ALTITUDE_ALIASES = new Set(['ALT', 'A', 'ALTITUDE']);
+const APPROACH_ALIASES = new Set(['APP', 'ILS']);
 
 function resolveCallsign(token: string, callsigns: string[]): string | null {
   const upper = token.toUpperCase();
@@ -17,6 +18,7 @@ export function parseCommandLine(
   input: string,
   callsigns: string[],
   selectedCallsign: string | null,
+  runwayIds: string[] = [],
 ): ParseResult {
   const compact = input.trim().toUpperCase().replace(/(HDG|SPD|ALT|FL)(\d)/g, '$1 $2');
   if (!compact) return { ok: false, error: 'Bir komut yaz veya hızlı komutlardan birini seç.' };
@@ -36,8 +38,24 @@ export function parseCommandLine(
 
   const keyword = body[0];
   const rawValue = body[1];
-  if (!keyword || !rawValue || !RE_NUMBER.test(rawValue)) {
-    return { ok: false, error: `${callsign} için örnek: HDG 090, FL100 veya SPD 220.` };
+  if (!keyword || !rawValue) {
+    return { ok: false, error: `${callsign} için örnek: HDG 090, FL100, SPD 220 veya ILS 34L.` };
+  }
+
+  if (APPROACH_ALIASES.has(keyword)) {
+    const runwayId = rawValue.toUpperCase();
+    if (runwayIds.length > 0 && !runwayIds.includes(runwayId)) {
+      return { ok: false, error: `${runwayId} bu senaryoda tanımlı bir pist değil.` };
+    }
+    return {
+      ok: true,
+      command: { kind: 'approach', callsign, runwayId },
+      normalized: `${callsign} ILS ${runwayId}`,
+    };
+  }
+
+  if (!RE_NUMBER.test(rawValue)) {
+    return { ok: false, error: `${callsign} için örnek: HDG 090, FL100, SPD 220 veya ILS 34L.` };
   }
 
   const numericValue = Number(rawValue);
@@ -64,7 +82,7 @@ export function parseCommandLine(
     command = { kind: 'speed', callsign, value: numericValue };
     normalized = `${callsign} SPD ${numericValue}`;
   } else {
-    return { ok: false, error: `“${keyword}” bilinmeyen komut. HDG, FL, ALT veya SPD kullan.` };
+    return { ok: false, error: `“${keyword}” bilinmeyen komut. HDG, FL, ALT, SPD veya ILS kullan.` };
   }
 
   return { ok: true, command, normalized };
@@ -74,13 +92,17 @@ export function applyCommand(stateAircraft: readonly import('./types').Aircraft[
   return stateAircraft.map((aircraft) => {
     if (aircraft.callsign !== command.callsign) return aircraft;
     if (command.kind === 'heading') {
-      return { ...aircraft, targetHeading: command.value, turnDirection: command.direction };
+      return { ...aircraft, targetHeading: command.value, turnDirection: command.direction, approach: undefined };
     }
     if (command.kind === 'altitude') return { ...aircraft, targetAltitude: command.value };
+    if (command.kind === 'approach') {
+      return aircraft.phase === 'arrival'
+        ? { ...aircraft, approach: { runwayId: command.runwayId, status: 'armed' as const } }
+        : aircraft;
+    }
     return {
       ...aircraft,
       targetSpeed: Math.max(aircraft.performance.minSpeed, Math.min(aircraft.performance.maxSpeed, command.value)),
     };
   });
 }
-

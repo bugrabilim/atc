@@ -18,6 +18,7 @@ const quickCommands = [
   { label: 'FL100', command: 'FL100' },
   { label: 'SPD 220', command: 'SPD 220' },
   { label: 'SPD 180', command: 'SPD 180' },
+  { label: 'ILS 34L', command: 'ILS 34L' },
 ];
 
 export function CommandPanel({
@@ -96,7 +97,7 @@ export function CommandPanel({
           autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}
-          placeholder={selectedCallsign ? `${selectedCallsign} HDG 090` : 'Uçağa dokun veya çağrı kodunu yaz'}
+        placeholder={selectedCallsign ? `${selectedCallsign} HDG 090 · ILS 34L` : 'Uçağa dokun veya çağrı kodunu yaz'}
           aria-label="Komut satırı"
         />
         <button type="button" className="send-command" onClick={onSubmit}>UYGULA</button>

@@ -22,5 +22,12 @@ describe('parseCommandLine', () => {
     const result = parseCommandLine('TK1953 DOWN 1000', callsigns, null);
     expect(result.ok).toBe(false);
   });
-});
 
+  it('arms an ILS approach for an available runway', () => {
+    expect(parseCommandLine('TK ILS 34L', callsigns, null, ['34L', '35R'])).toEqual({
+      ok: true,
+      command: { kind: 'approach', callsign: 'TK1953', runwayId: '34L' },
+      normalized: 'TK1953 ILS 34L',
+    });
+  });
+});

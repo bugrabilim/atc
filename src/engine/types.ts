@@ -2,6 +2,7 @@ export type Vector2 = { x: number; y: number };
 
 export type AircraftPhase = 'arrival' | 'departure';
 export type Trend = 'climb' | 'level' | 'descend';
+export type ApproachStatus = 'armed' | 'captured';
 
 export interface AircraftPerformance {
   turnRateDegPerSecond: number;
@@ -25,6 +26,10 @@ export interface Aircraft {
   targetSpeed: number;
   turnDirection: 'shortest' | 'left' | 'right';
   performance: AircraftPerformance;
+  approach?: {
+    runwayId: string;
+    status: ApproachStatus;
+  };
 }
 
 export interface Runway {
@@ -65,14 +70,24 @@ export interface GameState {
   conflicts: Conflict[];
   selectedCallsign: string | null;
   score: number;
+  landed: number;
+  spawned: number;
+  nextTrafficAt: number;
+  eventLog: GameEvent[];
+}
+
+export interface GameEvent {
+  id: string;
+  type: 'info' | 'success' | 'warning';
+  message: string;
 }
 
 export type AircraftCommand =
   | { kind: 'heading'; callsign: string; value: number; direction: 'shortest' | 'left' | 'right' }
   | { kind: 'altitude'; callsign: string; value: number }
-  | { kind: 'speed'; callsign: string; value: number };
+  | { kind: 'speed'; callsign: string; value: number }
+  | { kind: 'approach'; callsign: string; runwayId: string };
 
 export type ParseResult =
   | { ok: true; command: AircraftCommand; normalized: string }
   | { ok: false; error: string; suggestions?: string[] };
-

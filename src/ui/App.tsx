@@ -5,6 +5,7 @@ import { stepGame } from '../engine/simulation';
 import type { GameState } from '../engine/types';
 import { CommandPanel } from './CommandPanel';
 import { FlightStripList } from './FlightStripList';
+import { MissionPanel } from './MissionPanel';
 import { RadarScope } from './RadarScope';
 
 function formatClock(seconds: number) {
@@ -48,6 +49,7 @@ export function App() {
       command,
       snapshot.aircraft.map((item) => item.callsign),
       snapshot.selectedCallsign,
+      world.runways.map((item) => item.id),
     );
     if (!parsed.ok) {
       setFeedback({ type: 'error', message: parsed.error });
@@ -59,7 +61,12 @@ export function App() {
       aircraft: applyCommand(current.aircraft, parsed.command),
     }));
     setCommand('');
-    setFeedback({ type: 'success', message: `${parsed.normalized} · Talimat alındı, uçak kademeli uyguluyor.` });
+    setFeedback({
+      type: 'success',
+      message: parsed.command.kind === 'approach'
+        ? `${parsed.normalized} · ILS silahlandı; localizer ve glideslope yakalanınca otomatik takip başlayacak.`
+        : `${parsed.normalized} · Talimat alındı, uçak kademeli uyguluyor.`,
+    });
   }, [command]);
 
   const togglePause = () => setState((current) => ({ ...current, paused: !current.paused }));
@@ -93,9 +100,17 @@ export function App() {
         </div>
       </header>
 
-      {severeConflicts > 0 ? (
-        <div className="conflict-banner" role="alert">AYIRMA KAYBI · ACİL MÜDAHALE GEREKİYOR</div>
-      ) : null}
+      <div className="game-status">
+        {severeConflicts > 0 ? (
+          <div className="conflict-banner" role="alert">AYIRMA KAYBI · ACİL MÜDAHALE GEREKİYOR</div>
+        ) : null}
+        <MissionPanel
+          aircraft={state.aircraft}
+          score={state.score}
+          landed={state.landed}
+          events={state.eventLog}
+        />
+      </div>
 
       <div className="workspace">
         <RadarScope

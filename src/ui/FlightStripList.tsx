@@ -30,7 +30,7 @@ export function FlightStripList({ aircraft, conflicts, selectedCallsign, onSelec
             >
               <span className="flight-strip__lead">
                 <strong>{item.callsign}</strong>
-                <small>{item.type} · {item.phase === 'arrival' ? 'GELİŞ' : 'KALKIŞ'}</small>
+                <small>{item.type} · {item.approach ? `ILS ${item.approach.runwayId}` : item.phase === 'arrival' ? 'GELİŞ' : 'KALKIŞ'}</small>
               </span>
               <span className="flight-strip__numbers">
                 <b>FL{String(Math.round(item.altitude / 100)).padStart(3, '0')}</b>
@@ -43,4 +43,3 @@ export function FlightStripList({ aircraft, conflicts, selectedCallsign, onSelec
     </aside>
   );
 }
-

@@ -41,8 +41,8 @@ export const world: RadarWorld = {
 
 const aircraft: Aircraft[] = [
   {
-    callsign: 'TK1953', type: 'A321', phase: 'arrival', position: { x: -22, y: -20 },
-    heading: 42, altitude: 10000, speed: 285, targetHeading: 42, targetAltitude: 10000, targetSpeed: 285,
+    callsign: 'TK1953', type: 'A321', phase: 'arrival', position: { x: -1.65, y: 6 },
+    heading: 354, altitude: 1500, speed: 160, targetHeading: 354, targetAltitude: 1500, targetSpeed: 160,
     turnDirection: 'shortest', performance: jet,
   },
   {
@@ -65,5 +65,31 @@ export const initialState: GameState = {
   conflicts: [],
   selectedCallsign: 'TK1953',
   score: 0,
+  landed: 0,
+  spawned: 0,
+  nextTrafficAt: 48,
+  eventLog: [
+    { id: 'welcome', type: 'info', message: 'Eğitim: TK1953 için ILS 34L yaklaşmasını başlat.' },
+  ],
 };
 
+const trafficTemplates: Omit<Aircraft, 'callsign'>[] = [
+  {
+    type: 'A320', phase: 'arrival', position: { x: -12, y: -18 }, heading: 22, altitude: 9000, speed: 260,
+    targetHeading: 22, targetAltitude: 9000, targetSpeed: 260, turnDirection: 'shortest', performance: jet,
+  },
+  {
+    type: 'B738', phase: 'arrival', position: { x: 17, y: -16 }, heading: 326, altitude: 8000, speed: 250,
+    targetHeading: 326, targetAltitude: 8000, targetSpeed: 250, turnDirection: 'shortest', performance: jet,
+  },
+  {
+    type: 'A21N', phase: 'arrival', position: { x: -20, y: 12 }, heading: 140, altitude: 11000, speed: 280,
+    targetHeading: 140, targetAltitude: 11000, targetSpeed: 280, turnDirection: 'shortest', performance: jet,
+  },
+];
+
+export function spawnTraffic(index: number): Aircraft {
+  const template = trafficTemplates[index % trafficTemplates.length];
+  const suffix = String(410 + index * 7).padStart(3, '0');
+  return { ...structuredClone(template), callsign: `TK${suffix}` };
+}
