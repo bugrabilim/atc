@@ -53,6 +53,13 @@ function screenToWorld(point: Vector2, viewport: Viewport): Vector2 {
   };
 }
 
+function initialScale(width: number, height: number, rangeNm: number) {
+  // Phone screens should begin at a usable tactical range instead of trying to
+  // show the entire sector with unreadably small labels.
+  if (width < 760) return Math.max(5.5, Math.min(width, height) / (rangeNm * 1.25));
+  return Math.min(width, height) / (rangeNm * 2.05);
+}
+
 function drawLine(ctx: CanvasRenderingContext2D, from: Vector2, to: Vector2, color: string, width = 1, dash: number[] = []) {
   ctx.save();
   ctx.strokeStyle = color;
@@ -104,7 +111,7 @@ function drawRadar(
 
   ctx.strokeStyle = 'rgba(68, 148, 111, 0.2)';
   ctx.lineWidth = 1;
-  ctx.font = '10px IBM Plex Mono, ui-monospace, monospace';
+  ctx.font = '12px IBM Plex Mono, ui-monospace, monospace';
   ctx.fillStyle = 'rgba(100, 184, 144, 0.46)';
   for (let radiusNm = 10; radiusNm <= world.rangeNm; radiusNm += 10) {
     ctx.beginPath();
@@ -135,7 +142,7 @@ function drawRadar(
       }
     }
     ctx.fillStyle = color;
-    ctx.font = '700 10px IBM Plex Mono, ui-monospace, monospace';
+    ctx.font = '700 12px IBM Plex Mono, ui-monospace, monospace';
     ctx.textAlign = 'center';
     ctx.fillText(runway.id, to.x, to.y - 7);
     ctx.fillText(runway.reciprocal, from.x, from.y + 13);
@@ -244,24 +251,24 @@ function drawRadar(
     const trendSymbol = trend === 'climb' ? '↑' : trend === 'descend' ? '↓' : '—';
     const currentFlightLevel = String(Math.round(item.altitude / 100)).padStart(3, '0');
     const targetFlightLevel = String(Math.round(item.targetAltitude / 100)).padStart(3, '0');
-    const boxWidth = 136;
-    const boxHeight = conflict?.predicted ? 44 : 35;
+    const boxWidth = 174;
+    const boxHeight = conflict?.predicted ? 54 : 43;
     ctx.fillStyle = 'rgba(1, 10, 7, .84)';
     ctx.fillRect(label.x, label.y - 13, boxWidth, boxHeight);
     ctx.strokeStyle = `${color}66`;
     ctx.strokeRect(label.x, label.y - 13, boxWidth, boxHeight);
     labelBoxes.set(item.callsign, { callsign: item.callsign, x: label.x, y: label.y - 13, width: boxWidth, height: boxHeight });
-    ctx.font = `${selected ? '700' : '600'} 10px IBM Plex Mono, ui-monospace, monospace`;
+    ctx.font = `${selected ? '700' : '600'} 12px IBM Plex Mono, ui-monospace, monospace`;
     ctx.fillStyle = color;
     ctx.textAlign = 'left';
     ctx.fillText(`${item.callsign}  ${item.wakeCategory}`, label.x + 4, label.y - 2);
     ctx.fillText(`${currentFlightLevel}${trendSymbol}${targetFlightLevel}  ${Math.round(item.speed)}/${Math.round(item.groundSpeed)}`, label.x + 4, label.y + 10);
-    ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';
+    ctx.font = '700 10px IBM Plex Mono, ui-monospace, monospace';
     ctx.fillStyle = pendingReadback ? '#ffb648' : item.approach?.status === 'tower' ? '#8cffc5' : color;
     ctx.fillText(`${pendingReadback ? 'READBACK · ' : ''}${statusText(item)}`, label.x + 4, label.y + 21);
     if (conflict?.predicted) {
       ctx.fillStyle = '#ffb648';
-      ctx.fillText(`CPA ${conflict.predicted.horizontalNm.toFixed(1)}NM / ${Math.round(conflict.predicted.timeSeconds)}s`, label.x + 4, label.y + 32);
+      ctx.fillText(`CPA ${conflict.predicted.horizontalNm.toFixed(1)}NM / ${Math.round(conflict.predicted.timeSeconds)}s`, label.x + 4, label.y + 37);
     }
   }
 
@@ -273,13 +280,13 @@ function drawRadar(
       const distanceNm = Math.hypot(measurement.to.x - measurement.from.x, measurement.to.y - measurement.from.y);
       const bearing = (Math.atan2(measurement.to.x - measurement.from.x, -(measurement.to.y - measurement.from.y)) * 180 / Math.PI + 360) % 360;
       ctx.fillStyle = '#ffffff';
-      ctx.font = '700 10px IBM Plex Mono, ui-monospace, monospace';
+      ctx.font = '700 12px IBM Plex Mono, ui-monospace, monospace';
       ctx.fillText(`${distanceNm.toFixed(1)}NM / ${String(Math.round(bearing)).padStart(3, '0')}°`, (from.x + to.x) / 2 + 5, (from.y + to.y) / 2 - 5);
     }
   }
 
   ctx.fillStyle = 'rgba(110, 243, 176, 0.45)';
-  ctx.font = '9px IBM Plex Mono, ui-monospace, monospace';
+  ctx.font = '11px IBM Plex Mono, ui-monospace, monospace';
   ctx.textAlign = 'left';
   ctx.fillText(`RANGE ${Math.round(Math.min(width, height) / scale / 2)}NM · ${world.airport}`, 14, height - 14);
 }
@@ -317,7 +324,7 @@ export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCa
       viewportRef.current = {
         width: rect.width,
         height: rect.height,
-        scale: previous?.scale ?? Math.min(rect.width, rect.height) / (world.rangeNm * 2.05),
+        scale: previous?.scale ?? initialScale(rect.width, rect.height, world.rangeNm),
         centerWorld: previous?.centerWorld ?? { x: 0, y: 0 },
       };
       setViewportVersion((value) => value + 1);
@@ -347,7 +354,7 @@ export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCa
   const resetView = useCallback(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
-    viewportRef.current = { ...viewport, scale: Math.min(viewport.width, viewport.height) / (world.rangeNm * 2.05), centerWorld: { x: 0, y: 0 } };
+    viewportRef.current = { ...viewport, scale: initialScale(viewport.width, viewport.height, world.rangeNm), centerWorld: { x: 0, y: 0 } };
     setMeasurement(null);
     setViewportVersion((value) => value + 1);
   }, [world.rangeNm]);
@@ -445,4 +452,3 @@ export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCa
     </div>
   );
 }
-
