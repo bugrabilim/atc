@@ -13,7 +13,7 @@ interface CareerStats {
   bestLandings: number;
 }
 
-const CAREER_STORAGE_KEY = 'istanbul-radar-career-v1';
+const CAREER_STORAGE_KEY = 'airspace-control-career-v1';
 
 function loadCareerStats(): CareerStats {
   try {
@@ -42,7 +42,7 @@ export function App() {
   const [command, setCommand] = useState('');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string }>({
     type: 'info',
-    message: 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. “TK” + Tab ile çağrı kodunu tamamlayabilirsin.',
+    message: 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. Çağrı kodunun ilk harflerini yazıp Tab ile tamamlayabilirsin.',
   });
 
   useEffect(() => {
@@ -132,7 +132,7 @@ export function App() {
         <div className="brand-lockup">
           <span className="brand-mark" aria-hidden="true">◉</span>
           <div>
-            <strong>İSTANBUL RADAR</strong>
+            <strong>AIRSPACE CONTROL</strong>
             <small>{world.sectorName}</small>
           </div>
         </div>

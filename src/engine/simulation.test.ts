@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { initialState, world } from './scenario';
+import { initialState, spawnTraffic, world } from './scenario';
 import { detectConflicts, landingClearanceStatus, stepGame, trafficProfile } from './simulation';
 
 describe('stepGame', () => {
@@ -31,14 +31,14 @@ describe('stepGame', () => {
 
     expect(state.landed).toBe(1);
     expect(state.score).toBe(100);
-    expect(state.aircraft.some((item) => item.callsign === 'TK1953')).toBe(false);
+    expect(state.aircraft.some((item) => item.callsign === 'AR101')).toBe(false);
   });
 
   it('blocks a landing clearance while the runway is occupied', () => {
     const state = structuredClone(initialState);
     state.aircraft[0].approach = { runwayId: '34L', status: 'captured', landingCleared: false };
     state.runwayAvailableAt['34L'] = 40;
-    const result = landingClearanceStatus(state, 'TK1953', world);
+    const result = landingClearanceStatus(state, 'AR101', world);
 
     expect(result.ok).toBe(false);
     expect(result.message).toContain('pist işgali');
@@ -57,6 +57,16 @@ describe('stepGame', () => {
     const next = stepGame(state, world, 0.1);
 
     expect(next.aircraft.some((item) => item.priority?.deadlineAt)).toBe(true);
+  });
+
+  it('varies callsigns, types, routes and traffic phase over successive spawns', () => {
+    const earlyArrival = spawnTraffic(0);
+    const laterArrival = spawnTraffic(1);
+    const departure = spawnTraffic(3);
+
+    expect(earlyArrival.callsign).not.toBe(laterArrival.callsign);
+    expect(earlyArrival.navigation?.procedure).not.toBe(laterArrival.navigation?.procedure);
+    expect(departure.phase).toBe('departure');
   });
 
   it('warns about an approaching loss before aircraft are already too close', () => {

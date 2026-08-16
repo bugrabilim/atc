@@ -14,7 +14,7 @@ interface MissionPanelProps {
 }
 
 export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, bestScore, bestLandings, priorityTraffic, events }: MissionPanelProps) {
-  const trainingAircraft = aircraft.find((item) => item.callsign === 'TK1953');
+  const trainingAircraft = aircraft.find((item) => item.callsign === 'AR101');
   const approachCaptured = trainingAircraft?.approach?.status === 'captured';
   const landingCleared = trainingAircraft?.approach?.landingCleared;
   const priorityMission = priorityTraffic.find((item) => item.priority && !item.priority.alertRaised);
@@ -23,10 +23,10 @@ export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, 
     : landed > 0
     ? nextMission(landed, score)
     : approachCaptured && !landingCleared
-      ? 'TK1953 ILS üzerinde. Pist geçmeden LAND komutuyla iniş izni ver.'
+      ? 'AR101 ILS üzerinde. Pist geçmeden LAND komutuyla iniş izni ver.'
     : approachCaptured
-      ? 'TK1953 localizer ve glideslope üzerinde. Pisti takip et.'
-      : 'İlk görev: TK1953 için ILS 34L komutunu ver. Diğer trafikte DCT ve HOLD kullan.';
+      ? 'AR101 localizer ve glideslope üzerinde. Pisti takip et.'
+      : 'İlk görev: AR101 için ILS 34L komutunu ver. Diğer trafikte DCT ve HOLD kullan.';
 
   return (
     <section className="mission-panel" aria-label="Oyun görevi ve skor">

@@ -79,7 +79,7 @@ export function parseCommandLine(
   }
 
   if (!RE_NUMBER.test(rawValue)) {
-    return { ok: false, error: `${callsign} için örnek: HDG 090, FL100, SPD 220, DCT FM001 veya ILS 34L.` };
+    return { ok: false, error: `${callsign} için örnek: HDG 090, FL100, SPD 220, DCT FINAL1 veya ILS 34L.` };
   }
 
   const numericValue = Number(rawValue);
