@@ -252,3 +252,93 @@ button { touch-action: manipulation; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; }
 }
+
+/* Readability pass: the original dense radar styling was sized for a large
+   desktop display. Keep the information density, but never rely on 8px text. */
+.brand-lockup strong { font-size: 16px; }
+.brand-lockup small, .top-status span { font-size: 11px; }
+.session-actions button { min-height: 42px; font-size: 11px; }
+.operation-bar { min-height: 40px; font-size: 11px; }
+.operation-bar select { min-height: 30px; font-size: 11px; }
+.conflict-banner { font-size: 13px; }
+.mission-primary strong { font-size: 13px; line-height: 1.35; }
+.mission-score { font-size: 11px; }
+.mission-score b { font-size: 14px; }
+.mission-event { font-size: 11px; }
+.assistant-drawer summary { min-height: 34px; font-size: 11px; }
+.tutorial-guide__step, .coach-guide__label { font-size: 10px; }
+.tutorial-guide strong, .coach-guide strong { font-size: 12px; }
+.tutorial-guide small, .coach-guide small { font-size: 11px; }
+.tutorial-guide button, .coach-guide button { min-height: 40px; font-size: 11px; }
+.radar-tools button { min-width: 44px; min-height: 40px; font-size: 11px; }
+.workspace { grid-template-columns: minmax(0, 1fr) 310px; }
+.panel-heading { height: 46px; font-size: 11px; }
+.flight-strip { min-height: 76px; padding: 12px; }
+.flight-strip__lead strong, .flight-strip__numbers b { font-size: 14px; }
+.flight-strip__lead small, .flight-strip__numbers small { font-size: 10px; line-height: 1.35; }
+.selected-aircraft strong { font-size: 18px; }
+.eyebrow { font-size: 10px; }
+.selected-aircraft__metrics { font-size: 11px; }
+.next-aircraft { min-height: 42px; font-size: 10px; }
+.vector-control span { font-size: 10px; width: 66px; }
+.vector-control b { font-size: 12px; min-width: 52px; }
+.vector-control button { min-height: 42px; min-width: 54px; font-size: 11px; }
+.quick-command { min-height: 42px; font-size: 11px; }
+.command-entry { height: 54px; }
+.command-entry input { font-size: 15px; }
+.command-entry input::placeholder { font-size: 12px; }
+.send-command { height: 44px; min-width: 96px; font-size: 11px; }
+.command-feedback { min-height: 22px; font-size: 11px; }
+
+@media (max-width: 900px) {
+  .app-shell { grid-template-rows: auto auto auto minmax(250px, 1fr) auto; }
+  .workspace { grid-template-columns: minmax(0, 1fr); }
+  .top-bar { min-height: 62px; }
+  .brand-lockup strong { font-size: 15px; }
+  .brand-lockup small { font-size: 10px; }
+  .operation-bar { min-height: 38px; }
+  .mission-panel { min-height: 58px; }
+  .mission-event { display: none; }
+  .assistant-drawer__content { max-height: min(38dvh, 280px); }
+  .radar-frame { min-height: 250px; }
+  .vector-control {
+    display: flex;
+    grid-template-columns: none;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+  .vector-control > div { flex: 0 0 max-content; }
+  .vector-control span { width: 58px; }
+  .command-panel { padding-top: 8px; }
+}
+
+@media (max-width: 520px) {
+  .top-bar { min-height: 58px; }
+  .brand-lockup strong { font-size: 13px; }
+  .brand-lockup small { font-size: 9px; }
+  .session-actions { gap: 4px; }
+  .session-actions button { min-width: 48px; min-height: 44px; font-size: 9px; }
+  .session-actions button:first-child { min-width: 56px; }
+  .operation-bar { padding-inline: 10px; font-size: 10px; }
+  .operation-bar select { font-size: 10px; }
+  .mission-panel { padding: 8px 10px; }
+  .mission-primary strong { font-size: 12px; }
+  .mission-score { font-size: 10px; }
+  .mission-score b { font-size: 13px; }
+  .radar-tools { top: 8px; right: 8px; }
+  .radar-tools button { min-width: 42px; min-height: 40px; font-size: 10px; }
+  .selected-aircraft { margin-bottom: 6px; }
+  .selected-aircraft strong { font-size: 17px; }
+  .selected-aircraft__metrics { gap: 9px; font-size: 10px; }
+  .next-aircraft { min-height: 42px; padding-inline: 8px; font-size: 9px; }
+  .vector-control { margin-bottom: 6px; }
+  .vector-control button { min-height: 44px; min-width: 48px; font-size: 10px; }
+  .quick-command-row { margin-bottom: 6px; }
+  .quick-command { min-width: 100px; min-height: 44px; font-size: 10px; }
+  .command-entry { height: 56px; }
+  .command-entry input { font-size: 14px; }
+  .send-command { height: 46px; min-width: 86px; font-size: 10px; }
+  .command-feedback { font-size: 10px; }
+}
