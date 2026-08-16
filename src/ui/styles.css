@@ -90,6 +90,7 @@ button { touch-action: manipulation; }
 .game-status { border-bottom: 1px solid var(--line); background: rgba(5, 15, 11, 0.94); }
 .mission-panel { min-height: 48px; display: grid; grid-template-columns: minmax(260px, 1fr) auto minmax(220px, .9fr); align-items: center; gap: 18px; padding: 8px 16px; }
 .mission-primary strong { display: block; margin-top: 4px; color: #d8f5e6; font: 600 10px/1.25 IBM Plex Mono, monospace; }
+.mission-primary__action { min-height: 34px; margin-top: 8px; padding: 0 10px; color: #032218; border: 1px solid var(--cyan); border-radius: 6px; background: var(--cyan); font: 700 10px IBM Plex Mono, monospace; cursor: pointer; }
 .mission-score { display: flex; gap: 14px; color: var(--muted); font: 600 9px IBM Plex Mono, monospace; }
 .mission-score b { margin-left: 5px; color: var(--green); font-size: 12px; }
 .mission-event { color: #9dc7b0; font: 500 9px/1.35 IBM Plex Mono, monospace; text-align: right; }
@@ -356,6 +357,7 @@ button { touch-action: manipulation; }
   .operation-bar select { font-size: 10px; }
   .mission-panel { display: block; min-height: 0; padding: 7px 10px; }
   .mission-primary strong { font-size: 12px; }
+  .mission-primary__action { width: 100%; min-height: 42px; font-size: 10px; }
   .mission-score { display: none; }
   .mission-score b { font-size: 13px; }
   .radar-tools { top: 8px; right: 8px; }
@@ -386,7 +388,6 @@ button { touch-action: manipulation; }
   .app-shell { height: auto; min-height: 100dvh; grid-template-rows: auto auto auto minmax(280px, 1fr) auto; }
   .workspace { min-height: 280px; }
 }
-
 
 /* Phone control pass. A radar game must reserve a real tactical viewport,
    while the command console remains immediately reachable. Short phones can
