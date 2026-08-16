@@ -1,12 +1,18 @@
 {
   "name": "Airspace Control",
   "short_name": "Airspace",
+  "id": "/",
+  "lang": "tr",
+  "dir": "ltr",
   "description": "Klasik radar görünümünde sonsuz yaklaşma kontrol oyunu.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#030907",
   "theme_color": "#06110e",
   "orientation": "any",
+  "categories": ["games", "simulation", "education"],
   "icons": [
     {
       "src": "/icon.svg",
