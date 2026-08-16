@@ -17,6 +17,7 @@ export function DebriefPanel({ report, state, onRestart, onContinue }: DebriefPa
           <span className="eyebrow">VARDİYA DEBRIEF</span>
           <h2>{report.headline}</h2>
           <p>{report.summary}</p>
+          <p className={report.objectiveComplete ? 'debrief-objective is-complete' : 'debrief-objective'}>{report.objectiveComplete ? 'HEDEF TAMAMLANDI · ' : 'HEDEF DURUMU · '}{report.objective}</p>
         </div>
         <div className="debrief-metrics">
           <span>SKILL <b>{state.skill.toFixed(1)}</b></span>
