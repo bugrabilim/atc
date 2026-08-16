@@ -171,13 +171,13 @@ export function App() {
           aircraft={state.aircraft}
           conflicts={state.conflicts}
           selectedCallsign={state.selectedCallsign}
-          elapsedSeconds={state.elapsedSeconds}
           onSelect={selectAircraft}
         />
         <FlightStripList
           aircraft={state.aircraft}
           conflicts={state.conflicts}
           selectedCallsign={state.selectedCallsign}
+          elapsedSeconds={state.elapsedSeconds}
           onSelect={selectAircraft}
         />
       </div>
