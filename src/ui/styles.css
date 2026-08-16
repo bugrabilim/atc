@@ -22,6 +22,35 @@ body { min-width: 320px; min-height: 100dvh; overflow: hidden; -webkit-tap-highl
 button, input, select { font: inherit; }
 button { touch-action: manipulation; }
 
+.landing-page { min-height: 100dvh; overflow-y: auto; padding: clamp(24px, 5vw, 64px) clamp(16px, 6vw, 96px) 18px; color: #e8fff4; background: radial-gradient(circle at 72% 10%, rgba(34, 133, 92, .18), transparent 33%), #030907; }
+.landing-hero { position: relative; min-height: min(54vh, 520px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, .72fr); align-items: center; gap: 30px; max-width: 1280px; margin: 0 auto; overflow: hidden; border: 1px solid rgba(110,243,176,.17); border-radius: 22px; padding: clamp(28px, 5vw, 72px); background: linear-gradient(112deg, rgba(8, 30, 21, .92), rgba(3, 15, 10, .74)); }
+.landing-hero__copy { position: relative; z-index: 1; max-width: 580px; }
+.landing-kicker { color: var(--cyan); font: 700 10px IBM Plex Mono, monospace; letter-spacing: .14em; }
+.landing-hero h1 { margin: 14px 0 18px; color: #effff7; font: 700 clamp(40px, 7vw, 86px)/.88 IBM Plex Mono, monospace; letter-spacing: -.08em; }
+.landing-hero h1 em { color: var(--green); font-style: normal; }
+.landing-hero p { max-width: 470px; margin: 0; color: #9fc5b2; font: 500 clamp(14px, 1.7vw, 18px)/1.5 Manrope, sans-serif; }
+.landing-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.landing-actions button { min-height: 54px; padding: 0 18px; border-radius: 9px; cursor: pointer; font: 700 11px IBM Plex Mono, monospace; }
+.landing-actions small { display: block; margin-top: 4px; font: 500 9px Manrope, sans-serif; opacity: .72; }
+.landing-primary { color: #03140d; border: 1px solid var(--green); background: var(--green); }
+.landing-secondary { color: #d8f7e7; border: 1px solid rgba(110,243,176,.3); background: rgba(8, 31, 22, .82); }
+.landing-hero__radar { position: absolute; right: clamp(-90px, 3vw, 30px); width: min(44vw, 480px); aspect-ratio: 1; border: 1px solid rgba(103,232,196,.28); border-radius: 50%; opacity: .72; background: repeating-radial-gradient(circle, transparent 0 52px, rgba(103,232,196,.12) 53px 54px), linear-gradient(90deg, transparent 49.8%, rgba(103,232,196,.16) 50%, transparent 50.2%), linear-gradient(0deg, transparent 49.8%, rgba(103,232,196,.16) 50%, transparent 50.2%); }
+.landing-hero__radar::before, .landing-hero__radar::after { content: ''; position: absolute; inset: 15%; border: 1px solid rgba(103,232,196,.18); border-radius: 50%; }
+.landing-hero__radar::after { inset: 35%; }
+.landing-hero__sweep { position: absolute; inset: 0 50% 0 0; transform-origin: 100% 50%; background: linear-gradient(90deg, transparent, rgba(110,243,176,.36)); clip-path: polygon(100% 50%, 0 0, 0 100%); opacity: .65; }
+.landing-hero__radar i { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 14px var(--green); }
+.landing-hero__radar i:nth-of-type(1) { top: 27%; left: 62%; }.landing-hero__radar i:nth-of-type(2) { top: 63%; left: 31%; background: var(--cyan); }.landing-hero__radar i:nth-of-type(3) { top: 45%; left: 78%; background: var(--warning); }
+.airport-selector { max-width: 1280px; margin: clamp(22px, 4vw, 48px) auto 0; }
+.airport-selector__heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 12px; }
+.airport-selector h2 { margin: 6px 0 0; font: 700 24px IBM Plex Mono, monospace; letter-spacing: -.04em; }.airport-selector__hint { color: var(--muted); font: 500 11px Manrope, sans-serif; }
+.airport-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+.airport-card { position: relative; min-height: 128px; display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto 1fr auto; gap: 8px; padding: 13px; color: #dff8ec; border: 1px solid rgba(110,243,176,.15); border-radius: 10px; background: rgba(7, 24, 17, .86); text-align: left; cursor: pointer; transition: border-color .16s, transform .16s, background .16s; }
+.airport-card:hover:not(:disabled), .airport-card.is-selected { border-color: rgba(110,243,176,.62); background: rgba(14, 49, 34, .9); transform: translateY(-2px); }.airport-card.is-locked { opacity: .48; cursor: not-allowed; }
+.airport-card__number { color: var(--muted); font: 700 10px IBM Plex Mono, monospace; }.airport-card__mark { color: var(--green); font-size: 17px; }.airport-card__body { grid-column: 1 / -1; }.airport-card__body strong, .airport-card__body small { display: block; }.airport-card__body strong { color: #edfff5; font: 700 12px IBM Plex Mono, monospace; }.airport-card__body small { margin-top: 7px; color: #91b7a4; font: 500 10px/1.35 Manrope, sans-serif; }.airport-card__score { grid-column: 1 / -1; color: var(--cyan); font: 700 9px IBM Plex Mono, monospace; }
+.landing-footer { max-width: 1280px; display: flex; justify-content: space-between; gap: 12px; margin: 22px auto 0; color: #547366; font: 600 9px IBM Plex Mono, monospace; letter-spacing: .06em; }
+@media (max-width: 800px) { .landing-page { padding: 14px 12px 16px; }.landing-hero { min-height: 0; grid-template-columns: 1fr; padding: 28px 22px; }.landing-hero__radar { width: 280px; right: -95px; top: 28px; opacity: .35; }.landing-hero p { max-width: 80%; }.airport-selector__heading { align-items: start; flex-direction: column; gap: 5px; }.airport-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.airport-card { min-height: 118px; }.landing-footer { flex-direction: column; margin-top: 16px; } }
+@media (max-width: 420px) { .airport-grid { grid-template-columns: 1fr; }.airport-card { min-height: 92px; grid-template-columns: auto auto 1fr; align-items: center; }.airport-card__body { grid-column: auto; }.airport-card__score { grid-column: auto; text-align: right; }.landing-hero h1 { font-size: 43px; }.landing-hero p { max-width: 100%; } }
+
 .app-shell {
   height: 100dvh;
   display: grid;
