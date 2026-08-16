@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { arrivalAdvice, type ArrivalAdvice } from '../engine/arrivalAdvisor';
 import { predictAircraftPath } from '../engine/aircraftDynamics';
 import { aircraftTrend } from '../engine/simulation';
 import { requiredWakeSeparationNm } from '../engine/wake';
 import type { Aircraft, Conflict, RadarWorld, Vector2 } from '../engine/types';
+import type { CoachAdvice } from '../engine/controllerCoach';
 
 interface RadarScopeProps {
   world: RadarWorld;
@@ -11,7 +13,9 @@ interface RadarScopeProps {
   trackHistory: Record<string, Vector2[]>;
   pendingCallsigns: string[];
   selectedCallsign: string | null;
+  coach: CoachAdvice;
   onSelect: (callsign: string) => void;
+  onApplyCoach: (advice: CoachAdvice) => void;
 }
 
 interface Viewport {
@@ -92,6 +96,7 @@ function drawRadar(
   trackHistory: Record<string, Vector2[]>,
   pendingCallsigns: string[],
   selectedCallsign: string | null,
+  arrivalPlan: Map<string, ArrivalAdvice>,
   labelOffsets: Record<string, Vector2>,
   labelBoxes: Map<string, LabelBox>,
   measurement: Measurement | null,
@@ -183,6 +188,7 @@ function drawRadar(
     const selected = selectedCallsign === item.callsign;
     const conflict = conflictFor(item.callsign, conflicts);
     const color = conflict?.severity === 'loss' ? '#ff5d5d' : conflict ? '#ffb648' : item.priority ? '#ffb648' : selected ? '#ffffff' : item.phase === 'arrival' ? '#67e8c4' : '#79b9ff';
+    const arrival = arrivalPlan.get(item.callsign);
     const trackRadians = item.track * Math.PI / 180;
     const pendingReadback = pendingCallsigns.includes(item.callsign);
 
@@ -216,6 +222,26 @@ function drawRadar(
       }
       ctx.stroke();
       ctx.restore();
+
+      if (arrival && !item.approach) {
+        const runway = world.runways.find((entry) => entry.id === arrival.runwayId);
+        if (runway) {
+          const radians = runway.heading * Math.PI / 180;
+          const intercept = worldToScreen({
+            x: runway.center.x - Math.sin(radians) * 9,
+            y: runway.center.y + Math.cos(radians) * 9,
+          }, viewport);
+          drawLine(ctx, point, intercept, 'rgba(103,232,196,.72)', 1.5, [7, 5]);
+          ctx.strokeStyle = 'rgba(103,232,196,.9)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(intercept.x, intercept.y, 7, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = '#67e8c4';
+          ctx.font = '700 11px IBM Plex Mono, ui-monospace, monospace';
+          ctx.fillText(`FINAL ${arrival.runwayId}`, intercept.x + 10, intercept.y - 8);
+        }
+      }
     }
 
     if (item.approach && item.approach.status !== 'armed') {
@@ -252,7 +278,7 @@ function drawRadar(
     const currentFlightLevel = String(Math.round(item.altitude / 100)).padStart(3, '0');
     const targetFlightLevel = String(Math.round(item.targetAltitude / 100)).padStart(3, '0');
     const boxWidth = 174;
-    const boxHeight = conflict?.predicted ? 54 : 43;
+    const boxHeight = conflict?.predicted ? 66 : arrival ? 56 : 43;
     ctx.fillStyle = 'rgba(1, 10, 7, .84)';
     ctx.fillRect(label.x, label.y - 13, boxWidth, boxHeight);
     ctx.strokeStyle = `${color}66`;
@@ -266,9 +292,13 @@ function drawRadar(
     ctx.font = '700 10px IBM Plex Mono, ui-monospace, monospace';
     ctx.fillStyle = pendingReadback ? '#ffb648' : item.approach?.status === 'tower' ? '#8cffc5' : color;
     ctx.fillText(`${pendingReadback ? 'READBACK · ' : ''}${statusText(item)}`, label.x + 4, label.y + 21);
+    if (arrival) {
+      ctx.fillStyle = arrival.sequence === 1 ? '#67e8c4' : '#a7cabb';
+      ctx.fillText(`QUEUE #${arrival.sequence} · ${arrival.runwayId} · ${Math.ceil(arrival.etaSeconds / 60)}m`, label.x + 4, label.y + 34);
+    }
     if (conflict?.predicted) {
       ctx.fillStyle = '#ffb648';
-      ctx.fillText(`CPA ${conflict.predicted.horizontalNm.toFixed(1)}NM / ${Math.round(conflict.predicted.timeSeconds)}s`, label.x + 4, label.y + 37);
+      ctx.fillText(`CPA ${conflict.predicted.horizontalNm.toFixed(1)}NM / ${Math.round(conflict.predicted.timeSeconds)}s`, label.x + 4, label.y + (arrival ? 47 : 37));
     }
   }
 
@@ -291,7 +321,7 @@ function drawRadar(
   ctx.fillText(`RANGE ${Math.round(Math.min(width, height) / scale / 2)}NM · ${world.airport}`, 14, height - 14);
 }
 
-export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCallsigns, selectedCallsign, onSelect }: RadarScopeProps) {
+export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCallsigns, selectedCallsign, coach, onSelect, onApplyCoach }: RadarScopeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewportRef = useRef<Viewport | null>(null);
   const labelBoxes = useRef(new Map<string, LabelBox>());
@@ -300,14 +330,21 @@ export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCa
   const [labelOffsets, setLabelOffsets] = useState<Record<string, Vector2>>({});
   const [measureMode, setMeasureMode] = useState(false);
   const [measurement, setMeasurement] = useState<Measurement | null>(null);
+  const arrivalPlan = useMemo(() => arrivalAdvice(aircraft, world), [aircraft, world]);
+  const arrivalQueue = useMemo(() => aircraft
+    .map((item) => ({ aircraft: item, advice: arrivalPlan.get(item.callsign) }))
+    .filter((item): item is { aircraft: Aircraft; advice: ArrivalAdvice } => Boolean(item.advice))
+    .sort((first, second) => first.advice.sequence - second.advice.sequence || first.advice.etaSeconds - second.advice.etaSeconds)
+    .slice(0, 3), [aircraft, arrivalPlan]);
+  const selectedAdvice = selectedCallsign ? arrivalPlan.get(selectedCallsign) : undefined;
 
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
     const viewport = viewportRef.current;
     if (!canvas || !viewport) return;
     const ctx = canvas.getContext('2d');
-    if (ctx) drawRadar(ctx, viewport, world, aircraft, conflicts, trackHistory, pendingCallsigns, selectedCallsign, labelOffsets, labelBoxes.current, measurement);
-  }, [aircraft, conflicts, labelOffsets, measurement, pendingCallsigns, selectedCallsign, trackHistory, world]);
+    if (ctx) drawRadar(ctx, viewport, world, aircraft, conflicts, trackHistory, pendingCallsigns, selectedCallsign, arrivalPlan, labelOffsets, labelBoxes.current, measurement);
+  }, [aircraft, arrivalPlan, conflicts, labelOffsets, measurement, pendingCallsigns, selectedCallsign, trackHistory, world]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -438,6 +475,26 @@ export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCa
         <button type="button" onClick={resetView}>LOCK</button>
         <button type="button" className={measureMode ? 'is-active' : ''} onClick={() => { setMeasureMode((current) => !current); setMeasurement(null); }}>RANGE</button>
       </div>
+      {arrivalQueue.length > 0 ? (
+        <div className="radar-queue" aria-label="Yaklaşma sırası">
+          <span className="radar-queue__heading">YAKLAŞMA SIRASI</span>
+          <div className="radar-queue__items">
+            {arrivalQueue.map(({ aircraft: queuedAircraft, advice }) => (
+              <button key={queuedAircraft.callsign} type="button" className={queuedAircraft.callsign === selectedCallsign ? 'is-selected' : ''} onClick={() => onSelect(queuedAircraft.callsign)}>
+                <b>#{advice.sequence}</b> {queuedAircraft.callsign} <small>{advice.runwayId} · {Math.ceil(advice.etaSeconds / 60)}m</small>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {selectedAdvice ? (
+        <div className={`radar-decision radar-decision--${coach.tone}`} aria-live="polite">
+          <span>SONRAKİ İŞ</span>
+          <strong>{selectedCallsign} · #{selectedAdvice.sequence} · {selectedAdvice.runwayId}</strong>
+          <small>Final {Math.round(selectedAdvice.distanceNm)} NM · ETA {Math.ceil(selectedAdvice.etaSeconds / 60)} dk · H{String(selectedAdvice.recommendedHeading).padStart(3, '0')} · FL{String(Math.round(selectedAdvice.recommendedAltitude / 100)).padStart(3, '0')}</small>
+          {coach.callsign === selectedCallsign && coach.command ? <button type="button" onClick={() => onApplyCoach(coach)}>{coach.command} UYGULA</button> : null}
+        </div>
+      ) : null}
       <canvas
         ref={canvasRef}
         className="radar-canvas"
