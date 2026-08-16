@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { parseCommandBatch, parseCommandLine } from './commands';
 
 const callsigns = ['AR101', 'NX204'];
+const procedures = [
+  { id: 'GATE1-ALPHA', kind: 'arrival' as const, runwayId: '34L', fixIds: ['GATE1', 'FINAL1'] },
+  { id: 'EXIT1-DEPARTURE', kind: 'departure' as const, fixIds: ['EXIT1'] },
+];
 
 describe('parseCommandLine', () => {
   it('resolves a unique partial callsign and heading', () => {
@@ -39,6 +43,17 @@ describe('parseCommandLine', () => {
     expect(parseCommandLine('NX HOLD FINAL1', callsigns, null, [], ['FINAL1'])).toMatchObject({
       ok: true,
       command: { kind: 'hold', callsign: 'NX204', fixId: 'FINAL1' },
+    });
+  });
+
+  it('assigns STAR and SID procedures with their full fix sequence', () => {
+    expect(parseCommandLine('AR STAR GATE1-ALPHA', callsigns, null, [], [], procedures)).toMatchObject({
+      ok: true,
+      command: { kind: 'procedure', callsign: 'AR101', procedureId: 'GATE1-ALPHA', procedureKind: 'arrival', fixIds: ['GATE1', 'FINAL1'] },
+    });
+    expect(parseCommandLine('NX SID EXIT1-DEPARTURE', callsigns, null, [], [], procedures)).toMatchObject({
+      ok: true,
+      command: { kind: 'procedure', callsign: 'NX204', procedureId: 'EXIT1-DEPARTURE', procedureKind: 'departure' },
     });
   });
 
