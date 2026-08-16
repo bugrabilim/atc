@@ -173,6 +173,14 @@ button { touch-action: manipulation; }
 .vector-control b { min-width: 48px; color: #e7fff4; text-align: center; font: 700 9px IBM Plex Mono, monospace; }
 .vector-control button { min-height: 38px; min-width: 50px; padding: 0 7px; color: #cce9dc; border: 1px solid var(--line); border-radius: 6px; background: #0a1a14; font: 700 8px IBM Plex Mono, monospace; }
 .vector-control button:disabled { opacity: .35; }
+.coach-command { width: 100%; min-height: 44px; display: grid; grid-template-columns: minmax(88px, auto) auto minmax(0, 1fr); align-items: center; gap: 8px; margin-bottom: 7px; padding: 0 10px; color: #dff8ec; border: 1px solid rgba(110,243,176,.34); border-radius: 7px; background: rgba(7,39,29,.72); text-align: left; cursor: pointer; font-family: IBM Plex Mono, monospace; }
+.coach-command span { color: var(--cyan); font-size: 9px; font-weight: 700; letter-spacing: .06em; }
+.coach-command b { color: #032218; padding: 5px 7px; border-radius: 4px; background: var(--green); font-size: 11px; white-space: nowrap; }
+.coach-command small { min-width: 0; color: #a8cbb9; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.coach-command--warning { border-color: rgba(255,182,72,.56); background: rgba(59,39,8,.42); }
+.coach-command--warning b { background: var(--warning); }
+.coach-command--danger { border-color: rgba(255,104,104,.66); background: rgba(63,9,9,.42); }
+.coach-command--danger b { color: #fff; background: var(--danger); }
 .quick-command-row { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; scrollbar-width: none; }
 .quick-command-row::-webkit-scrollbar { display: none; }
 .quick-command { min-width: 84px; padding: 0 10px; font: 600 9px IBM Plex Mono, monospace; white-space: nowrap; }
@@ -375,6 +383,9 @@ button { touch-action: manipulation; }
   .selected-aircraft__metrics { gap: 9px; font-size: 10px; }
   .next-aircraft { min-height: 42px; padding-inline: 8px; font-size: 9px; }
   .vector-control { margin-bottom: 6px; }
+  .coach-command { min-height: 46px; }
+  .coach-command span { font-size: 8px; }
+  .coach-command small { font-size: 9px; }
   .vector-control button { min-height: 44px; min-width: 48px; font-size: 10px; }
   .quick-command-row { margin-bottom: 6px; }
   .quick-command { min-width: 100px; min-height: 44px; font-size: 10px; }
