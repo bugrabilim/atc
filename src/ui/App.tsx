@@ -22,6 +22,7 @@ interface CareerStats {
   completedShifts: number;
   completedObjectives: number;
   badges: string[];
+  scenarioBestScores: Record<string, number>;
 }
 
 const CAREER_STORAGE_KEY = 'airspace-control-career-v1';
@@ -30,7 +31,7 @@ const SESSION_STORAGE_KEY = 'airspace-control-session-v1';
 function loadCareerStats(): CareerStats {
   try {
     const value = window.localStorage.getItem(CAREER_STORAGE_KEY);
-    if (!value) return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0, badges: [] };
+    if (!value) return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0, badges: [], scenarioBestScores: {} };
     const parsed = JSON.parse(value) as Partial<CareerStats>;
     return {
       bestScore: typeof parsed.bestScore === 'number' ? parsed.bestScore : 0,
@@ -38,9 +39,12 @@ function loadCareerStats(): CareerStats {
       completedShifts: typeof parsed.completedShifts === 'number' ? parsed.completedShifts : 0,
       completedObjectives: typeof parsed.completedObjectives === 'number' ? parsed.completedObjectives : 0,
       badges: Array.isArray(parsed.badges) ? [...new Set(parsed.badges.filter((item): item is string => typeof item === 'string' && isAchievementId(item)))] : [],
+      scenarioBestScores: parsed.scenarioBestScores && typeof parsed.scenarioBestScores === 'object'
+        ? Object.fromEntries(Object.entries(parsed.scenarioBestScores).filter(([, score]) => typeof score === 'number' && Number.isFinite(score) && score >= 0))
+        : {},
     };
   } catch {
-    return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0, badges: [] };
+    return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0, badges: [], scenarioBestScores: {} };
   }
 }
 
@@ -81,7 +85,7 @@ export function App() {
   const activeWorld = useMemo(() => worldWithFlow(worldForMode(scenario.world, state.mode), state.flowId, state.peakSkill), [scenario.world, state.flowId, state.mode, state.peakSkill]);
   const activeFlow = activeWorld.flowConfigurations.find((item) => item.id === state.flowId) ?? activeWorld.flowConfigurations[0];
   const goal = useMemo(() => shiftGoal(state.mode), [state.mode]);
-  const progression = useMemo(() => careerProgression(career.badges), [career.badges]);
+  const progression = useMemo(() => careerProgression(career.badges, career.scenarioBestScores), [career.badges, career.scenarioBestScores]);
   const activeArrivalRunways = activeWorld.runways.filter((item) => item.active && (item.operation === 'arrival' || item.operation === 'mixed'));
   const trainingAircraft = scenario.initialAircraft.find((item) => item.phase === 'arrival');
 
@@ -121,12 +125,16 @@ export function App() {
         ...current,
         bestScore: Math.max(current.bestScore, state.score),
         bestLandings: Math.max(current.bestLandings, state.landed),
+        scenarioBestScores: {
+          ...current.scenarioBestScores,
+          [scenario.id]: Math.max(current.scenarioBestScores[scenario.id] ?? 0, state.score),
+        },
       };
-      if (next.bestScore === current.bestScore && next.bestLandings === current.bestLandings) return current;
+      if (next.bestScore === current.bestScore && next.bestLandings === current.bestLandings && next.scenarioBestScores[scenario.id] === current.scenarioBestScores[scenario.id]) return current;
       window.localStorage.setItem(CAREER_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
-  }, [state.landed, state.score]);
+  }, [scenario.id, state.landed, state.score]);
 
   useEffect(() => {
     if (!debriefOpen || shiftRecorded.current) return;
@@ -429,6 +437,9 @@ export function App() {
           badgeCount={career.badges.length}
           achievementTotal={ACHIEVEMENT_TOTAL}
           achievementIds={career.badges}
+          scenarioBestScore={career.scenarioBestScores[scenario.id] ?? 0}
+          nextUnlockLabel={progression.nextUnlock?.label ?? null}
+          nextUnlockDescription={progression.nextUnlock?.description ?? null}
           trainingCallsign={trainingAircraft?.callsign ?? null}
           trainingRunway={trainingAircraft?.assignedRunway ?? null}
           priorityTraffic={state.aircraft.filter((item) => item.priority)}
