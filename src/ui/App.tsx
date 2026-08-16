@@ -10,7 +10,7 @@ import { DebriefPanel } from './DebriefPanel';
 import { FlightStripList } from './FlightStripList';
 import { MissionPanel } from './MissionPanel';
 import { RadarScope } from './RadarScope';
-import { buildDebrief, goalComplete, shiftGoal, trainingGuide, type TrainingGuide } from '../engine/progression';
+import { buildDebrief, earnedAwards, goalComplete, shiftGoal, trainingGuide, type TrainingGuide } from '../engine/progression';
 import { controllerCoach, type CoachAdvice } from '../engine/controllerCoach';
 import { restoreSession, serializeSession, type SavedSession } from '../engine/session';
 import { AudioCuePlayer, type AudioCue } from './audioCues';
@@ -21,6 +21,7 @@ interface CareerStats {
   bestLandings: number;
   completedShifts: number;
   completedObjectives: number;
+  badges: string[];
 }
 
 const CAREER_STORAGE_KEY = 'airspace-control-career-v1';
@@ -29,16 +30,17 @@ const SESSION_STORAGE_KEY = 'airspace-control-session-v1';
 function loadCareerStats(): CareerStats {
   try {
     const value = window.localStorage.getItem(CAREER_STORAGE_KEY);
-    if (!value) return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0 };
+    if (!value) return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0, badges: [] };
     const parsed = JSON.parse(value) as Partial<CareerStats>;
     return {
       bestScore: typeof parsed.bestScore === 'number' ? parsed.bestScore : 0,
       bestLandings: typeof parsed.bestLandings === 'number' ? parsed.bestLandings : 0,
       completedShifts: typeof parsed.completedShifts === 'number' ? parsed.completedShifts : 0,
       completedObjectives: typeof parsed.completedObjectives === 'number' ? parsed.completedObjectives : 0,
+      badges: Array.isArray(parsed.badges) ? parsed.badges.filter((item): item is string => typeof item === 'string') : [],
     };
   } catch {
-    return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0 };
+    return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0, badges: [] };
   }
 }
 
@@ -123,11 +125,13 @@ export function App() {
     if (!debriefOpen || shiftRecorded.current) return;
     shiftRecorded.current = true;
     const objectiveComplete = goalComplete(state, goal);
+    const awards = earnedAwards(state, goal);
     setCareer((current) => {
       const next = {
         ...current,
         completedShifts: current.completedShifts + 1,
         completedObjectives: current.completedObjectives + (objectiveComplete ? 1 : 0),
+        badges: [...new Set([...current.badges, ...awards.map((award) => award.id)])],
       };
       window.localStorage.setItem(CAREER_STORAGE_KEY, JSON.stringify(next));
       return next;
@@ -401,6 +405,7 @@ export function App() {
           bestLandings={career.bestLandings}
           completedShifts={career.completedShifts}
           completedObjectives={career.completedObjectives}
+          badgeCount={career.badges.length}
           trainingCallsign={trainingAircraft?.callsign ?? null}
           trainingRunway={trainingAircraft?.assignedRunway ?? null}
           priorityTraffic={state.aircraft.filter((item) => item.priority)}
