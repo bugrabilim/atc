@@ -13,6 +13,7 @@ import { RadarScope } from './RadarScope';
 import { buildDebrief, trainingGuide, type TrainingGuide } from '../engine/progression';
 import { controllerCoach, type CoachAdvice } from '../engine/controllerCoach';
 import { restoreSession, serializeSession, type SavedSession } from '../engine/session';
+import { AudioCuePlayer, type AudioCue } from './audioCues';
 
 interface CareerStats {
   bestScore: number;
@@ -63,8 +64,10 @@ export function App() {
     message: savedSession ? 'Kaydedilmiş vardiya duraklatıldı. Devam ile aynı trafikten sürdürebilirsin.' : 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. Çağrı kodunun ilk harflerini yazıp Tab ile tamamlayabilirsin.',
   });
   const [debriefOpen, setDebriefOpen] = useState(false);
-  const [radioEnabled, setRadioEnabled] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(false);
   const lastSpokenEvent = useRef<string | null>(null);
+  const lastCuedEvent = useRef<string | null>(null);
+  const audioPlayer = useRef<AudioCuePlayer | null>(null);
   const activeWorld = useMemo(() => worldWithFlow(scenario.world, state.flowId, state.peakSkill), [scenario.world, state.flowId, state.peakSkill]);
   const activeFlow = activeWorld.flowConfigurations.find((item) => item.id === state.flowId) ?? activeWorld.flowConfigurations[0];
   const activeArrivalRunways = activeWorld.runways.filter((item) => item.active && (item.operation === 'arrival' || item.operation === 'mixed'));
@@ -119,8 +122,13 @@ export function App() {
     return () => window.clearInterval(timer);
   }, [activeWorld]);
 
+  const playCue = useCallback((cue: AudioCue) => {
+    if (!audioEnabled) return;
+    audioPlayer.current?.play(cue);
+  }, [audioEnabled]);
+
   useEffect(() => {
-    if (!radioEnabled || !('speechSynthesis' in window)) return;
+    if (!audioEnabled || !('speechSynthesis' in window)) return;
     const event = [...state.eventLog].reverse().find((item) => item.id.startsWith('readback-') || item.id.startsWith('tower-'));
     if (!event || event.id === lastSpokenEvent.current) return;
     lastSpokenEvent.current = event.id;
@@ -135,7 +143,19 @@ export function App() {
     const voiceIndex = [...event.message].reduce((sum, character) => sum + character.charCodeAt(0), 0) % Math.max(1, voices.length);
     if (voices[voiceIndex]) utterance.voice = voices[voiceIndex];
     window.speechSynthesis.speak(utterance);
-  }, [radioEnabled, state.eventLog]);
+  }, [audioEnabled, state.eventLog]);
+
+  useEffect(() => {
+    const event = state.eventLog.at(-1);
+    if (!event || event.id === lastCuedEvent.current) return;
+    lastCuedEvent.current = event.id;
+    if (!audioEnabled) return;
+    if (event.id.startsWith('readback-')) playCue('readback');
+    else if (event.id.startsWith('tower-')) playCue('handoff');
+    else if (event.id.startsWith('landing-')) playCue('landing');
+    else if (event.type === 'danger') playCue('alert');
+    else if (event.type === 'warning') playCue('warning');
+  }, [audioEnabled, playCue, state.eventLog]);
 
   useEffect(() => () => {
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
@@ -144,7 +164,8 @@ export function App() {
   const selectAircraft = useCallback((callsign: string) => {
     setState((current) => ({ ...current, selectedCallsign: callsign }));
     setFeedback({ type: 'info', message: `${callsign} seçildi. Hedef komutu yazabilir veya hızlı komut kullanabilirsin.` });
-  }, []);
+    playCue('select');
+  }, [playCue]);
 
   const issueCommand = useCallback((input: string) => {
     const snapshot = stateRef.current;
@@ -168,8 +189,9 @@ export function App() {
       type: 'success',
       message: `${parsed.normalized.join(' · ')} · tek readback içinde sıraya alındı.`,
     });
+    playCue('command');
     return true;
-  }, [activeArrivalRunways, activeWorld]);
+  }, [activeArrivalRunways, activeWorld, playCue]);
 
   const selectNextAircraft = useCallback(() => {
     const snapshot = stateRef.current;
@@ -217,6 +239,16 @@ export function App() {
 
   const togglePause = () => setState((current) => ({ ...current, paused: !current.paused }));
   const cycleSpeed = () => setState((current) => ({ ...current, timeScale: current.timeScale === 1 ? 2 : current.timeScale === 2 ? 4 : 1 }));
+  const toggleAudio = () => {
+    setAudioEnabled((current) => {
+      const next = !current;
+      if (next) {
+        audioPlayer.current ??= new AudioCuePlayer();
+        void audioPlayer.current.unlock().then(() => audioPlayer.current?.play('select'));
+      }
+      return next;
+    });
+  };
   const reset = () => {
     setState(createInitialState(scenario));
     setCommand('');
@@ -270,7 +302,7 @@ export function App() {
           ))}
           <button type="button" onClick={togglePause}>{state.paused ? 'DEVAM' : 'DURAKLAT'}</button>
           <button type="button" onClick={cycleSpeed}>{state.timeScale}×</button>
-          <button type="button" className={radioEnabled ? 'is-active' : ''} onClick={() => setRadioEnabled((current) => !current)}>{radioEnabled ? 'RADYO AÇIK' : 'RADYO'}</button>
+          <button type="button" className={audioEnabled ? 'is-active' : ''} onClick={toggleAudio}>{audioEnabled ? 'SES AÇIK' : 'SES'}</button>
           <button type="button" onClick={endShift}>BİTİR</button>
           <button type="button" onClick={reset}>YENİLE</button>
         </div>
