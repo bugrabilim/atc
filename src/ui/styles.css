@@ -90,6 +90,9 @@ button { touch-action: manipulation; }
 .game-status { border-bottom: 1px solid var(--line); background: rgba(5, 15, 11, 0.94); }
 .mission-panel { min-height: 48px; display: grid; grid-template-columns: minmax(260px, 1fr) auto minmax(220px, .9fr); align-items: center; gap: 18px; padding: 8px 16px; }
 .mission-primary strong { display: block; margin-top: 4px; color: #d8f5e6; font: 600 10px/1.25 IBM Plex Mono, monospace; }
+.mission-briefing { display: block; max-width: 640px; margin-top: 5px; color: #91b8a5; font: 500 8px/1.35 IBM Plex Mono, monospace; }
+.mission-briefing b { color: var(--cyan); font-weight: 700; }
+.mission-briefing em { color: var(--green); font-style: normal; }
 .mission-primary__action { min-height: 34px; margin-top: 8px; padding: 0 10px; color: #032218; border: 1px solid var(--cyan); border-radius: 6px; background: var(--cyan); font: 700 10px IBM Plex Mono, monospace; cursor: pointer; }
 .mission-score { display: flex; gap: 14px; color: var(--muted); font: 600 9px IBM Plex Mono, monospace; }
 .mission-score b { margin-left: 5px; color: var(--green); font-size: 12px; }
@@ -200,6 +203,8 @@ button { touch-action: manipulation; }
 .debrief-panel { width: min(660px, 100%); display: grid; grid-template-columns: auto 1fr; gap: 16px; padding: 22px; border: 1px solid rgba(110,243,176,.32); border-radius: 14px; background: #07130f; box-shadow: 0 22px 80px rgba(0,0,0,.55); }
 .debrief-panel h2 { margin: 5px 0 7px; color: #e7fff4; font: 700 17px/1.15 IBM Plex Mono, monospace; }
 .debrief-panel p { margin: 0; color: #93b5a4; font: 500 10px/1.45 IBM Plex Mono, monospace; }
+.debrief-objective { margin-top: 8px !important; color: var(--warning) !important; }
+.debrief-objective.is-complete { color: var(--green) !important; }
 .debrief-grade { width: 68px; height: 68px; display: grid; place-items: center; border: 2px solid; border-radius: 10px; font: 700 38px/1 IBM Plex Mono, monospace; }
 .debrief-grade--a { color: var(--green); background: rgba(110,243,176,.1); }
 .debrief-grade--b { color: var(--cyan); background: rgba(103,232,196,.08); }
