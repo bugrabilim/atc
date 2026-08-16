@@ -18,7 +18,7 @@
 
 * { box-sizing: border-box; }
 html, body, #root { width: 100%; min-height: 100%; margin: 0; }
-body { min-width: 320px; min-height: 100dvh; overflow: hidden; }
+body { min-width: 320px; min-height: 100dvh; overflow: hidden; -webkit-tap-highlight-color: transparent; }
 button, input, select { font: inherit; }
 button { touch-action: manipulation; }
 
@@ -29,6 +29,7 @@ button { touch-action: manipulation; }
   background:
     radial-gradient(circle at 38% 30%, rgba(33, 117, 82, 0.08), transparent 35%),
     #030907;
+  padding-top: env(safe-area-inset-top);
 }
 
 .top-bar {
@@ -37,7 +38,7 @@ button { touch-action: manipulation; }
   grid-template-columns: minmax(210px, 0.9fr) minmax(0, 1.7fr) auto auto;
   align-items: center;
   gap: 20px;
-  padding: 10px 16px;
+  padding: 10px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left));
   border-bottom: 1px solid var(--line);
   background: rgba(5, 15, 11, 0.96);
 }
@@ -73,7 +74,7 @@ button { touch-action: manipulation; }
 .session-menu__panel button { min-height: 40px; padding: 0 10px; color: #d7f5e5; border: 1px solid var(--line); border-radius: 6px; background: #0a1a14; text-align: left; font: 700 11px IBM Plex Mono, monospace; cursor: pointer; }
 .session-menu__panel button.is-active { color: #04120c; border-color: var(--green); background: var(--green); }
 
-.operation-bar { min-height: 34px; display: flex; align-items: center; gap: 15px; padding: 5px 16px; border-bottom: 1px solid var(--line); color: var(--muted); background: rgba(5, 15, 11, .94); font: 500 9px IBM Plex Mono, monospace; }
+.operation-bar { min-height: 34px; display: flex; align-items: center; gap: 15px; padding: 5px max(16px, env(safe-area-inset-right)) 5px max(16px, env(safe-area-inset-left)); border-bottom: 1px solid var(--line); color: var(--muted); background: rgba(5, 15, 11, .94); font: 500 9px IBM Plex Mono, monospace; }
 .operation-bar label { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
 .operation-bar select { min-height: 25px; padding: 0 23px 0 7px; color: #dff8ec; border: 1px solid var(--line); border-radius: 5px; outline: 0; background: #0a1a14; font: 700 8px IBM Plex Mono, monospace; }
 .operation-bar b { color: var(--green); font-weight: 700; }
@@ -166,7 +167,7 @@ button { touch-action: manipulation; }
 .flight-strip__lead small, .flight-strip__numbers small { display: block; margin-top: 6px; color: var(--muted); font: 500 8px IBM Plex Mono, monospace; }
 .flight-strip__numbers { text-align: right; }
 
-.command-panel { padding: 10px 14px max(10px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: rgba(5, 15, 11, 0.98); }
+.command-panel { padding: 10px max(14px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); border-top: 1px solid var(--line); background: rgba(5, 15, 11, 0.98); }
 .selected-aircraft { display: none; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .selected-aircraft strong { display: block; margin-top: 3px; font: 700 14px IBM Plex Mono, monospace; }
 .eyebrow { color: var(--muted); font: 600 8px IBM Plex Mono, monospace; letter-spacing: .08em; }
@@ -429,6 +430,7 @@ button { touch-action: manipulation; }
   .assistant-drawer:not([open]) { display: none; }
   .workspace { min-height: clamp(330px, 52dvh, 520px); }
   .radar-frame { height: clamp(330px, 52dvh, 520px); min-height: 0; }
+  .radar-canvas { cursor: default; }
   .command-panel {
     position: sticky;
     z-index: 9;
@@ -446,4 +448,26 @@ button { touch-action: manipulation; }
   .vector-control > div:nth-child(2) button,
   .vector-control > div:nth-child(3) button { min-width: 44px; }
   .quick-command { min-width: 92px; }
+}
+
+/* Native webviews and phones with display cut-outs need a stable tactical
+   viewport. These late rules also cover the compact phone pass above. */
+@media (max-width: 900px) {
+  .flight-strip { min-height: 72px; touch-action: manipulation; }
+  .flight-strip:focus-visible, .radar-tools button:focus-visible, .radar-queue button:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .app-shell { padding-top: env(safe-area-inset-top); }
+  .top-bar { padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(10px, env(safe-area-inset-right)); }
+  .operation-bar { padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(10px, env(safe-area-inset-right)); }
+  .workspace, .radar-frame { min-height: 0; }
+  .radar-queue { top: 6px; left: 38px; max-width: min(420px, calc(100% - 168px)); }
+  .radar-queue__items { display: flex; gap: 4px; }
+  .radar-queue__items button { min-width: 114px; }
+  .radar-decision { bottom: 10px; }
+  .scope-corner--bottom-right { bottom: max(8px, env(safe-area-inset-bottom)); }
 }
