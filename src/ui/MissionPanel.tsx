@@ -24,6 +24,9 @@ interface MissionPanelProps {
   badgeCount: number;
   achievementTotal: number;
   achievementIds: string[];
+  scenarioBestScore: number;
+  nextUnlockLabel: string | null;
+  nextUnlockDescription: string | null;
   trainingCallsign: string | null;
   trainingRunway: string | null;
   priorityTraffic: Aircraft[];
@@ -36,7 +39,7 @@ interface MissionPanelProps {
   onCoachCommand: (advice: CoachAdvice) => void;
 }
 
-export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, scenarioFocus, goal, score, landed, handoffs, trafficLevel, skill, peakSkill, targetAircraft, bestScore, bestLandings, completedShifts, completedObjectives, badgeCount, achievementTotal, achievementIds, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
+export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, scenarioFocus, goal, score, landed, handoffs, trafficLevel, skill, peakSkill, targetAircraft, bestScore, bestLandings, completedShifts, completedObjectives, badgeCount, achievementTotal, achievementIds, scenarioBestScore, nextUnlockLabel, nextUnlockDescription, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
   // Radar ilk ekranda her zaman öncelikli. Yardım ve ayrıntılar isteğe bağlı
   // çekmecelerdedir; özellikle telefonda taktik alanı sıkıştırmazlar.
   const [helpOpen, setHelpOpen] = useState(false);
@@ -80,6 +83,7 @@ export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, 
       <details className="career-drawer">
         <summary>BAŞARIM KOLEKSİYONU · {badgeCount}/{achievementTotal}</summary>
         <div>
+          <p className="career-progress"><b>{scenarioLabel} REKORU · {scenarioBestScore} PUAN</b>{nextUnlockLabel ? ` · SIRADAKİ: ${nextUnlockLabel} — ${nextUnlockDescription}` : ' · TÜM AÇILMALAR TAMAM'}</p>
           {ACHIEVEMENTS.map((achievement) => {
             const unlocked = achievementIds.includes(achievement.id);
             return <p key={achievement.id}><b>{unlocked ? '✓' : '○'} {achievement.label}</b> · {achievement.description}</p>;
