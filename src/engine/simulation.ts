@@ -13,6 +13,18 @@ import type { Aircraft, Conflict, GameEvent, GameMode, GameState, RadarWorld, Tr
 const FIXED_STEP_SECONDS = 0.05;
 const RUNWAY_TURNAROUND_SECONDS = 45;
 
+/** A shift score rewards completed work; skill is a multiplier, not the score itself. */
+export function shiftScore(state: Pick<GameState, 'landed' | 'handoffs' | 'peakSkill' | 'metrics'>) {
+  const reward = state.landed * 125 + state.handoffs * 55 + Math.round(state.peakSkill * 15);
+  const penalty = state.metrics.separationLosses * 260
+    + state.metrics.wakeViolations * 100
+    + state.metrics.goArounds * 45
+    + state.metrics.missedHandoffs * 85
+    + state.metrics.unmanagedArrivals * 120
+    + state.metrics.expiredPriorities * 170;
+  return Math.max(0, reward - penalty);
+}
+
 export function aircraftTrend(aircraft: Aircraft): Trend {
   if (aircraft.verticalSpeed > 100 || aircraft.targetAltitude > aircraft.altitude + 50) return 'climb';
   if (aircraft.verticalSpeed < -100 || aircraft.targetAltitude < aircraft.altitude - 50) return 'descend';
@@ -454,7 +466,19 @@ function stepFixed(state: GameState, world: RadarWorld, dt: number): GameState {
     skill,
     peakSkill,
     targetAircraft: profile.targetAircraft,
-    score: Math.round(peakSkill * 10),
+    score: shiftScore({
+      landed: state.landed + landedAircraft.length,
+      handoffs: state.handoffs + handedOffAircraft.length,
+      peakSkill,
+      metrics: {
+        separationLosses: state.metrics.separationLosses + newLossKeys.length,
+        wakeViolations: state.metrics.wakeViolations + newWakeLosses,
+        goArounds: state.metrics.goArounds + goAroundAircraft.length,
+        missedHandoffs: state.metrics.missedHandoffs + missedHandoffAircraft.length,
+        expiredPriorities: state.metrics.expiredPriorities + expiredPriority.length,
+        unmanagedArrivals: state.metrics.unmanagedArrivals + unmanagedArrivalAircraft.length,
+      },
+    }),
     landed: state.landed + landedAircraft.length,
     spawned,
     trafficLevel: profile.level,
