@@ -27,7 +27,8 @@ interface MissionPanelProps {
 }
 
 export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, skill, peakSkill, targetAircraft, bestScore, bestLandings, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
-  const [helpOpen, setHelpOpen] = useState(landed === 0);
+  // Radar alanı ilk açılışta öncelikli. Yardım, oyuncunun isteğiyle açılır.
+  const [helpOpen, setHelpOpen] = useState(false);
   const trainingAircraft = aircraft.find((item) => item.callsign === trainingCallsign);
   const priorityMission = priorityTraffic.find((item) => item.priority && !item.priority.alertRaised);
   const mission = priorityMission
