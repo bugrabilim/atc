@@ -1,4 +1,24 @@
-import type { GameState } from './types';
+import type { GameMode, GameState } from './types';
+
+export interface ShiftGoal {
+  label: string;
+  targetLandings: number;
+  targetHandoffs: number;
+  maximumLosses: number;
+}
+
+export function shiftGoal(mode: GameMode): ShiftGoal {
+  if (mode === 'beginner') return { label: 'İLK VARDİYA', targetLandings: 1, targetHandoffs: 0, maximumLosses: 0 };
+  if (mode === 'normal') return { label: 'DENGELİ AKIŞ', targetLandings: 3, targetHandoffs: 1, maximumLosses: 1 };
+  if (mode === 'advanced') return { label: 'YOĞUN OPERASYON', targetLandings: 6, targetHandoffs: 2, maximumLosses: 1 };
+  return { label: 'UZMAN VARDİYA', targetLandings: 10, targetHandoffs: 4, maximumLosses: 0 };
+}
+
+export function goalComplete(state: GameState, goal = shiftGoal(state.mode)) {
+  return state.landed >= goal.targetLandings
+    && state.handoffs >= goal.targetHandoffs
+    && state.metrics.separationLosses <= goal.maximumLosses;
+}
 
 export interface TrainingGuide {
   step: number;
@@ -48,9 +68,11 @@ export interface DebriefReport {
   summary: string;
   strengths: string[];
   improvements: string[];
+  objective: string;
+  objectiveComplete: boolean;
 }
 
-export function buildDebrief(state: GameState): DebriefReport {
+export function buildDebrief(state: GameState, goal = shiftGoal(state.mode)): DebriefReport {
   const { metrics } = state;
   const safetyPenalty = metrics.separationLosses * 3 + metrics.expiredPriorities * 2 + metrics.missedHandoffs + metrics.unmanagedArrivals;
   const grade = safetyPenalty === 0 && state.landed >= 3 ? 'A'
@@ -73,5 +95,7 @@ export function buildDebrief(state: GameState): DebriefReport {
     summary: `${controllerRank(state.score)} · ${Math.floor(state.elapsedSeconds / 60)} dk · peak skill ${state.peakSkill.toFixed(1)}`,
     strengths,
     improvements,
+    objective: `${goal.label}: ${state.landed}/${goal.targetLandings} iniş · ${state.handoffs}/${goal.targetHandoffs} handoff · en çok ${goal.maximumLosses} ayırma kaybı`,
+    objectiveComplete: goalComplete(state, goal),
   };
 }
