@@ -1,12 +1,13 @@
 import { useRef } from 'react';
 import { difficultyConfig } from '../engine/difficulty';
-import type { Aircraft, GameMode } from '../engine/types';
+import type { Aircraft, GameMode, Procedure } from '../engine/types';
 import type { CoachAdvice } from '../engine/controllerCoach';
 
 interface CommandPanelProps {
   aircraft: Aircraft[];
   runwayIds: string[];
   fixIds: string[];
+  procedures: Procedure[];
   selectedCallsign: string | null;
   mode: GameMode;
   coach: CoachAdvice;
@@ -30,6 +31,7 @@ export function CommandPanel({
   aircraft,
   runwayIds,
   fixIds,
+  procedures,
   selectedCallsign,
   mode,
   coach,
@@ -46,10 +48,12 @@ export function CommandPanel({
   const selected = aircraft.find((item) => item.callsign === selectedCallsign) ?? null;
   const modeConfig = difficultyConfig(mode);
   const primaryFix = fixIds.find((item) => item.startsWith('FINAL')) ?? fixIds[0];
+  const matchingProcedure = selected ? procedures.find((item) => item.kind === selected.phase) : undefined;
   const quickCommands = [
     ...runwayIds.slice(0, 2).map((runwayId) => ({ label: `ILS ${runwayId}`, command: `ILS ${runwayId}` })),
     ...(mode !== 'beginner' ? runwayIds.slice(0, 2).map((runwayId) => ({ label: `LOC ${runwayId}`, command: `LOC ${runwayId}` })) : []),
     ...(modeConfig.showAdvancedCommands && primaryFix ? [{ label: `DCT ${primaryFix}`, command: `DCT ${primaryFix}` }, { label: `HOLD ${primaryFix}`, command: `HOLD ${primaryFix}` }] : []),
+    ...(modeConfig.showAdvancedCommands && matchingProcedure ? [{ label: `${matchingProcedure.kind === 'arrival' ? 'STAR' : 'SID'} ${matchingProcedure.id}`, command: `${matchingProcedure.kind === 'arrival' ? 'STAR' : 'SID'} ${matchingProcedure.id}` }] : []),
     ...(selected?.approach ? [{ label: 'GO-AROUND', command: 'GA' }] : []),
     ...(mode !== 'beginner' ? baseQuickCommands : [{ label: 'NORMAL SPD', command: 'RN' }]),
   ];
