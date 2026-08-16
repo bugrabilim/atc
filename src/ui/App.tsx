@@ -3,7 +3,7 @@ import { parseCommandBatch } from '../engine/commands';
 import { queueInstructions, spokenRadioMessage } from '../engine/radio';
 import { createInitialState, defaultScenario, scenarioCatalog, worldWithFlow } from '../engine/scenario';
 import { stepGame } from '../engine/simulation';
-import type { GameState } from '../engine/types';
+import type { GameMode, GameState } from '../engine/types';
 import type { GameScenario } from '../engine/scenario';
 import { CommandPanel } from './CommandPanel';
 import { DebriefPanel } from './DebriefPanel';
@@ -14,6 +14,7 @@ import { buildDebrief, trainingGuide, type TrainingGuide } from '../engine/progr
 import { controllerCoach, type CoachAdvice } from '../engine/controllerCoach';
 import { restoreSession, serializeSession, type SavedSession } from '../engine/session';
 import { AudioCuePlayer, type AudioCue } from './audioCues';
+import { DIFFICULTY_MODES, difficultyConfig, worldForMode } from '../engine/difficulty';
 
 interface CareerStats {
   bestScore: number;
@@ -54,7 +55,7 @@ function loadSavedSession(): SavedSession | null {
 export function App() {
   const [savedSession] = useState<SavedSession | null>(loadSavedSession);
   const [scenario, setScenario] = useState<GameScenario>(() => scenarioCatalog.find((item) => item.id === savedSession?.scenarioId) ?? defaultScenario);
-  const [state, setState] = useState<GameState>(() => savedSession?.state ?? createInitialState(defaultScenario));
+  const [state, setState] = useState<GameState>(() => savedSession?.state ?? createInitialState(defaultScenario, 'beginner'));
   const [career, setCareer] = useState<CareerStats>(loadCareerStats);
   const stateRef = useRef(state);
   const scenarioRef = useRef(scenario);
@@ -68,7 +69,7 @@ export function App() {
   const lastSpokenEvent = useRef<string | null>(null);
   const lastCuedEvent = useRef<string | null>(null);
   const audioPlayer = useRef<AudioCuePlayer | null>(null);
-  const activeWorld = useMemo(() => worldWithFlow(scenario.world, state.flowId, state.peakSkill), [scenario.world, state.flowId, state.peakSkill]);
+  const activeWorld = useMemo(() => worldWithFlow(worldForMode(scenario.world, state.mode), state.flowId, state.peakSkill), [scenario.world, state.flowId, state.mode, state.peakSkill]);
   const activeFlow = activeWorld.flowConfigurations.find((item) => item.id === state.flowId) ?? activeWorld.flowConfigurations[0];
   const activeArrivalRunways = activeWorld.runways.filter((item) => item.active && (item.operation === 'arrival' || item.operation === 'mixed'));
   const trainingAircraft = scenario.initialAircraft.find((item) => item.phase === 'arrival');
@@ -254,7 +255,7 @@ export function App() {
     });
   };
   const reset = () => {
-    setState(createInitialState(scenario));
+    setState(createInitialState(scenario, stateRef.current.mode));
     setCommand('');
     setFeedback({ type: 'info', message: 'Senaryo yeniden başlatıldı.' });
     setDebriefOpen(false);
@@ -262,7 +263,7 @@ export function App() {
   };
   const selectScenario = (nextScenario: GameScenario) => {
     setScenario(nextScenario);
-    setState(createInitialState(nextScenario));
+    setState(createInitialState(nextScenario, stateRef.current.mode));
     setCommand('');
     setFeedback({ type: 'info', message: `${nextScenario.label} sektörü yüklendi.` });
     setDebriefOpen(false);
@@ -273,6 +274,14 @@ export function App() {
     if (!flow) return;
     setState((current) => ({ ...current, flowId }));
     setFeedback({ type: 'info', message: `${flow.label} operasyonu aktif. Yeni trafik bu pist akışına göre planlanacak.` });
+  };
+  const selectMode = (mode: GameMode) => {
+    const config = difficultyConfig(mode);
+    setState(createInitialState(scenario, mode));
+    setCommand('');
+    setFeedback({ type: 'info', message: `${config.label} modu başladı · ${config.description}` });
+    setDebriefOpen(false);
+    try { window.localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* storage unavailable */ }
   };
   const severeConflicts = state.conflicts.filter((item) => item.severity === 'loss').length;
   const endShift = () => {
@@ -318,6 +327,12 @@ export function App() {
           Pist akışı
           <select value={state.flowId} onChange={(event) => selectFlow(event.target.value)}>
             {activeWorld.flowConfigurations.map((flow) => <option key={flow.id} value={flow.id}>{flow.label}</option>)}
+          </select>
+        </label>
+        <label>
+          Mod
+          <select value={state.mode} onChange={(event) => selectMode(event.target.value as GameMode)}>
+            {DIFFICULTY_MODES.map((mode) => <option key={mode.id} value={mode.id}>{mode.label}</option>)}
           </select>
         </label>
         {activeFlow ? <span>RÜZGÂR <b>{String(activeFlow.windDirection).padStart(3, '0')}°/{activeFlow.windSpeedKt}KT</b></span> : null}
@@ -380,6 +395,7 @@ export function App() {
         runwayIds={activeArrivalRunways.map((item) => item.id)}
         fixIds={activeWorld.fixes.map((item) => item.id)}
         selectedCallsign={state.selectedCallsign}
+        mode={state.mode}
         value={command}
         feedback={feedback}
         onChange={setCommand}
