@@ -403,11 +403,13 @@ export function App() {
         fixIds={activeWorld.fixes.map((item) => item.id)}
         selectedCallsign={state.selectedCallsign}
         mode={state.mode}
+        coach={coach}
         value={command}
         feedback={feedback}
         onChange={setCommand}
         onSubmit={submitCommand}
         onQuickCommand={issueCommand}
+        onCoachCommand={submitCoachCommand}
         onSelect={selectAircraft}
         onNext={selectNextAircraft}
       />
