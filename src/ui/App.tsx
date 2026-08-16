@@ -77,7 +77,7 @@ export function App() {
     message: savedSession ? 'Kaydedilmiş vardiya duraklatıldı. Devam ile aynı trafikten sürdürebilirsin.' : 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. Çağrı kodunun ilk harflerini yazıp Tab ile tamamlayabilirsin.',
   });
   const [debriefOpen, setDebriefOpen] = useState(false);
-  const [landingOpen, setLandingOpen] = useState(true);
+  const [landingOpen, setLandingOpen] = useState(() => window.location.hostname !== 'atc-tr-play.vercel.app');
   const [newAchievementIds, setNewAchievementIds] = useState<string[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const lastSpokenEvent = useRef<string | null>(null);
