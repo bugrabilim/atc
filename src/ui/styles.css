@@ -377,6 +377,44 @@ button { touch-action: manipulation; }
 @media (max-width: 900px) { .landing-nav__links { display: none; }.landing-hero { grid-template-columns: 1fr; min-height: 0; padding-block: 74px; }.landing-hero__visual { min-height: 390px; }.landing-hero__radar { width: min(68vw, 360px); }.landing-feature-grid, .airport-grid { grid-template-columns: repeat(2, 1fr); }.landing-feature:last-child { grid-column: 1 / -1; }.landing-section__heading--row { align-items: start; flex-direction: column; }.landing-section__heading--row p { text-align: left; } }
 @media (max-width: 560px) { .landing-page { padding-inline: 14px; }.landing-nav { min-height: 64px; }.landing-nav__cta { padding-inline: 10px; font-size: 9px; }.landing-hero { padding-block: 58px 72px; }.landing-hero h1 { font-size: clamp(46px, 14vw, 70px); }.landing-hero__visual { min-height: 330px; }.landing-feature-grid, .airport-grid, .landing-steps { grid-template-columns: 1fr; }.landing-feature:last-child { grid-column: auto; }.landing-feature { min-height: 0; }.landing-steps > div { padding: 0 0 24px; border-right: 0; border-bottom: 1px solid rgba(110,243,176,.15); }.landing-steps > div:last-child { border-bottom: 0; }.landing-footer { align-items: start; flex-direction: column; }.landing-footer__meta { justify-content: start; flex-direction: column; gap: 8px; } }
 
+/* Mobile game layout: no horizontal page overflow, readable controls and a
+   dedicated radar viewport. Controls wrap instead of being cut off by Safari. */
+@media (max-width: 640px) {
+  html, body, #root { max-width: 100%; overflow-x: hidden; }
+  .app-shell { width: 100%; overflow-x: hidden; }
+  .top-bar { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding-inline: 12px; }
+  .top-status { display: none; }
+  .brand-lockup { min-width: 0; }
+  .brand-lockup strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .session-actions { min-width: 0; }
+  .session-actions button { min-width: 44px; padding-inline: 7px; }
+  .operation-bar { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); gap: 7px; align-items: center; min-height: 58px; padding: 7px 12px; overflow: hidden; }
+  .operation-bar > span:not(.eyebrow) { display: none; }
+  .operation-bar > .eyebrow { min-width: 0; font-size: 9px; }
+  .operation-bar label { min-width: 0; display: grid; gap: 2px; font-size: 8px; }
+  .operation-bar label select { width: 100%; min-width: 0; padding-inline: 5px; font-size: 9px; }
+  .mission-panel { display: block; padding: 10px 12px; }
+  .mission-primary strong { max-width: 100%; margin-top: 4px; font-size: 12px; line-height: 1.35; white-space: normal; overflow: visible; }
+  .mission-score { margin-top: 7px; }
+  .workspace { width: 100%; min-height: 0; }
+  .radar-frame { width: 100%; height: clamp(390px, 58dvh, 590px); min-height: 390px; border-right: 0; }
+  .radar-queue { left: 34px; max-width: calc(100% - 48px); min-width: 0; }
+  .radar-queue__runways { display: block; }
+  .radar-queue__runway:not(:first-child) { display: none; }
+  .radar-decision { left: 10px; max-width: calc(100% - 20px); }
+  .command-panel { width: 100%; padding: 12px; }
+  .vector-control { display: grid; grid-template-columns: 1fr; gap: 7px; overflow: visible; }
+  .vector-control > div { display: grid; grid-template-columns: 70px repeat(5, minmax(0, 1fr)); gap: 4px; width: 100%; }
+  .vector-control span { width: auto; align-self: center; font-size: 9px; }
+  .vector-control b, .vector-control button { min-width: 0; width: 100%; }
+  .quick-command-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; overflow: visible; }
+  .quick-command { min-width: 0; width: 100%; }
+  .command-entry { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; width: 100%; }
+  .command-entry input { min-width: 0; width: 100%; }
+  .send-command { min-width: 76px; padding-inline: 8px; }
+  .command-feedback { white-space: normal; overflow: visible; line-height: 1.35; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; }
 }
