@@ -5,7 +5,7 @@ import { profileForSkill } from './skill';
 import { difficultyConfig, modeTrafficProfile } from './difficulty';
 
 export interface GameScenario {
-  id: 'alpha' | 'coastal' | 'metro';
+  id: 'alpha' | 'coastal' | 'metro' | 'highland';
   label: string;
   briefing: string;
   focus: string;
@@ -104,6 +104,35 @@ const metroWorld: RadarWorld = {
   ],
 };
 
+const highlandWorld: RadarWorld = {
+  airport: 'HIGHLAND INTERNATIONAL', sectorName: 'APPROACH · HIGHLAND SECTOR', rangeNm: 38,
+  runways: [
+    { id: '14', reciprocal: '32', center: { x: -1.4, y: 0.8 }, heading: 140, lengthNm: 1.78, active: true, operation: 'arrival' },
+    { id: '15', reciprocal: '33', center: { x: 2.1, y: -1.7 }, heading: 150, lengthNm: 1.71, active: true, operation: 'departure' },
+  ],
+  fixes: [
+    { id: 'RIDGE', position: { x: -23, y: -15 } }, { id: 'VALLEY', position: { x: 24, y: -12 } },
+    { id: 'PASS', position: { x: -17, y: 18 } }, { id: 'FINAL14', position: { x: -10, y: 10 } },
+    { id: 'EXIT15', position: { x: 23, y: 17 } },
+  ],
+  procedures: [
+    { id: 'RIDGE-HIGH', kind: 'arrival', runwayId: '14', fixIds: ['RIDGE', 'FINAL14'] },
+    { id: 'VALLEY-HIGH', kind: 'arrival', runwayId: '14', fixIds: ['VALLEY', 'FINAL14'] },
+    { id: 'PASS-HIGH', kind: 'arrival', runwayId: '14', fixIds: ['PASS', 'FINAL14'] },
+    { id: 'EXIT15-HIGH', kind: 'departure', fixIds: ['EXIT15'] },
+  ],
+  trafficEntries: [
+    { id: 'RIDGE', position: { x: -23, y: -15 }, procedureId: 'RIDGE-HIGH', compatibleRunwayIds: ['14'] },
+    { id: 'VALLEY', position: { x: 24, y: -12 }, procedureId: 'VALLEY-HIGH', compatibleRunwayIds: ['14'] },
+    { id: 'PASS', position: { x: -17, y: 18 }, procedureId: 'PASS-HIGH', compatibleRunwayIds: ['14'] },
+  ],
+  trafficExits: [{ id: 'EXIT15', procedureId: 'EXIT15-HIGH' }],
+  flowConfigurations: [
+    { id: 'highland-calm', label: 'HIGHLAND · SAKİN HAVA', arrivalRunwayIds: ['14'], departureRunwayIds: ['15'], windDirection: 135, windSpeedKt: 7, visibilityNm: 12, qnh: 1019 },
+    { id: 'highland-front', label: 'HIGHLAND · HAVA CEPHESİ', arrivalRunwayIds: ['14'], departureRunwayIds: ['15'], windDirection: 185, windSpeedKt: 24, visibilityNm: 5, qnh: 997 },
+  ],
+};
+
 const alphaAircraft: Aircraft[] = [
   createAircraft({ callsign: 'AR101', type: 'A321', phase: 'arrival', position: { x: -1.65, y: 6 }, heading: 354, altitude: 1200, speed: 170, targetHeading: 354, targetAltitude: 1200, targetSpeed: 170, turnDirection: 'shortest', performance: JET_PERFORMANCE, assignedRunway: '34L' }),
   createAircraft({ callsign: 'NX204', type: 'B738', phase: 'arrival', position: { x: 20, y: -17 }, heading: 316, altitude: 8000, speed: 260, targetHeading: 316, targetAltitude: 8000, targetSpeed: 260, turnDirection: 'shortest', performance: JET_PERFORMANCE, assignedRunway: '34L' }),
@@ -122,6 +151,12 @@ const metroAircraft: Aircraft[] = [
   createAircraft({ callsign: 'MG711', type: 'A330', phase: 'departure', position: { x: 2, y: -1.8 }, heading: 270, altitude: 3000, speed: 205, targetHeading: 270, targetAltitude: 11000, targetSpeed: 275, turnDirection: 'shortest', performance: HEAVY_PERFORMANCE, navigation: { mode: 'route', fixIds: ['EXIT27'], currentLegIndex: 0, procedure: 'EXIT27-METRO' } }),
 ];
 
+const highlandAircraft: Aircraft[] = [
+  createAircraft({ callsign: 'HL208', type: 'A21N', phase: 'arrival', position: { x: -11, y: 12 }, heading: 140, altitude: 3100, speed: 185, targetHeading: 140, targetAltitude: 3100, targetSpeed: 185, turnDirection: 'shortest', performance: JET_PERFORMANCE, assignedRunway: '14' }),
+  createAircraft({ callsign: 'HL431', type: 'B738', phase: 'arrival', position: { x: 24, y: -12 }, heading: 285, altitude: 9500, speed: 255, targetHeading: 285, targetAltitude: 9500, targetSpeed: 255, turnDirection: 'shortest', performance: JET_PERFORMANCE, assignedRunway: '14' }),
+  createAircraft({ callsign: 'HL777', type: 'B77W', phase: 'departure', position: { x: 2.5, y: -2 }, heading: 150, altitude: 3200, speed: 205, targetHeading: 150, targetAltitude: 12000, targetSpeed: 280, turnDirection: 'shortest', performance: HEAVY_PERFORMANCE, navigation: { mode: 'route', fixIds: ['EXIT15'], currentLegIndex: 0, procedure: 'EXIT15-HIGH' } }),
+];
+
 export const scenarioCatalog: GameScenario[] = [
   {
     id: 'alpha', label: 'IST · PARALEL AKIŞ',
@@ -137,6 +172,11 @@ export const scenarioCatalog: GameScenario[] = [
     id: 'metro', label: 'METRO · TEK PİST',
     briefing: 'Tek iniş pisti, sınırlı kapasite. Sıralamayı erken kur; gerekirse HOLD ve go-around kullan.',
     focus: 'Sıralama, holding ve pist kapasitesi', world: metroWorld, initialAircraft: metroAircraft,
+  },
+  {
+    id: 'highland', label: 'HIGHLAND · HAVA CEPHESİ',
+    briefing: 'Tek piste gelen akışı, yaklaşan hava cephesi ve düşen görüş altında koru.',
+    focus: 'Düşük görüş, rüzgâr ve erken yaklaşma kararı', world: highlandWorld, initialAircraft: highlandAircraft,
   },
 ];
 
