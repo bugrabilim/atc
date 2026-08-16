@@ -249,7 +249,16 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
   ));
   const handedOffAircraft = leavingAircraft.filter((item) => item.handoffCleared);
   const missedHandoffAircraft = leavingAircraft.filter((item) => !item.handoffCleared);
-  let aircraft = recoveredAircraft.filter((item) => !landedAircraft.includes(item) && !leavingAircraft.includes(item));
+  const unmanagedArrivalAircraft = recoveredAircraft.filter((item) => (
+    item.phase === 'arrival'
+    && item.approach?.status !== 'captured'
+    && distance(item.position, { x: 0, y: 0 }) > _world.rangeNm + 2
+  ));
+  let aircraft = recoveredAircraft.filter((item) => (
+    !landedAircraft.includes(item)
+    && !leavingAircraft.includes(item)
+    && !unmanagedArrivalAircraft.includes(item)
+  ));
   let spawned = state.spawned;
   let nextTrafficAt = state.nextTrafficAt;
   let runwayAvailableAt = state.runwayAvailableAt;
@@ -306,6 +315,14 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
       id: `missed-handoff-${Math.round(elapsedSeconds * 10)}`,
       type: 'danger',
       message: `${missedHandoffAircraft.map((item) => item.callsign).join(', ')} · koordinasyonsuz sektör çıkışı (-100)`,
+    });
+  }
+
+  if (unmanagedArrivalAircraft.length > 0) {
+    eventLog = appendEvent(eventLog, {
+      id: `unmanaged-arrival-${Math.round(elapsedSeconds * 10)}`,
+      type: 'warning',
+      message: `${unmanagedArrivalAircraft.map((item) => item.callsign).join(', ')} · yaklaşma yönetilmeden sektörden çıktı (-75)`,
     });
   }
 
@@ -379,7 +396,7 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
     aircraft,
     conflicts,
     landed: state.landed + landedAircraft.length,
-    score: Math.max(0, state.score + landedAircraft.length * 100 + priorityLanded.length * 150 + handedOffAircraft.length * 50 - missedHandoffAircraft.length * 100 - newLossPairs.length * 250 - expiredPriority.length * 150),
+    score: Math.max(0, state.score + landedAircraft.length * 100 + priorityLanded.length * 150 + handedOffAircraft.length * 50 - missedHandoffAircraft.length * 100 - unmanagedArrivalAircraft.length * 75 - newLossPairs.length * 250 - expiredPriority.length * 150),
     spawned,
     trafficLevel: nextTrafficLevel,
     nextTrafficAt,
@@ -395,6 +412,7 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
       goArounds: state.metrics.goArounds + missedAircraft.length,
       missedHandoffs: state.metrics.missedHandoffs + missedHandoffAircraft.length,
       expiredPriorities: state.metrics.expiredPriorities + expiredPriority.length,
+      unmanagedArrivals: state.metrics.unmanagedArrivals + unmanagedArrivalAircraft.length,
     },
     eventTimeline: [...state.eventTimeline, ...timelineUpdates].slice(-40),
   };

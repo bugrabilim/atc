@@ -23,6 +23,7 @@ export function DebriefPanel({ report, state, onRestart, onContinue }: DebriefPa
           <span>HANDOFF <b>{state.handoffs}</b></span>
           <span>AYIRMA <b>{state.metrics.separationLosses}</b></span>
           <span>GO-AROUND <b>{state.metrics.goArounds}</b></span>
+          <span>KAYIP GELİŞ <b>{state.metrics.unmanagedArrivals}</b></span>
         </div>
         <div className="debrief-columns">
           <div><span className="eyebrow">GÜÇLÜ YANLAR</span>{report.strengths.map((item) => <p key={item}>{item}</p>)}</div>

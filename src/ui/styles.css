@@ -155,7 +155,7 @@ button { touch-action: manipulation; }
 .debrief-grade--b { color: var(--cyan); background: rgba(103,232,196,.08); }
 .debrief-grade--c { color: var(--warning); background: rgba(255,182,72,.08); }
 .debrief-grade--d { color: var(--danger); background: rgba(255,104,104,.08); }
-.debrief-metrics { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+.debrief-metrics { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
 .debrief-metrics span { padding: 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); font: 600 8px IBM Plex Mono, monospace; }
 .debrief-metrics b { display: block; margin-top: 5px; color: var(--green); font-size: 18px; }
 .debrief-columns { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
@@ -208,6 +208,7 @@ button { touch-action: manipulation; }
   .debrief-grade { width: 52px; height: 52px; font-size: 27px; }
   .debrief-panel h2 { font-size: 13px; }
   .debrief-columns { grid-template-columns: 1fr; gap: 12px; }
+  .debrief-metrics { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (orientation: landscape) and (max-height: 560px) {

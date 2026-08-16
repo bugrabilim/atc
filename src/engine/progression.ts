@@ -52,7 +52,7 @@ export interface DebriefReport {
 
 export function buildDebrief(state: GameState): DebriefReport {
   const { metrics } = state;
-  const safetyPenalty = metrics.separationLosses * 3 + metrics.expiredPriorities * 2 + metrics.missedHandoffs;
+  const safetyPenalty = metrics.separationLosses * 3 + metrics.expiredPriorities * 2 + metrics.missedHandoffs + metrics.unmanagedArrivals;
   const grade = safetyPenalty === 0 && state.landed >= 3 ? 'A'
     : safetyPenalty <= 1 && state.landed >= 1 ? 'B'
       : safetyPenalty <= 3 ? 'C' : 'D';
@@ -63,6 +63,7 @@ export function buildDebrief(state: GameState): DebriefReport {
   const improvements = [
     metrics.separationLosses > 0 ? `${metrics.separationLosses} ayırma kaybı yaşandı; CPA uyarısını daha erken çöz.` : 'Ayırma kaybı yok.',
     metrics.goArounds > 0 ? `${metrics.goArounds} go-around oluştu; iniş izni zamanlamasını güçlendir.` : 'Go-around yok.',
+    metrics.unmanagedArrivals > 0 ? `${metrics.unmanagedArrivals} geliş yaklaşma yönetilmeden sektörden çıktı; ILS kararını daha erken ver.` : 'Kontrol edilmeden sektörden çıkan geliş yok.',
     metrics.expiredPriorities > 0 ? `${metrics.expiredPriorities} öncelikli trafik süresi aşıldı.` : 'Öncelikli trafik süresi aşılmadı.',
   ];
   return {

@@ -42,6 +42,10 @@ export function restoreSession(serialized: string | null, scenarios: readonly Ga
       state: {
         ...state,
         paused: true,
+        metrics: {
+          ...state.metrics,
+          unmanagedArrivals: typeof state.metrics?.unmanagedArrivals === 'number' ? state.metrics.unmanagedArrivals : 0,
+        },
         eventTimeline: Array.isArray(state.eventTimeline) ? state.eventTimeline : state.eventLog,
       },
     };

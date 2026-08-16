@@ -67,6 +67,19 @@ describe('stepGame', () => {
     expect(next.aircraft.some((item) => item.priority?.deadlineAt)).toBe(true);
   });
 
+  it('removes an unmanaged arrival that leaves the radar sector', () => {
+    const state = structuredClone(initialState);
+    state.aircraft = [state.aircraft[1]];
+    state.aircraft[0].position = { x: world.rangeNm + 3, y: 0 };
+    state.aircraft[0].navigation = undefined;
+
+    const next = stepGame(state, world, 0.1);
+
+    expect(next.aircraft).toHaveLength(0);
+    expect(next.metrics.unmanagedArrivals).toBe(1);
+    expect(next.eventLog.at(-1)?.message).toContain('yaklaşma yönetilmeden');
+  });
+
   it('varies callsigns, types, routes and traffic phase over successive spawns', () => {
     const earlyArrival = spawnTraffic(0);
     const laterArrival = spawnTraffic(1);

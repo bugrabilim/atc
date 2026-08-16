@@ -152,6 +152,8 @@ export interface SessionMetrics {
   goArounds: number;
   missedHandoffs: number;
   expiredPriorities: number;
+  /** Arrivals that crossed the sector boundary without being safely established. */
+  unmanagedArrivals: number;
 }
 
 export interface GameEvent {
