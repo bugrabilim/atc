@@ -352,6 +352,7 @@ export function App() {
         ) : null}
         <MissionPanel
           aircraft={state.aircraft}
+          mode={state.mode}
           score={state.score}
           landed={state.landed}
           handoffs={state.handoffs}
