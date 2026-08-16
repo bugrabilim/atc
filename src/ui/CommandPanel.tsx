@@ -12,6 +12,7 @@ interface CommandPanelProps {
   feedback: { type: 'success' | 'error' | 'info'; message: string };
   onChange: (value: string) => void;
   onSubmit: () => void;
+  onQuickCommand: (command: string) => boolean;
   onSelect: (callsign: string) => void;
   onNext: () => void;
 }
@@ -32,6 +33,7 @@ export function CommandPanel({
   feedback,
   onChange,
   onSubmit,
+  onQuickCommand,
   onSelect,
   onNext,
 }: CommandPanelProps) {
@@ -48,8 +50,7 @@ export function CommandPanel({
 
   const useQuickCommand = (command: string) => {
     if (!selectedCallsign) return;
-    onChange(`${selectedCallsign} ${command}`);
-    inputRef.current?.focus();
+    onQuickCommand(`${selectedCallsign} ${command}`);
   };
 
   const relativeCommand = (kind: 'heading' | 'altitude' | 'speed', delta: number) => {
