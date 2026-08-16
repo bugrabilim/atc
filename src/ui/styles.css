@@ -121,6 +121,21 @@ button { touch-action: manipulation; }
 .radar-tools { position: absolute; z-index: 4; top: 10px; right: 10px; display: flex; gap: 5px; }
 .radar-tools button { min-width: 38px; min-height: 34px; padding: 0 8px; color: #a9d8c2; border: 1px solid rgba(110,243,176,.25); border-radius: 5px; background: rgba(3,14,10,.88); font: 700 8px IBM Plex Mono, monospace; cursor: pointer; }
 .radar-tools button.is-active { color: #03140d; border-color: var(--green); background: var(--green); }
+.radar-queue { position: absolute; z-index: 3; top: 12px; left: 46px; min-width: 230px; padding: 8px; border: 1px solid rgba(103,232,196,.3); border-radius: 8px; background: rgba(2, 14, 10, .91); box-shadow: 0 8px 24px rgba(0,0,0,.24); }
+.radar-queue__heading { display: block; margin-bottom: 6px; color: var(--cyan); font: 700 10px IBM Plex Mono, monospace; letter-spacing: .08em; }
+.radar-queue__items { display: grid; gap: 4px; }
+.radar-queue button { min-height: 32px; padding: 0 7px; color: #cbe7d9; border: 1px solid transparent; border-radius: 5px; background: rgba(14, 38, 28, .72); text-align: left; font: 600 11px IBM Plex Mono, monospace; cursor: pointer; }
+.radar-queue button b { color: var(--cyan); }
+.radar-queue button small { color: #9ebcac; font-size: 10px; }
+.radar-queue button.is-selected { border-color: var(--green); background: rgba(28, 79, 55, .74); }
+.radar-decision { position: absolute; z-index: 3; left: 12px; bottom: 30px; max-width: min(390px, calc(100% - 24px)); padding: 9px 11px; border: 1px solid rgba(103,232,196,.34); border-radius: 8px; background: rgba(2, 14, 10, .93); box-shadow: 0 8px 24px rgba(0,0,0,.24); }
+.radar-decision > span, .radar-decision strong, .radar-decision small { display: block; font-family: IBM Plex Mono, monospace; }
+.radar-decision > span { color: var(--cyan); font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+.radar-decision strong { margin-top: 4px; color: #e4fff2; font-size: 13px; }
+.radar-decision small { margin-top: 4px; color: #aac9ba; font-size: 10px; line-height: 1.35; }
+.radar-decision button { min-height: 34px; margin-top: 7px; padding: 0 10px; color: #03140d; border: 1px solid var(--green); border-radius: 5px; background: var(--green); font: 700 10px IBM Plex Mono, monospace; cursor: pointer; }
+.radar-decision--warning { border-color: rgba(255,182,72,.55); }
+.radar-decision--danger { border-color: rgba(255,93,93,.72); }
 .scope-corner { position: absolute; z-index: 2; width: 28px; height: 28px; pointer-events: none; }
 .scope-corner--top-left { top: 12px; left: 12px; border-top: 1px solid rgba(110,243,176,.5); border-left: 1px solid rgba(110,243,176,.5); }
 .scope-corner--bottom-right { right: 12px; bottom: 12px; border-right: 1px solid rgba(110,243,176,.5); border-bottom: 1px solid rgba(110,243,176,.5); }
@@ -301,6 +316,10 @@ button { touch-action: manipulation; }
   .mission-event { display: none; }
   .assistant-drawer__content { max-height: min(38dvh, 280px); }
   .radar-frame { min-height: 250px; }
+  .radar-queue { top: 8px; left: 42px; min-width: 205px; padding: 6px; }
+  .radar-queue__heading { font-size: 9px; }
+  .radar-queue button { min-height: 29px; font-size: 10px; }
+  .radar-decision { bottom: 27px; padding: 7px 9px; }
   .vector-control {
     display: flex;
     grid-template-columns: none;
@@ -328,6 +347,12 @@ button { touch-action: manipulation; }
   .mission-score { font-size: 10px; }
   .mission-score b { font-size: 13px; }
   .radar-tools { top: 8px; right: 8px; }
+  .radar-queue { left: 38px; max-width: calc(100% - 152px); min-width: 0; }
+  .radar-queue button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .radar-queue button small { font-size: 9px; }
+  .radar-decision { max-width: calc(100% - 24px); }
+  .radar-decision strong { font-size: 12px; }
+  .radar-decision small { font-size: 9px; }
   .radar-tools button { min-width: 42px; min-height: 40px; font-size: 10px; }
   .selected-aircraft { margin-bottom: 6px; }
   .selected-aircraft strong { font-size: 17px; }
