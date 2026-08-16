@@ -11,6 +11,7 @@ const DIRECT_ALIASES = new Set(['DCT', 'DIRECT']);
 const HOLD_ALIASES = new Set(['HOLD']);
 const LAND_ALIASES = new Set(['LAND', 'CLEARED']);
 const HANDOFF_ALIASES = new Set(['HANDOFF', 'HOF']);
+const GO_AROUND_ALIASES = new Set(['GA', 'GOAROUND', 'MISSED']);
 const RESUME_ALIASES = new Set(['RESUME', 'NORMAL', 'NORM', 'RN']);
 const EXPEDITE_ALIASES = new Set(['EXPEDITE', 'EXP', 'X']);
 
@@ -61,6 +62,9 @@ export function parseCommandLine(
   }
   if (keyword && HANDOFF_ALIASES.has(keyword)) {
     return { ok: true, command: { kind: 'handoff', callsign }, normalized: `${callsign} HANDOFF` };
+  }
+  if (keyword && GO_AROUND_ALIASES.has(keyword)) {
+    return { ok: true, command: { kind: 'goAround', callsign }, normalized: `${callsign} GO AROUND` };
   }
   if (keyword && RESUME_ALIASES.has(keyword)) {
     return { ok: true, command: { kind: 'resumeSpeed', callsign }, normalized: `${callsign} RESUME NORMAL SPEED` };
@@ -168,7 +172,7 @@ export function parseCommandBatch(
   let index = 0;
   while (index < body.length) {
     const keyword = body[index];
-    if (LAND_ALIASES.has(keyword) || HANDOFF_ALIASES.has(keyword) || RESUME_ALIASES.has(keyword) || EXPEDITE_ALIASES.has(keyword)) {
+    if (LAND_ALIASES.has(keyword) || HANDOFF_ALIASES.has(keyword) || GO_AROUND_ALIASES.has(keyword) || RESUME_ALIASES.has(keyword) || EXPEDITE_ALIASES.has(keyword)) {
       chunks.push([keyword]);
       index += 1;
       continue;
@@ -222,6 +226,9 @@ export function applyCommand(stateAircraft: readonly import('./types').Aircraft[
     }
     if (command.kind === 'handoff') {
       return aircraft.phase === 'departure' ? { ...aircraft, handoffCleared: true } : aircraft;
+    }
+    if (command.kind === 'goAround') {
+      return aircraft.phase === 'arrival' && aircraft.approach ? { ...aircraft, goAroundRequested: true } : aircraft;
     }
     if (command.kind === 'direct') {
       return {
