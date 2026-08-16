@@ -28,6 +28,10 @@ export function DebriefPanel({ report, state, onRestart, onContinue }: DebriefPa
           <div><span className="eyebrow">GÜÇLÜ YANLAR</span>{report.strengths.map((item) => <p key={item}>{item}</p>)}</div>
           <div><span className="eyebrow">SONRAKİ VARDİYA</span>{report.improvements.map((item) => <p key={item}>{item}</p>)}</div>
         </div>
+        <div className="debrief-timeline">
+          <span className="eyebrow">OPERASYON KAYDI</span>
+          {state.eventTimeline.slice(-6).reverse().map((event) => <p key={event.id} className={`debrief-event debrief-event--${event.type}`}>{event.message}</p>)}
+        </div>
         <div className="debrief-actions">
           <button type="button" onClick={onContinue}>VARDİYAYA DÖN</button>
           <button type="button" className="is-primary" onClick={onRestart}>YENİ VARDİYA</button>

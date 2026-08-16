@@ -143,6 +143,8 @@ export interface GameState {
   /** Instructions acknowledged by a pilot and waiting for execution. */
   pendingInstructions: PendingInstruction[];
   metrics: SessionMetrics;
+  /** Rolling operational history used by the debrief, separate from the short live event log. */
+  eventTimeline: GameEvent[];
 }
 
 export interface SessionMetrics {

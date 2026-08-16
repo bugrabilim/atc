@@ -371,6 +371,7 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
       [...(state.trackHistory[item.callsign] ?? []), { ...item.position }].slice(-60),
     ]))
     : state.trackHistory;
+  const timelineUpdates = eventLog.filter((event) => !state.eventLog.some((previous) => previous.id === event.id));
 
   return {
     ...state,
@@ -395,5 +396,6 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
       missedHandoffs: state.metrics.missedHandoffs + missedHandoffAircraft.length,
       expiredPriorities: state.metrics.expiredPriorities + expiredPriority.length,
     },
+    eventTimeline: [...state.eventTimeline, ...timelineUpdates].slice(-40),
   };
 }

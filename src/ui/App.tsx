@@ -11,6 +11,7 @@ import { FlightStripList } from './FlightStripList';
 import { MissionPanel } from './MissionPanel';
 import { RadarScope } from './RadarScope';
 import { buildDebrief } from '../engine/progression';
+import { restoreSession, serializeSession, type SavedSession } from '../engine/session';
 
 interface CareerStats {
   bestScore: number;
@@ -18,6 +19,7 @@ interface CareerStats {
 }
 
 const CAREER_STORAGE_KEY = 'airspace-control-career-v1';
+const SESSION_STORAGE_KEY = 'airspace-control-session-v1';
 
 function loadCareerStats(): CareerStats {
   try {
@@ -39,15 +41,25 @@ function formatClock(seconds: number) {
   return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
 }
 
+function loadSavedSession(): SavedSession | null {
+  try {
+    return restoreSession(window.localStorage.getItem(SESSION_STORAGE_KEY), scenarioCatalog);
+  } catch {
+    return null;
+  }
+}
+
 export function App() {
-  const [scenario, setScenario] = useState<GameScenario>(defaultScenario);
-  const [state, setState] = useState<GameState>(() => createInitialState(defaultScenario));
+  const [savedSession] = useState<SavedSession | null>(loadSavedSession);
+  const [scenario, setScenario] = useState<GameScenario>(() => scenarioCatalog.find((item) => item.id === savedSession?.scenarioId) ?? defaultScenario);
+  const [state, setState] = useState<GameState>(() => savedSession?.state ?? createInitialState(defaultScenario));
   const [career, setCareer] = useState<CareerStats>(loadCareerStats);
   const stateRef = useRef(state);
+  const scenarioRef = useRef(scenario);
   const [command, setCommand] = useState('');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string }>({
     type: 'info',
-    message: 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. Çağrı kodunun ilk harflerini yazıp Tab ile tamamlayabilirsin.',
+    message: savedSession ? 'Kaydedilmiş vardiya duraklatıldı. Devam ile aynı trafikten sürdürebilirsin.' : 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. Çağrı kodunun ilk harflerini yazıp Tab ile tamamlayabilirsin.',
   });
   const [debriefOpen, setDebriefOpen] = useState(false);
   const activeWorld = useMemo(() => worldWithFlow(scenario.world, state.flowId), [scenario.world, state.flowId]);
@@ -58,6 +70,28 @@ export function App() {
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    scenarioRef.current = scenario;
+  }, [scenario]);
+
+  const persistSession = useCallback(() => {
+    try {
+      window.localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(scenarioRef.current.id, stateRef.current));
+    } catch {
+      // Storage can be unavailable in private or quota-limited browser contexts.
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(persistSession, 3000);
+    window.addEventListener('beforeunload', persistSession);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('beforeunload', persistSession);
+      persistSession();
+    };
+  }, [persistSession]);
 
   useEffect(() => {
     setCareer((current) => {
@@ -133,6 +167,7 @@ export function App() {
     setCommand('');
     setFeedback({ type: 'info', message: 'Senaryo yeniden başlatıldı.' });
     setDebriefOpen(false);
+    try { window.localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* storage unavailable */ }
   };
   const selectScenario = (nextScenario: GameScenario) => {
     setScenario(nextScenario);
@@ -140,6 +175,7 @@ export function App() {
     setCommand('');
     setFeedback({ type: 'info', message: `${nextScenario.label} sektörü yüklendi.` });
     setDebriefOpen(false);
+    try { window.localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* storage unavailable */ }
   };
   const selectFlow = (flowId: string) => {
     const flow = scenario.world.flowConfigurations.find((item) => item.id === flowId);

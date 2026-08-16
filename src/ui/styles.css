@@ -137,6 +137,11 @@ button { touch-action: manipulation; }
 .debrief-metrics b { display: block; margin-top: 5px; color: var(--green); font-size: 18px; }
 .debrief-columns { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .debrief-columns p { margin-top: 8px; }
+.debrief-timeline { grid-column: 1 / -1; display: grid; gap: 5px; padding: 11px; border: 1px solid var(--line); border-radius: 7px; background: rgba(2, 11, 8, .55); }
+.debrief-timeline p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.debrief-event--success { color: var(--green) !important; }
+.debrief-event--warning { color: var(--warning) !important; }
+.debrief-event--danger { color: #ff8585 !important; }
 .debrief-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
 .debrief-actions button { min-height: 40px; padding: 0 14px; color: #dff8ec; border: 1px solid var(--line); border-radius: 7px; background: #0a1a14; font: 700 9px IBM Plex Mono, monospace; cursor: pointer; }
 .debrief-actions .is-primary { color: #04120c; border-color: var(--green); background: var(--green); }
