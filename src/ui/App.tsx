@@ -64,7 +64,7 @@ export function App() {
     message: savedSession ? 'Kaydedilmiş vardiya duraklatıldı. Devam ile aynı trafikten sürdürebilirsin.' : 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. Çağrı kodunun ilk harflerini yazıp Tab ile tamamlayabilirsin.',
   });
   const [debriefOpen, setDebriefOpen] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(true);
   const lastSpokenEvent = useRef<string | null>(null);
   const lastCuedEvent = useRef<string | null>(null);
   const audioPlayer = useRef<AudioCuePlayer | null>(null);
@@ -124,7 +124,11 @@ export function App() {
 
   const playCue = useCallback((cue: AudioCue) => {
     if (!audioEnabled) return;
-    audioPlayer.current?.play(cue);
+    audioPlayer.current ??= new AudioCuePlayer();
+    // Browsers permit AudioContext activation only after a user interaction.
+    // Selection and command actions call this function directly, so the first
+    // interaction unlocks all later radio and warning cues automatically.
+    void audioPlayer.current.unlock().then(() => audioPlayer.current?.play(cue));
   }, [audioEnabled]);
 
   useEffect(() => {
