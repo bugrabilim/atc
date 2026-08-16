@@ -63,6 +63,8 @@ export interface Aircraft {
     holding?: boolean;
   };
   goAroundGraceUntil?: number;
+  /** Set by a controller-issued missed-approach clearance; consumed on readback. */
+  goAroundRequested?: boolean;
 }
 
 export interface Runway {
@@ -201,6 +203,7 @@ export type AircraftCommand =
   /** Legacy save compatibility. Standard approach mode hands aircraft to tower automatically. */
   | { kind: 'land'; callsign: string }
   | { kind: 'handoff'; callsign: string }
+  | { kind: 'goAround'; callsign: string }
   | { kind: 'direct'; callsign: string; fixId: string }
   | { kind: 'hold'; callsign: string; fixId: string };
 
