@@ -1,4 +1,4 @@
-const CACHE_NAME = 'airspace-control-core-v4';
+const CACHE_NAME = 'airspace-control-core-v5-mobile';
 const CORE_ASSETS = ['/', '/manifest.webmanifest', '/icon.svg'];
 
 self.addEventListener('install', (event) => {
