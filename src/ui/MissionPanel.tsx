@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Aircraft, GameEvent, GameMode } from '../engine/types';
-import { controllerRank, nextMission, type ShiftGoal, type TrainingGuide } from '../engine/progression';
+import { ACHIEVEMENTS, controllerRank, nextMission, type ShiftGoal, type TrainingGuide } from '../engine/progression';
 import type { CoachAdvice } from '../engine/controllerCoach';
 
 interface MissionPanelProps {
@@ -22,6 +22,8 @@ interface MissionPanelProps {
   completedShifts: number;
   completedObjectives: number;
   badgeCount: number;
+  achievementTotal: number;
+  achievementIds: string[];
   trainingCallsign: string | null;
   trainingRunway: string | null;
   priorityTraffic: Aircraft[];
@@ -34,7 +36,7 @@ interface MissionPanelProps {
   onCoachCommand: (advice: CoachAdvice) => void;
 }
 
-export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, scenarioFocus, goal, score, landed, handoffs, trafficLevel, skill, peakSkill, targetAircraft, bestScore, bestLandings, completedShifts, completedObjectives, badgeCount, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
+export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, scenarioFocus, goal, score, landed, handoffs, trafficLevel, skill, peakSkill, targetAircraft, bestScore, bestLandings, completedShifts, completedObjectives, badgeCount, achievementTotal, achievementIds, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
   // Radar alanı ilk açılışta öncelikli. Yardım, oyuncunun isteğiyle açılır.
   const [helpOpen, setHelpOpen] = useState(mode === 'beginner');
   useEffect(() => {
@@ -76,11 +78,20 @@ export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, 
         <span>YOĞUNLUK <b>{trafficLevel}/5</b></span>
         <span>AKIŞ <b>{activeFlowLabel}</b></span>
         {pendingInstructionCount > 0 ? <span>READBACK <b>{pendingInstructionCount}</b></span> : null}
-        <span>KARİYER <b>{controllerRank(bestScore)} · {bestLandings} İNİŞ · {completedObjectives}/{completedShifts} HEDEF · {badgeCount} ROZET</b></span>
+        <span>KARİYER <b>{controllerRank(bestScore)} · {bestLandings} İNİŞ · {completedObjectives}/{completedShifts} HEDEF · {badgeCount}/{achievementTotal} BAŞARIM</b></span>
       </div>
       <div className="mission-event" aria-live="polite">
         {events.at(-1)?.message ?? 'Radar sahası izleniyor.'}
       </div>
+      <details className="career-drawer">
+        <summary>BAŞARIM KOLEKSİYONU · {badgeCount}/{achievementTotal}</summary>
+        <div>
+          {ACHIEVEMENTS.map((achievement) => {
+            const unlocked = achievementIds.includes(achievement.id);
+            return <p key={achievement.id}><b>{unlocked ? '✓' : '○'} {achievement.label}</b> · {achievement.description}</p>;
+          })}
+        </div>
+      </details>
       <details className="assistant-drawer" open={helpOpen} onToggle={(event) => setHelpOpen(event.currentTarget.open)}>
         <summary>YARDIM / KOÇ <span>{coach.title}</span></summary>
         <div className="assistant-drawer__content">
