@@ -6,6 +6,7 @@ export type ApproachStatus = 'armed' | 'localizer' | 'glideslope' | 'tower';
 export type NavigationMode = 'route' | 'direct' | 'hold';
 export type SpeedMode = 'normal' | 'assigned';
 export type WakeCategory = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
+export type GameMode = 'beginner' | 'normal' | 'advanced' | 'expert';
 
 export interface AircraftPerformance {
   climbRateFpm: number;
@@ -135,6 +136,8 @@ export interface Conflict {
 }
 
 export interface GameState {
+  /** Chosen workload preset. Difficulty affects traffic, weather and available helpers. */
+  mode: GameMode;
   elapsedSeconds: number;
   paused: boolean;
   timeScale: number;
