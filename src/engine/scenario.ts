@@ -7,12 +7,14 @@ import { difficultyConfig, modeTrafficProfile } from './difficulty';
 export interface GameScenario {
   id: 'alpha' | 'coastal' | 'metro';
   label: string;
+  briefing: string;
+  focus: string;
   world: RadarWorld;
   initialAircraft: Aircraft[];
 }
 
 const alphaWorld: RadarWorld = {
-  airport: 'NOVA INTERNATIONAL', sectorName: 'APPROACH · ALPHA SECTOR', rangeNm: 42,
+  airport: 'ISTANBUL AIRPORT', sectorName: 'APPROACH · IST NORTH SECTOR', rangeNm: 42,
   runways: [
     { id: '34R', reciprocal: '16L', center: { x: -3.8, y: 2 }, heading: 354, lengthNm: 2.03, active: false, operation: 'inactive' },
     { id: '34L', reciprocal: '16R', center: { x: -1.9, y: 1.7 }, heading: 354, lengthNm: 2.03, active: true, operation: 'arrival' },
@@ -121,9 +123,21 @@ const metroAircraft: Aircraft[] = [
 ];
 
 export const scenarioCatalog: GameScenario[] = [
-  { id: 'alpha', label: 'ALPHA · PARALLEL', world: alphaWorld, initialAircraft: alphaAircraft },
-  { id: 'coastal', label: 'COASTAL · CROSSWIND', world: coastalWorld, initialAircraft: coastalAircraft },
-  { id: 'metro', label: 'METRO · SINGLE RUNWAY', world: metroWorld, initialAircraft: metroAircraft },
+  {
+    id: 'alpha', label: 'IST · PARALEL AKIŞ',
+    briefing: 'Çift yaklaşma pistinde gelişleri dağıt; kalkışları güvenli şekilde sektörden çıkar.',
+    focus: 'Paralel final, wake aralığı ve kalkış handoff’u', world: alphaWorld, initialAircraft: alphaAircraft,
+  },
+  {
+    id: 'coastal', label: 'COASTAL · ÇAPRAZ RÜZGÂR',
+    briefing: 'Çapraz rüzgâr altında iki finali yönet. Hız kontrolü, son yaklaşma aralığını belirler.',
+    focus: 'Hız yönetimi ve rüzgâr telafisi', world: coastalWorld, initialAircraft: coastalAircraft,
+  },
+  {
+    id: 'metro', label: 'METRO · TEK PİST',
+    briefing: 'Tek iniş pisti, sınırlı kapasite. Sıralamayı erken kur; gerekirse HOLD ve go-around kullan.',
+    focus: 'Sıralama, holding ve pist kapasitesi', world: metroWorld, initialAircraft: metroAircraft,
+  },
 ];
 
 export const defaultScenario = scenarioCatalog[0];
