@@ -176,6 +176,7 @@ button { touch-action: manipulation; }
 .quick-command-row { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; scrollbar-width: none; }
 .quick-command-row::-webkit-scrollbar { display: none; }
 .quick-command { min-width: 84px; padding: 0 10px; font: 600 9px IBM Plex Mono, monospace; white-space: nowrap; }
+.quick-command::after { content: ' ↗'; color: var(--cyan); }
 .quick-command:disabled { cursor: not-allowed; opacity: 0.35; }
 .command-entry { height: 46px; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; border: 1px solid rgba(110, 243, 176, 0.34); border-radius: 9px; background: #030b08; box-shadow: 0 0 0 3px rgba(110,243,176,.025); }
 .command-prompt { color: var(--green); text-align: center; font: 700 20px IBM Plex Mono, monospace; }
