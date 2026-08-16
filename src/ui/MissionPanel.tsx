@@ -21,6 +21,7 @@ interface MissionPanelProps {
   bestLandings: number;
   completedShifts: number;
   completedObjectives: number;
+  badgeCount: number;
   trainingCallsign: string | null;
   trainingRunway: string | null;
   priorityTraffic: Aircraft[];
@@ -33,7 +34,7 @@ interface MissionPanelProps {
   onCoachCommand: (advice: CoachAdvice) => void;
 }
 
-export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, scenarioFocus, goal, score, landed, handoffs, trafficLevel, skill, peakSkill, targetAircraft, bestScore, bestLandings, completedShifts, completedObjectives, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
+export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, scenarioFocus, goal, score, landed, handoffs, trafficLevel, skill, peakSkill, targetAircraft, bestScore, bestLandings, completedShifts, completedObjectives, badgeCount, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
   // Radar alanı ilk açılışta öncelikli. Yardım, oyuncunun isteğiyle açılır.
   const [helpOpen, setHelpOpen] = useState(mode === 'beginner');
   useEffect(() => {
@@ -75,7 +76,7 @@ export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, 
         <span>YOĞUNLUK <b>{trafficLevel}/5</b></span>
         <span>AKIŞ <b>{activeFlowLabel}</b></span>
         {pendingInstructionCount > 0 ? <span>READBACK <b>{pendingInstructionCount}</b></span> : null}
-        <span>KARİYER <b>{controllerRank(bestScore)} · {bestLandings} İNİŞ · {completedObjectives}/{completedShifts} HEDEF</b></span>
+        <span>KARİYER <b>{controllerRank(bestScore)} · {bestLandings} İNİŞ · {completedObjectives}/{completedShifts} HEDEF · {badgeCount} ROZET</b></span>
       </div>
       <div className="mission-event" aria-live="polite">
         {events.at(-1)?.message ?? 'Radar sahası izleniyor.'}
