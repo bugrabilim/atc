@@ -1,4 +1,4 @@
-import type { GameMode, GameState } from './types';
+import type { CareerProgression, CareerUnlock, GameMode, GameState, ScenarioId } from './types';
 
 export interface ShiftGoal {
   label: string;
@@ -160,6 +160,61 @@ export const ACHIEVEMENT_IDS = new Set(ACHIEVEMENTS.map((achievement) => achieve
 /** Protects persisted career data from old builds or manually edited storage. */
 export function isAchievementId(value: string): boolean {
   return ACHIEVEMENT_IDS.has(value);
+}
+
+/**
+ * Unlocks deliberately reward demonstrated ATC skills rather than raw play
+ * time. This follows the pattern in Endless ATC: safety, endurance and broad
+ * airport mastery are the meaningful progression gates.
+ */
+export const CAREER_UNLOCKS: readonly CareerUnlock[] = [
+  { id: 'scenario:alpha', kind: 'scenario', label: 'IST · PARALEL AKIŞ', description: 'Başlangıç yaklaşma sektörü.', requiredAchievementIds: [] },
+  { id: 'mode:beginner', kind: 'mode', label: 'YENİ BAŞLAYAN', description: 'Yardımlı eğitim vardiyası.', requiredAchievementIds: [] },
+  { id: 'operation:basic-radar', kind: 'operation', label: 'TEMEL RADAR', description: 'Heading, irtifa, hız ve ILS araçları.', requiredAchievementIds: [] },
+  { id: 'mode:normal', kind: 'mode', label: 'NORMAL', description: 'Dengeli trafik ve standart yardım seviyesi.', requiredAchievementIds: ['beginner-complete'] },
+  { id: 'scenario:coastal', kind: 'scenario', label: 'COASTAL · ÇAPRAZ RÜZGÂR', description: 'Hız yönetimi ile paralel yaklaşma sektörü.', requiredAchievementIds: ['landing-trio', 'clean-start'] },
+  { id: 'operation:wake-advisor', kind: 'operation', label: 'WAKE DANIŞMANI', description: 'Lider/takipçi aralığı ve önerilen hız vurgusu.', requiredAchievementIds: ['wake-keeper'] },
+  { id: 'mode:advanced', kind: 'mode', label: 'İLERİ', description: 'Daha yoğun akış, prosedür ve öncelikli trafik.', requiredAchievementIds: ['normal-complete', 'procedure-pilot'] },
+  { id: 'scenario:metro', kind: 'scenario', label: 'METRO · TEK PİST', description: 'Pist kapasitesi, HOLD ve sıralama vardiyası.', requiredAchievementIds: ['normal-complete', 'holding-strategist'] },
+  { id: 'scenario:strait', kind: 'scenario', label: 'STRAIT · DAR KORİDOR', description: 'Dar giriş koridoru ve iki SID koordinasyonu.', requiredAchievementIds: ['normal-complete', 'handoff-trio'] },
+  { id: 'operation:flow-management', kind: 'operation', label: 'AKIŞ YÖNETİMİ', description: 'Pist akışı değişimi ve düşük görüş operasyonları.', requiredAchievementIds: ['landing-six', 'wake-shield'] },
+  { id: 'mode:expert', kind: 'mode', label: 'UZMAN', description: 'Pist kontrolleri ve tam operasyon yükü.', requiredAchievementIds: ['advanced-complete', 'clean-shift'] },
+  { id: 'scenario:highland', kind: 'scenario', label: 'HIGHLAND · HAVA CEPHESİ', description: 'Dağlık arazi, düşük görüş ve sert rüzgâr sektörü.', requiredAchievementIds: ['advanced-complete', 'priority-ready'] },
+  { id: 'scenario:nordic', kind: 'scenario', label: 'NORDIC · LOW VIS', description: 'Paralel yaklaşma, kar ve düşük görüş operasyonu.', requiredAchievementIds: ['advanced-complete', 'wake-shield'] },
+  { id: 'scenario:desert', kind: 'scenario', label: 'DESERT · HEAVY BANK', description: 'Geniş TMA ve yoğun heavy/wake sıralaması.', requiredAchievementIds: ['advanced-complete', 'high-workload'] },
+  { id: 'scenario:river', kind: 'scenario', label: 'RIVER · ÇİFT FİNAL', description: 'İki paralel final ve ayrışan üç SID akışı.', requiredAchievementIds: ['expert-complete', 'master-controller'] },
+  { id: 'operation:master-flow', kind: 'operation', label: 'USTA AKIŞ', description: 'Tam prosedür, wake ve yoğunluk çalışma seti.', requiredAchievementIds: ['expert-complete', 'high-workload'] },
+];
+
+function unlockSatisfied(unlock: CareerUnlock, earnedIds: Set<string>) {
+  return unlock.requiredAchievementIds.every((id) => earnedIds.has(id));
+}
+
+/**
+ * Converts persisted achievement IDs into tangible content availability.
+ * Consumers should use this one function for web, PWA and Capacitor builds.
+ */
+export function careerProgression(achievementIds: readonly string[]): CareerProgression {
+  const earnedIds = new Set(achievementIds.filter(isAchievementId));
+  const unlocked = CAREER_UNLOCKS.filter((unlock) => unlockSatisfied(unlock, earnedIds));
+  const scenarioIds = unlocked.filter((unlock) => unlock.kind === 'scenario').map((unlock) => unlock.id.replace('scenario:', '') as ScenarioId);
+  const modeIds = unlocked.filter((unlock) => unlock.kind === 'mode').map((unlock) => unlock.id.replace('mode:', '') as GameMode);
+  const operationIds = unlocked.filter((unlock) => unlock.kind === 'operation').map((unlock) => unlock.id.replace('operation:', ''));
+  const nextUnlock = CAREER_UNLOCKS.find((unlock) => !unlocked.includes(unlock)) ?? null;
+  const rank = earnedIds.has('master-controller') ? 'BAŞ KONTROLÖR'
+    : earnedIds.has('expert-complete') ? 'UZMAN KONTROLÖR'
+      : earnedIds.has('advanced-complete') ? 'KIDEMLİ KONTROLÖR'
+        : earnedIds.has('normal-complete') ? 'YAKLAŞMA KONTROLÖRÜ'
+          : 'STAJYER KONTROLÖR';
+  return {
+    rank,
+    unlockedScenarioIds: scenarioIds,
+    unlockedModeIds: modeIds,
+    unlockedOperationIds: operationIds,
+    unlocked,
+    nextUnlock,
+    completionPercent: Math.round((unlocked.length / CAREER_UNLOCKS.length) * 100),
+  };
 }
 
 export function earnedAwards(state: GameState, goal = shiftGoal(state.mode)): AchievementAward[] {
