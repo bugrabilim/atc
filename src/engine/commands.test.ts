@@ -73,4 +73,12 @@ describe('parseCommandLine', () => {
       normalized: 'NX204 HANDOFF',
     });
   });
+
+  it('accepts a controller-initiated go-around for an established arrival', () => {
+    expect(parseCommandLine('AR GA', callsigns, null)).toEqual({
+      ok: true,
+      command: { kind: 'goAround', callsign: 'AR101' },
+      normalized: 'AR101 GO AROUND',
+    });
+  });
 });
