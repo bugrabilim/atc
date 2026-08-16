@@ -27,6 +27,8 @@ export interface Aircraft {
   targetSpeed: number;
   turnDirection: 'shortest' | 'left' | 'right';
   performance: AircraftPerformance;
+  /** Suggested arrival runway from the traffic flow. The controller may still assign another active runway. */
+  assignedRunway?: string;
   approach?: {
     runwayId: string;
     status: ApproachStatus;
@@ -81,7 +83,10 @@ export interface GameState {
   score: number;
   landed: number;
   spawned: number;
+  trafficLevel: number;
   nextTrafficAt: number;
+  /** Simulated timestamp after which a runway can accept another landing clearance. */
+  runwayAvailableAt: Record<string, number>;
   eventLog: GameEvent[];
   activeLossPairs: string[];
   handoffs: number;

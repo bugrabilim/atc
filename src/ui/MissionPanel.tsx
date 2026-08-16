@@ -5,10 +5,11 @@ interface MissionPanelProps {
   score: number;
   landed: number;
   handoffs: number;
+  trafficLevel: number;
   events: GameEvent[];
 }
 
-export function MissionPanel({ aircraft, score, landed, handoffs, events }: MissionPanelProps) {
+export function MissionPanel({ aircraft, score, landed, handoffs, trafficLevel, events }: MissionPanelProps) {
   const trainingAircraft = aircraft.find((item) => item.callsign === 'TK1953');
   const approachCaptured = trainingAircraft?.approach?.status === 'captured';
   const landingCleared = trainingAircraft?.approach?.landingCleared;
@@ -30,6 +31,7 @@ export function MissionPanel({ aircraft, score, landed, handoffs, events }: Miss
         <span>SKOR <b>{score}</b></span>
         <span>İNİŞ <b>{landed}</b></span>
         <span>HANDOFF <b>{handoffs}</b></span>
+        <span>YOĞUNLUK <b>{trafficLevel}/5</b></span>
       </div>
       <div className="mission-event" aria-live="polite">
         {events.at(-1)?.message ?? 'Radar sahası izleniyor.'}

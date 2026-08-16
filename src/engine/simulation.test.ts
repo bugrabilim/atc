@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { initialState, world } from './scenario';
-import { stepGame } from './simulation';
+import { landingClearanceStatus, stepGame, trafficProfile } from './simulation';
 
 describe('stepGame', () => {
   it('turns gradually instead of snapping to the target heading', () => {
@@ -32,5 +32,21 @@ describe('stepGame', () => {
     expect(state.landed).toBe(1);
     expect(state.score).toBe(100);
     expect(state.aircraft.some((item) => item.callsign === 'TK1953')).toBe(false);
+  });
+
+  it('blocks a landing clearance while the runway is occupied', () => {
+    const state = structuredClone(initialState);
+    state.aircraft[0].approach = { runwayId: '34L', status: 'captured', landingCleared: false };
+    state.runwayAvailableAt['34L'] = 40;
+    const result = landingClearanceStatus(state, 'TK1953', world);
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain('pist işgali');
+  });
+
+  it('raises traffic density and capacity in measured steps', () => {
+    expect(trafficProfile(0)).toMatchObject({ level: 1, maxAircraft: 5 });
+    expect(trafficProfile(9)).toMatchObject({ level: 4, maxAircraft: 8 });
+    expect(trafficProfile(99)).toMatchObject({ level: 5, maxAircraft: 9 });
   });
 });

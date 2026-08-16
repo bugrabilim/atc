@@ -8,6 +8,8 @@ const SECONDS_PER_MINUTE = 60;
 const GLIDESLOPE_FEET_PER_NM = 318;
 const APPROACH_CAPTURE_DISTANCE_NM = 16;
 const APPROACH_CAPTURE_LATERAL_NM = 2.2;
+const RUNWAY_TURNAROUND_SECONDS = 45;
+const FINAL_SEPARATION_NM = 4.5;
 
 interface ApproachGeometry {
   distanceToThreshold: number;
@@ -38,6 +40,37 @@ function getApproachGeometry(aircraft: Aircraft, runway: Runway): ApproachGeomet
   const distanceToThreshold = -(relative.x * inbound.x + relative.y * inbound.y);
   const lateralDistance = Math.abs(relative.x * inbound.y - relative.y * inbound.x);
   return { distanceToThreshold, lateralDistance };
+}
+
+export function trafficProfile(spawned: number) {
+  const level = Math.min(5, 1 + Math.floor(spawned / 3));
+  return {
+    level,
+    spawnInterval: [42, 36, 31, 27, 24][level - 1],
+    maxAircraft: [5, 6, 7, 8, 9][level - 1],
+  };
+}
+
+export function landingClearanceStatus(state: GameState, callsign: string, world: RadarWorld) {
+  const aircraft = state.aircraft.find((item) => item.callsign === callsign);
+  if (!aircraft?.approach) return { ok: false, message: 'Önce bir ILS yaklaşması başlatmalısın.' };
+  const runway = world.runways.find((item) => item.id === aircraft.approach?.runwayId);
+  if (!runway) return { ok: false, message: 'Atanmış pist bulunamadı.' };
+  const availableAt = state.runwayAvailableAt[runway.id] ?? 0;
+  if (availableAt > state.elapsedSeconds) {
+    return { ok: false, message: `${runway.id} pist işgali nedeniyle ${Math.ceil(availableAt - state.elapsedSeconds)} sn daha müsait değil.` };
+  }
+
+  const candidateDistance = getApproachGeometry(aircraft, runway).distanceToThreshold;
+  const leadOnFinal = state.aircraft.find((item) => {
+    if (item.callsign === aircraft.callsign || item.approach?.runwayId !== runway.id || !item.approach.landingCleared) return false;
+    const leadDistance = getApproachGeometry(item, runway).distanceToThreshold;
+    return leadDistance >= 0 && leadDistance < candidateDistance && candidateDistance - leadDistance < FINAL_SEPARATION_NM;
+  });
+  if (leadOnFinal) {
+    return { ok: false, message: `${leadOnFinal.callsign} aynı pistte önde. En az ${FINAL_SEPARATION_NM} NM final aralığı bırak.` };
+  }
+  return { ok: true, message: `${runway.id} iniş izni verilebilir.` };
 }
 
 function guideApproach(aircraft: Aircraft, world: RadarWorld): Aircraft {
@@ -160,12 +193,17 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
   let aircraft = recoveredAircraft.filter((item) => !landedAircraft.includes(item) && !handedOffAircraft.includes(item));
   let spawned = state.spawned;
   let nextTrafficAt = state.nextTrafficAt;
+  let runwayAvailableAt = state.runwayAvailableAt;
   let eventLog = navigationResults.reduce<GameEvent[]>((events, result) => (
     result.event ? appendEvent(events, result.event) : events
   ), state.eventLog);
   const elapsedSeconds = state.elapsedSeconds + boundedDt;
 
   if (landedAircraft.length > 0) {
+    runwayAvailableAt = { ...runwayAvailableAt };
+    for (const item of landedAircraft) {
+      if (item.approach) runwayAvailableAt[item.approach.runwayId] = elapsedSeconds + RUNWAY_TURNAROUND_SECONDS;
+    }
     eventLog = appendEvent(eventLog, {
       id: `landing-${Math.round(elapsedSeconds * 10)}`,
       type: 'success',
@@ -189,7 +227,8 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
     });
   }
 
-  if (elapsedSeconds >= nextTrafficAt && aircraft.length < 5) {
+  const profile = trafficProfile(spawned);
+  if (elapsedSeconds >= nextTrafficAt && aircraft.length < profile.maxAircraft) {
     const incoming = spawnTraffic(spawned);
     if (!aircraft.some((item) => item.callsign === incoming.callsign)) {
       aircraft = [...aircraft, incoming];
@@ -197,10 +236,21 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
       eventLog = appendEvent(eventLog, {
         id: `traffic-${spawned}`,
         type: 'info',
-        message: `${incoming.callsign} sahaya girdi · geliş trafiği`,
+        message: incoming.phase === 'arrival'
+          ? `${incoming.callsign} sahaya girdi · planlanan pist ${incoming.assignedRunway ?? 'ATC'}`
+          : `${incoming.callsign} sahaya girdi · kalkış trafiği`,
       });
     }
-    nextTrafficAt += 48;
+    nextTrafficAt += profile.spawnInterval;
+  }
+
+  const nextTrafficLevel = trafficProfile(spawned).level;
+  if (nextTrafficLevel > state.trafficLevel) {
+    eventLog = appendEvent(eventLog, {
+      id: `traffic-level-${nextTrafficLevel}`,
+      type: 'warning',
+      message: `SEKTÖR YOĞUNLUĞU ${nextTrafficLevel}/5 · daha sık trafik ve daha dar kapasite`,
+    });
   }
 
   const conflicts = detectConflicts(aircraft);
@@ -224,7 +274,9 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
     landed: state.landed + landedAircraft.length,
     score: Math.max(0, state.score + landedAircraft.length * 100 + handedOffAircraft.length * 50 - newLossPairs.length * 250),
     spawned,
+    trafficLevel: nextTrafficLevel,
     nextTrafficAt,
+    runwayAvailableAt,
     eventLog,
     activeLossPairs: lossPairs,
     handoffs: state.handoffs + handedOffAircraft.length,

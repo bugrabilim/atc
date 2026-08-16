@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { applyCommand, parseCommandLine } from '../engine/commands';
 import { initialState, world } from '../engine/scenario';
-import { stepGame } from '../engine/simulation';
+import { landingClearanceStatus, stepGame } from '../engine/simulation';
 import type { GameState } from '../engine/types';
 import { CommandPanel } from './CommandPanel';
 import { FlightStripList } from './FlightStripList';
@@ -56,6 +56,13 @@ export function App() {
       setFeedback({ type: 'error', message: parsed.error });
       return;
     }
+    if (parsed.command.kind === 'land') {
+      const clearance = landingClearanceStatus(snapshot, parsed.command.callsign, world);
+      if (!clearance.ok) {
+        setFeedback({ type: 'error', message: clearance.message });
+        return;
+      }
+    }
     setState((current) => ({
       ...current,
       selectedCallsign: parsed.command.callsign,
@@ -68,9 +75,11 @@ export function App() {
         ? `${parsed.normalized} · ILS silahlandı; localizer ve glideslope yakalanınca otomatik takip başlayacak.`
         : parsed.command.kind === 'direct'
           ? `${parsed.normalized} · Uçak waypoint'e doğrudan yönlendirildi.`
-          : parsed.command.kind === 'hold'
-            ? `${parsed.normalized} · Uçak waypoint üzerinde hold paternine girecek.`
-        : `${parsed.normalized} · Talimat alındı, uçak kademeli uyguluyor.`,
+        : parsed.command.kind === 'hold'
+          ? `${parsed.normalized} · Uçak waypoint üzerinde hold paternine girecek.`
+          : parsed.command.kind === 'land'
+            ? `${parsed.normalized} · Pist sıralaması doğrulandı; yaklaşmayı sürdür.`
+          : `${parsed.normalized} · Talimat alındı, uçak kademeli uyguluyor.`,
     });
   }, [command]);
 
@@ -114,6 +123,7 @@ export function App() {
           score={state.score}
           landed={state.landed}
           handoffs={state.handoffs}
+          trafficLevel={state.trafficLevel}
           events={state.eventLog}
         />
       </div>
