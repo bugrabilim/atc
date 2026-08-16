@@ -10,7 +10,7 @@ import { DebriefPanel } from './DebriefPanel';
 import { FlightStripList } from './FlightStripList';
 import { MissionPanel } from './MissionPanel';
 import { RadarScope } from './RadarScope';
-import { buildDebrief, earnedAwards, goalComplete, shiftGoal, trainingGuide, type TrainingGuide } from '../engine/progression';
+import { ACHIEVEMENT_TOTAL, buildDebrief, earnedAwards, goalComplete, isAchievementId, shiftGoal, trainingGuide, type TrainingGuide } from '../engine/progression';
 import { controllerCoach, type CoachAdvice } from '../engine/controllerCoach';
 import { restoreSession, serializeSession, type SavedSession } from '../engine/session';
 import { AudioCuePlayer, type AudioCue } from './audioCues';
@@ -37,7 +37,7 @@ function loadCareerStats(): CareerStats {
       bestLandings: typeof parsed.bestLandings === 'number' ? parsed.bestLandings : 0,
       completedShifts: typeof parsed.completedShifts === 'number' ? parsed.completedShifts : 0,
       completedObjectives: typeof parsed.completedObjectives === 'number' ? parsed.completedObjectives : 0,
-      badges: Array.isArray(parsed.badges) ? parsed.badges.filter((item): item is string => typeof item === 'string') : [],
+      badges: Array.isArray(parsed.badges) ? [...new Set(parsed.badges.filter((item): item is string => typeof item === 'string' && isAchievementId(item)))] : [],
     };
   } catch {
     return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0, badges: [] };
@@ -65,12 +65,14 @@ export function App() {
   const [career, setCareer] = useState<CareerStats>(loadCareerStats);
   const stateRef = useRef(state);
   const scenarioRef = useRef(scenario);
+  const careerRef = useRef(career);
   const [command, setCommand] = useState('');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string }>({
     type: 'info',
     message: savedSession ? 'Kaydedilmiş vardiya duraklatıldı. Devam ile aynı trafikten sürdürebilirsin.' : 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. Çağrı kodunun ilk harflerini yazıp Tab ile tamamlayabilirsin.',
   });
   const [debriefOpen, setDebriefOpen] = useState(false);
+  const [newAchievementIds, setNewAchievementIds] = useState<string[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const lastSpokenEvent = useRef<string | null>(null);
   const lastCuedEvent = useRef<string | null>(null);
@@ -89,6 +91,10 @@ export function App() {
   useEffect(() => {
     scenarioRef.current = scenario;
   }, [scenario]);
+
+  useEffect(() => {
+    careerRef.current = career;
+  }, [career]);
 
   const persistSession = useCallback(() => {
     try {
@@ -126,6 +132,7 @@ export function App() {
     shiftRecorded.current = true;
     const objectiveComplete = goalComplete(state, goal);
     const awards = earnedAwards(state, goal);
+    setNewAchievementIds(awards.map((award) => award.id).filter((id) => !careerRef.current.badges.includes(id)));
     setCareer((current) => {
       const next = {
         ...current,
@@ -290,6 +297,7 @@ export function App() {
   };
   const reset = () => {
     shiftRecorded.current = false;
+    setNewAchievementIds([]);
     setState(createInitialState(scenario, stateRef.current.mode));
     setCommand('');
     setFeedback({ type: 'info', message: 'Senaryo yeniden başlatıldı.' });
@@ -298,6 +306,7 @@ export function App() {
   };
   const selectScenario = (nextScenario: GameScenario) => {
     shiftRecorded.current = false;
+    setNewAchievementIds([]);
     setScenario(nextScenario);
     setState(createInitialState(nextScenario, stateRef.current.mode));
     setCommand('');
@@ -313,6 +322,7 @@ export function App() {
   };
   const selectMode = (mode: GameMode) => {
     shiftRecorded.current = false;
+    setNewAchievementIds([]);
     const config = difficultyConfig(mode);
     setState(createInitialState(scenario, mode));
     setCommand('');
@@ -406,6 +416,8 @@ export function App() {
           completedShifts={career.completedShifts}
           completedObjectives={career.completedObjectives}
           badgeCount={career.badges.length}
+          achievementTotal={ACHIEVEMENT_TOTAL}
+          achievementIds={career.badges}
           trainingCallsign={trainingAircraft?.callsign ?? null}
           trainingRunway={trainingAircraft?.assignedRunway ?? null}
           priorityTraffic={state.aircraft.filter((item) => item.priority)}
@@ -458,7 +470,7 @@ export function App() {
         onSelect={selectAircraft}
         onNext={selectNextAircraft}
       />
-      {debriefOpen ? <DebriefPanel report={buildDebrief(state, goal)} state={state} onRestart={reset} onContinue={continueShift} /> : null}
+      {debriefOpen ? <DebriefPanel report={buildDebrief(state, goal)} state={state} achievementCount={career.badges.length} achievementTotal={ACHIEVEMENT_TOTAL} newAchievementIds={newAchievementIds} onRestart={reset} onContinue={continueShift} /> : null}
     </main>
   );
 }
