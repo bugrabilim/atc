@@ -5,9 +5,10 @@ import { distance } from './math';
 import { guideNavigation } from './navigation';
 import { detectConflicts as detectOperationalConflicts } from './separation';
 import { profileForSkill, updateSkill } from './skill';
+import { difficultyConfig, limitSkillForMode, modeTrafficProfile } from './difficulty';
 import { flowCapacity, planTraffic } from './trafficDirector';
 import { requiredWakeSeparationNm } from './wake';
-import type { Aircraft, Conflict, GameEvent, GameState, RadarWorld, Trend } from './types';
+import type { Aircraft, Conflict, GameEvent, GameMode, GameState, RadarWorld, Trend } from './types';
 
 const FIXED_STEP_SECONDS = 0.05;
 const RUNWAY_TURNAROUND_SECONDS = 45;
@@ -18,13 +19,14 @@ export function aircraftTrend(aircraft: Aircraft): Trend {
   return 'level';
 }
 
-export function trafficProfile(skill: number, world?: RadarWorld) {
+export function trafficProfile(skill: number, world?: RadarWorld, mode?: GameMode) {
   const capacity = world ? flowCapacity(world) : { intervalAdjustment: 0, aircraftAdjustment: 0 };
   const profile = profileForSkill(skill, capacity.aircraftAdjustment);
-  return {
+  const adjusted = {
     ...profile,
     spawnInterval: Math.max(6.5, profile.spawnInterval + capacity.intervalAdjustment),
   };
+  return mode ? modeTrafficProfile(mode, adjusted) : adjusted;
 }
 
 export function requiredFinalSeparationNm(leadingAircraft: Aircraft, followingAircraft?: Aircraft) {
@@ -197,7 +199,7 @@ function stepFixed(state: GameState, world: RadarWorld, dt: number): GameState {
     });
   }
 
-  const skill = updateSkill(state.skill, {
+  const skill = limitSkillForMode(state.mode, updateSkill(state.skill, {
     towerHandoffs,
     departureHandoffs: handedOffAircraft.length,
     separationLosses: newLossKeys.length,
@@ -206,14 +208,14 @@ function stepFixed(state: GameState, world: RadarWorld, dt: number): GameState {
     missedHandoffs: missedHandoffAircraft.length,
     unmanagedArrivals: unmanagedArrivalAircraft.length,
     expiredPriorities: expiredPriority.length,
-  });
+  }));
   const peakSkill = Math.max(state.peakSkill, skill);
-  const profile = trafficProfile(skill, world);
+  const profile = trafficProfile(skill, world, state.mode);
 
   if (elapsedSeconds >= nextTrafficAt) {
     if (aircraft.length < profile.targetAircraft) {
       const plannedTraffic = planTraffic(spawned, aircraft, world, state.seed);
-      const incoming = spawned > 0 && spawned % 7 === 0
+      const incoming = difficultyConfig(state.mode).allowPriorityTraffic && spawned > 0 && spawned % 7 === 0
         ? createPriorityTraffic(plannedTraffic.aircraft, elapsedSeconds)
         : plannedTraffic.aircraft;
       if (!aircraft.some((item) => item.callsign === incoming.callsign)) {
