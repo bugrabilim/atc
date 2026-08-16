@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { applyCommand } from './commands';
-import { queueInstruction } from './radio';
+import { queueInstruction, spokenCallsign, spokenRadioMessage } from './radio';
 import { initialState, world } from './scenario';
 import { stepGame } from './simulation';
 
 describe('radio instructions', () => {
+  it('reads callsigns with the NATO phonetic alphabet and individual digits', () => {
+    expect(spokenCallsign('CF101')).toBe('Charlie Foxtrot one zero one');
+    expect(spokenRadioMessage('CF101 · readback onaylandı: CF101 HDG 090')).toBe('Charlie Foxtrot one zero one, readback. heading zero niner zero.');
+  });
+
   it('queues an instruction before changing the aircraft target', () => {
     const state = structuredClone(initialState);
     const next = queueInstruction(state, { kind: 'heading', callsign: 'AR101', value: 180, direction: 'shortest' }, 'AR101 HDG 180');
