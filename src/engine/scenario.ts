@@ -1,4 +1,5 @@
 import type { Aircraft, GameState, RadarWorld } from './types';
+import { planTraffic } from './trafficDirector';
 
 const jet = { turnRateDegPerSecond: 3, climbRateFpm: 2200, descentRateFpm: 1800, accelerationKtPerSecond: 2.2, minSpeed: 140, maxSpeed: 480 };
 const heavy = { turnRateDegPerSecond: 2.2, climbRateFpm: 1700, descentRateFpm: 1500, accelerationKtPerSecond: 1.4, minSpeed: 150, maxSpeed: 500 };
@@ -125,32 +126,6 @@ export function createInitialState(scenario: GameScenario = defaultScenario): Ga
 
 export const initialState = createInitialState();
 
-const aircraftTypes = ['A220', 'A320', 'A21N', 'B738', 'B39M', 'E190'] as const;
-const callsignPrefixes = ['AR', 'NX', 'OR', 'VX', 'SK'] as const;
-
-function headingTo(from: { x: number; y: number }, to: { x: number; y: number }) {
-  return (Math.atan2(to.x - from.x, -(to.y - from.y)) * 180 / Math.PI + 360) % 360;
-}
-
 export function spawnTraffic(index: number, activeWorld: RadarWorld = world): Aircraft {
-  const suffix = String(310 + index * 13).padStart(3, '0');
-  const callsign = `${callsignPrefixes[index % callsignPrefixes.length]}${suffix}`;
-  const departureRunway = activeWorld.runways.find((runway) => runway.active && runway.operation === 'departure');
-  if (index % 5 === 3 && departureRunway) {
-    const altitude = 9000 + (index % 4) * 1500;
-    const exit = activeWorld.trafficExits[index % activeWorld.trafficExits.length];
-    const procedure = activeWorld.procedures.find((item) => item.id === exit?.procedureId);
-    return { callsign, type: index % 2 === 0 ? 'B77W' : 'A330', phase: 'departure', position: { ...departureRunway.center }, heading: departureRunway.heading, altitude: 2600, speed: 185, targetHeading: departureRunway.heading, targetAltitude: altitude, targetSpeed: 285, turnDirection: 'shortest', performance: heavy, navigation: { mode: 'route', fixIds: [...(procedure?.fixIds ?? [])], currentLegIndex: 0, procedure: procedure?.id ?? 'DEPARTURE' } };
-  }
-  const entry = activeWorld.trafficEntries[index % activeWorld.trafficEntries.length];
-  const procedure = activeWorld.procedures.find((item) => item.id === entry?.procedureId);
-  const entryFix = activeWorld.fixes.find((fix) => fix.id === entry?.id);
-  const arrivalRunways = activeWorld.runways.filter((runway) => runway.active && (runway.operation === 'arrival' || runway.operation === 'mixed'));
-  if (!entry || !entryFix || !procedure || arrivalRunways.length === 0) throw new Error('Scenario must define entry fixes, procedures and active arrival runways');
-  const compatibleRunways = arrivalRunways.filter((runway) => entry.compatibleRunwayIds.includes(runway.id));
-  const runwayPool = compatibleRunways.length > 0 ? compatibleRunways : arrivalRunways;
-  const altitude = 7000 + ((index * 1100) % 6000);
-  const speed = 235 + ((index * 17) % 55);
-  const heading = headingTo(entry.position, entryFix.position);
-  return { callsign, type: aircraftTypes[index % aircraftTypes.length], phase: 'arrival', position: { ...entry.position }, heading, altitude, speed, targetHeading: heading, targetAltitude: altitude, targetSpeed: speed, turnDirection: 'shortest', performance: jet, assignedRunway: runwayPool[index % runwayPool.length].id, navigation: { mode: 'route', fixIds: [...procedure.fixIds], currentLegIndex: 0, procedure: procedure.id } };
+  return planTraffic(index, [], activeWorld).aircraft;
 }

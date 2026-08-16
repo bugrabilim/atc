@@ -1,7 +1,7 @@
 import { distance, moveToward, turnToward } from './math';
 import { applyCommand } from './commands';
 import { guideNavigation } from './navigation';
-import { spawnTraffic } from './scenario';
+import { planTraffic, flowCapacity } from './trafficDirector';
 import type { Aircraft, Conflict, GameEvent, GameState, RadarWorld, Runway, Trend, Vector2 } from './types';
 
 const SECONDS_PER_HOUR = 3600;
@@ -42,12 +42,13 @@ function getApproachGeometry(aircraft: Aircraft, runway: Runway): ApproachGeomet
   return { distanceToThreshold, lateralDistance };
 }
 
-export function trafficProfile(spawned: number) {
+export function trafficProfile(spawned: number, world?: RadarWorld) {
   const level = Math.min(5, 1 + Math.floor(spawned / 3));
+  const capacity = world ? flowCapacity(world) : { intervalAdjustment: 0, aircraftAdjustment: 0 };
   return {
     level,
-    spawnInterval: [18, 16, 13, 11, 9][level - 1],
-    maxAircraft: [5, 6, 7, 8, 9][level - 1],
+    spawnInterval: [18, 16, 13, 11, 9][level - 1] + capacity.intervalAdjustment,
+    maxAircraft: Math.max(3, [5, 6, 7, 8, 9][level - 1] + capacity.aircraftAdjustment),
   };
 }
 
@@ -307,9 +308,10 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
     });
   }
 
-  const profile = trafficProfile(spawned);
+  const profile = trafficProfile(spawned, _world);
   if (elapsedSeconds >= nextTrafficAt && aircraft.length < profile.maxAircraft) {
-    const incoming = spawnTraffic(spawned, _world);
+    const plannedTraffic = planTraffic(spawned, aircraft, _world);
+    const incoming = plannedTraffic.aircraft;
     const scheduledIncoming = spawned > 0 && spawned % 6 === 0 ? createPriorityTraffic(incoming, elapsedSeconds) : incoming;
     if (!aircraft.some((item) => item.callsign === scheduledIncoming.callsign)) {
       aircraft = [...aircraft, scheduledIncoming];
@@ -319,15 +321,13 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
         type: scheduledIncoming.priority ? 'warning' : 'info',
         message: scheduledIncoming.priority
           ? `${scheduledIncoming.callsign} ÖNCELİKLİ · ${scheduledIncoming.priority.kind === 'minimumFuel' ? 'minimum yakıt' : 'tıbbi uçuş'} · inişe öncelik ver`
-          : scheduledIncoming.phase === 'arrival'
-            ? `${scheduledIncoming.callsign} sahaya girdi · planlanan pist ${scheduledIncoming.assignedRunway ?? 'ATC'}`
-            : `${scheduledIncoming.callsign} sahaya girdi · kalkış trafiği`,
+          : plannedTraffic.message,
       });
     }
     nextTrafficAt += profile.spawnInterval;
   }
 
-  const nextTrafficLevel = trafficProfile(spawned).level;
+  const nextTrafficLevel = trafficProfile(spawned, _world).level;
   if (nextTrafficLevel > state.trafficLevel) {
     eventLog = appendEvent(eventLog, {
       id: `traffic-level-${nextTrafficLevel}`,
