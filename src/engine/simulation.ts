@@ -350,6 +350,14 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
     });
   }
 
+  const shouldSampleTrack = elapsedSeconds - state.lastTrackAt >= 1;
+  const trackHistory = shouldSampleTrack
+    ? Object.fromEntries(aircraft.map((item) => [
+      item.callsign,
+      [...(state.trackHistory[item.callsign] ?? []), { ...item.position }].slice(-60),
+    ]))
+    : state.trackHistory;
+
   return {
     ...state,
     elapsedSeconds,
@@ -364,5 +372,7 @@ export function stepGame(state: GameState, _world: RadarWorld, dt: number): Game
     eventLog,
     activeLossPairs: lossPairs,
     handoffs: state.handoffs + handedOffAircraft.length,
+    trackHistory,
+    lastTrackAt: shouldSampleTrack ? elapsedSeconds : state.lastTrackAt,
   };
 }

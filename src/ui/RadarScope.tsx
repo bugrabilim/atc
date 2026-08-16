@@ -6,6 +6,7 @@ interface RadarScopeProps {
   world: RadarWorld;
   aircraft: Aircraft[];
   conflicts: Conflict[];
+  trackHistory: Record<string, Vector2[]>;
   selectedCallsign: string | null;
   onSelect: (callsign: string) => void;
 }
@@ -53,6 +54,7 @@ function drawRadar(
   world: RadarWorld,
   aircraft: Aircraft[],
   conflicts: Conflict[],
+  trackHistory: Record<string, Vector2[]>,
   selectedCallsign: string | null,
 ) {
   const { width, height, center, scale } = viewport;
@@ -135,6 +137,22 @@ function drawRadar(
     const activeFix = item.navigation?.fixIds[item.navigation.currentLegIndex];
     const fix = activeFix ? world.fixes.find((entry) => entry.id === activeFix) : undefined;
 
+    const trail = trackHistory[item.callsign] ?? [];
+    if (trail.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = selected ? 'rgba(255, 255, 255, 0.42)' : item.phase === 'arrival' ? 'rgba(103, 232, 196, 0.32)' : 'rgba(121, 185, 255, 0.28)';
+      ctx.lineWidth = selected ? 1.25 : 1;
+      ctx.setLineDash([2, 4]);
+      ctx.beginPath();
+      trail.forEach((historyPoint, index) => {
+        const screenPoint = worldToScreen(historyPoint, viewport);
+        if (index === 0) ctx.moveTo(screenPoint.x, screenPoint.y);
+        else ctx.lineTo(screenPoint.x, screenPoint.y);
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+
     if (fix) {
       const fixPoint = worldToScreen(fix.position, viewport);
       drawLine(ctx, point, fixPoint, item.navigation?.mode === 'hold' ? 'rgba(255, 182, 72, 0.46)' : 'rgba(121, 185, 255, 0.38)', 1, [2, 5]);
@@ -209,7 +227,7 @@ function drawRadar(
   ctx.fillText('SIMÜLASYON · OPERASYONEL KULLANIM İÇİN DEĞİLDİR', 14, height - 14);
 }
 
-export function RadarScope({ world, aircraft, conflicts, selectedCallsign, onSelect }: RadarScopeProps) {
+export function RadarScope({ world, aircraft, conflicts, trackHistory, selectedCallsign, onSelect }: RadarScopeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewportRef = useRef<Viewport | null>(null);
 
@@ -230,7 +248,7 @@ export function RadarScope({ world, aircraft, conflicts, selectedCallsign, onSel
         scale: Math.min(rect.width, rect.height) / (world.rangeNm * 2.15),
         center: { x: rect.width / 2, y: rect.height / 2 + Math.min(24, rect.height * 0.04) },
       };
-      drawRadar(ctx, viewportRef.current, world, aircraft, conflicts, selectedCallsign);
+      drawRadar(ctx, viewportRef.current, world, aircraft, conflicts, trackHistory, selectedCallsign);
     };
     resize();
     const observer = new ResizeObserver(resize);
@@ -243,8 +261,8 @@ export function RadarScope({ world, aircraft, conflicts, selectedCallsign, onSel
     const viewport = viewportRef.current;
     if (!canvas || !viewport) return;
     const ctx = canvas.getContext('2d');
-    if (ctx) drawRadar(ctx, viewport, world, aircraft, conflicts, selectedCallsign);
-  }, [aircraft, conflicts, selectedCallsign, world]);
+    if (ctx) drawRadar(ctx, viewport, world, aircraft, conflicts, trackHistory, selectedCallsign);
+  }, [aircraft, conflicts, selectedCallsign, trackHistory, world]);
 
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;

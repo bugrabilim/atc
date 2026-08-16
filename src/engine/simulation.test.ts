@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createInitialState, initialState, scenarioCatalog, spawnTraffic, world } from './scenario';
+import { createInitialState, initialState, scenarioCatalog, spawnTraffic, world, worldWithFlow } from './scenario';
 import { detectConflicts, landingClearanceStatus, requiredFinalSeparationNm, stepGame, trafficProfile } from './simulation';
 
 describe('stepGame', () => {
@@ -87,6 +87,25 @@ describe('stepGame', () => {
     expect(state.selectedCallsign).toBe('CF101');
     expect(state.timeScale).toBe(2);
     expect(['09L', '09R']).toContain(incoming.assignedRunway);
+  });
+
+  it('derives active runways from an airport-pack flow configuration', () => {
+    const singleFlow = worldWithFlow(world, 'north-single');
+    const arrivals = singleFlow.runways.filter((item) => item.operation === 'arrival').map((item) => item.id);
+    const departures = singleFlow.runways.filter((item) => item.operation === 'departure').map((item) => item.id);
+
+    expect(arrivals).toEqual(['34L']);
+    expect(departures).toEqual(['36']);
+  });
+
+  it('keeps a short radar history trail for active aircraft', () => {
+    let state = structuredClone(initialState);
+    state.aircraft = [state.aircraft[0]];
+    state.trackHistory = { [state.aircraft[0].callsign]: [{ ...state.aircraft[0].position }] };
+
+    for (let index = 0; index < 6; index += 1) state = stepGame(state, world, 0.1);
+
+    expect(state.trackHistory.AR101.length).toBeGreaterThan(1);
   });
 
   it('warns about an approaching loss before aircraft are already too close', () => {

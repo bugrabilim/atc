@@ -18,7 +18,7 @@
 * { box-sizing: border-box; }
 html, body, #root { width: 100%; min-height: 100%; margin: 0; }
 body { min-width: 320px; min-height: 100dvh; overflow: hidden; }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button { touch-action: manipulation; }
 
 .app-shell {
@@ -63,6 +63,11 @@ button { touch-action: manipulation; }
 .session-actions button.is-active { color: #04120c; border-color: var(--green); background: var(--green); }
 .session-actions button { min-width: 54px; padding: 0 10px; font: 600 9px IBM Plex Mono, monospace; }
 .session-actions button:hover, .quick-command:hover { border-color: rgba(110, 243, 176, 0.5); background: #10271d; }
+
+.operation-bar { min-height: 34px; display: flex; align-items: center; gap: 15px; padding: 5px 16px; border-bottom: 1px solid var(--line); color: var(--muted); background: rgba(5, 15, 11, .94); font: 500 9px IBM Plex Mono, monospace; }
+.operation-bar label { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.operation-bar select { min-height: 25px; padding: 0 23px 0 7px; color: #dff8ec; border: 1px solid var(--line); border-radius: 5px; outline: 0; background: #0a1a14; font: 700 8px IBM Plex Mono, monospace; }
+.operation-bar b { color: var(--green); font-weight: 700; }
 
 .conflict-banner {
   padding: 7px 16px;
@@ -121,6 +126,8 @@ button { touch-action: manipulation; }
 @media (max-width: 900px) {
   .top-bar { grid-template-columns: 1fr auto; min-height: 58px; padding: 8px 10px; }
   .top-status { display: none; }
+  .operation-bar { gap: 10px; padding-inline: 10px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; }
+  .operation-bar::-webkit-scrollbar { display: none; }
   .brand-lockup small { max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .workspace { grid-template-columns: minmax(0, 1fr); }
   .flight-panel { display: none; }
@@ -145,6 +152,7 @@ button { touch-action: manipulation; }
   .send-command { height: 40px; min-width: 78px; }
   .mission-primary strong { font-size: 8px; }
   .mission-score { gap: 8px; font-size: 8px; }
+  .mission-score span:nth-last-child(2) { display: none; }
   .mission-score b { font-size: 10px; }
 }
 

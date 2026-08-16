@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { applyCommand, parseCommandLine } from '../engine/commands';
-import { createInitialState, defaultScenario, scenarioCatalog } from '../engine/scenario';
+import { createInitialState, defaultScenario, scenarioCatalog, worldWithFlow } from '../engine/scenario';
 import { landingClearanceStatus, stepGame } from '../engine/simulation';
 import type { GameState } from '../engine/types';
 import type { GameScenario } from '../engine/scenario';
@@ -46,7 +46,8 @@ export function App() {
     type: 'info',
     message: 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. Çağrı kodunun ilk harflerini yazıp Tab ile tamamlayabilirsin.',
   });
-  const activeWorld = scenario.world;
+  const activeWorld = useMemo(() => worldWithFlow(scenario.world, state.flowId), [scenario.world, state.flowId]);
+  const activeFlow = activeWorld.flowConfigurations.find((item) => item.id === state.flowId) ?? activeWorld.flowConfigurations[0];
   const activeArrivalRunways = activeWorld.runways.filter((item) => item.active && (item.operation === 'arrival' || item.operation === 'mixed'));
   const trainingAircraft = scenario.initialAircraft.find((item) => item.phase === 'arrival');
 
@@ -135,6 +136,12 @@ export function App() {
     setCommand('');
     setFeedback({ type: 'info', message: `${nextScenario.label} sektörü yüklendi.` });
   };
+  const selectFlow = (flowId: string) => {
+    const flow = scenario.world.flowConfigurations.find((item) => item.id === flowId);
+    if (!flow) return;
+    setState((current) => ({ ...current, flowId }));
+    setFeedback({ type: 'info', message: `${flow.label} operasyonu aktif. Yeni trafik bu pist akışına göre planlanacak.` });
+  };
   const severeConflicts = state.conflicts.filter((item) => item.severity === 'loss').length;
 
   return (
@@ -162,6 +169,19 @@ export function App() {
         </div>
       </header>
 
+      <div className="operation-bar" aria-label="Operasyon ve hava koşulları">
+        <span className="eyebrow">OPERASYON</span>
+        <label>
+          Pist akışı
+          <select value={state.flowId} onChange={(event) => selectFlow(event.target.value)}>
+            {activeWorld.flowConfigurations.map((flow) => <option key={flow.id} value={flow.id}>{flow.label}</option>)}
+          </select>
+        </label>
+        {activeFlow ? <span>RÜZGÂR <b>{String(activeFlow.windDirection).padStart(3, '0')}°/{activeFlow.windSpeedKt}KT</b></span> : null}
+        {activeFlow ? <span>GÖRÜŞ <b>{activeFlow.visibilityNm}NM</b></span> : null}
+        {activeFlow ? <span>QNH <b>{activeFlow.qnh}</b></span> : null}
+      </div>
+
       <div className="game-status">
         {severeConflicts > 0 ? (
           <div className="conflict-banner" role="alert">AYIRMA KAYBI · ACİL MÜDAHALE GEREKİYOR</div>
@@ -178,6 +198,7 @@ export function App() {
           trainingRunway={trainingAircraft?.assignedRunway ?? null}
           priorityTraffic={state.aircraft.filter((item) => item.priority)}
           events={state.eventLog}
+          activeFlowLabel={activeFlow?.label ?? 'STANDART'}
         />
       </div>
 
@@ -186,6 +207,7 @@ export function App() {
           world={activeWorld}
           aircraft={state.aircraft}
           conflicts={state.conflicts}
+          trackHistory={state.trackHistory}
           selectedCallsign={state.selectedCallsign}
           onSelect={selectAircraft}
         />

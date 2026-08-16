@@ -64,12 +64,46 @@ export interface Fix {
   position: Vector2;
 }
 
+export interface Procedure {
+  id: string;
+  kind: 'arrival' | 'departure';
+  runwayId?: string;
+  fixIds: string[];
+}
+
+export interface TrafficEntry {
+  id: string;
+  position: Vector2;
+  procedureId: string;
+  compatibleRunwayIds: string[];
+}
+
+export interface TrafficExit {
+  id: string;
+  procedureId: string;
+}
+
+export interface FlowConfiguration {
+  id: string;
+  label: string;
+  arrivalRunwayIds: string[];
+  departureRunwayIds: string[];
+  windDirection: number;
+  windSpeedKt: number;
+  visibilityNm: number;
+  qnh: number;
+}
+
 export interface RadarWorld {
   airport: string;
   sectorName: string;
   rangeNm: number;
   runways: Runway[];
   fixes: Fix[];
+  procedures: Procedure[];
+  trafficEntries: TrafficEntry[];
+  trafficExits: TrafficExit[];
+  flowConfigurations: FlowConfiguration[];
 }
 
 export interface Conflict {
@@ -100,6 +134,11 @@ export interface GameState {
   eventLog: GameEvent[];
   activeLossPairs: string[];
   handoffs: number;
+  /** Selected operational runway/wind configuration for this session. */
+  flowId: string;
+  /** Radar positions sampled at one-second intervals for history trails. */
+  trackHistory: Record<string, Vector2[]>;
+  lastTrackAt: number;
 }
 
 export interface GameEvent {
