@@ -196,6 +196,11 @@ function drawRadar(
       ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';
       ctx.fillText(`${item.navigation?.mode === 'hold' ? 'HOLD' : 'DCT'} ${activeFix}`, leaderEnd.x + 3, leaderEnd.y + 21);
     }
+    if (conflict?.predicted) {
+      ctx.fillStyle = '#ffb648';
+      ctx.font = '700 8px IBM Plex Mono, ui-monospace, monospace';
+      ctx.fillText(`CPA ${conflict.predicted.horizontalNm.toFixed(1)}NM · ${Math.round(conflict.predicted.timeSeconds)}s`, leaderEnd.x + 3, leaderEnd.y + 32);
+    }
   }
 
   ctx.fillStyle = 'rgba(110, 243, 176, 0.48)';

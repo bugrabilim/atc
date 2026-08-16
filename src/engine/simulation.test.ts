@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { initialState, world } from './scenario';
-import { landingClearanceStatus, stepGame, trafficProfile } from './simulation';
+import { detectConflicts, landingClearanceStatus, stepGame, trafficProfile } from './simulation';
 
 describe('stepGame', () => {
   it('turns gradually instead of snapping to the target heading', () => {
@@ -57,5 +57,25 @@ describe('stepGame', () => {
     const next = stepGame(state, world, 0.1);
 
     expect(next.aircraft.some((item) => item.priority?.deadlineAt)).toBe(true);
+  });
+
+  it('warns about an approaching loss before aircraft are already too close', () => {
+    const first = structuredClone(initialState.aircraft[0]);
+    const second = structuredClone(initialState.aircraft[1]);
+    first.position = { x: 0, y: 10 };
+    first.heading = 0;
+    first.speed = 360;
+    first.altitude = 6000;
+    first.targetAltitude = 6000;
+    second.position = { x: 0, y: -10 };
+    second.heading = 180;
+    second.speed = 360;
+    second.altitude = 6000;
+    second.targetAltitude = 6000;
+
+    const conflict = detectConflicts([first, second])[0];
+
+    expect(conflict.severity).toBe('warning');
+    expect(conflict.predicted?.timeSeconds).toBeGreaterThan(0);
   });
 });

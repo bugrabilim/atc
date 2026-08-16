@@ -77,6 +77,10 @@ export interface Conflict {
   horizontalNm: number;
   verticalFt: number;
   severity: 'warning' | 'loss';
+  predicted?: {
+    timeSeconds: number;
+    horizontalNm: number;
+  };
 }
 
 export interface GameState {

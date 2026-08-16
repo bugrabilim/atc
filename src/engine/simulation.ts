@@ -185,6 +185,34 @@ export function detectConflicts(aircraft: readonly Aircraft[]): Conflict[] {
           verticalFt,
           severity: horizontalNm < 3 && verticalFt < 1000 ? 'loss' : 'warning',
         });
+        continue;
+      }
+
+      const firstHeading = (first.heading * Math.PI) / 180;
+      const secondHeading = (second.heading * Math.PI) / 180;
+      const firstVelocity = { x: Math.sin(firstHeading) * first.speed / SECONDS_PER_HOUR, y: -Math.cos(firstHeading) * first.speed / SECONDS_PER_HOUR };
+      const secondVelocity = { x: Math.sin(secondHeading) * second.speed / SECONDS_PER_HOUR, y: -Math.cos(secondHeading) * second.speed / SECONDS_PER_HOUR };
+      const relativePosition = { x: first.position.x - second.position.x, y: first.position.y - second.position.y };
+      const relativeVelocity = { x: firstVelocity.x - secondVelocity.x, y: firstVelocity.y - secondVelocity.y };
+      const relativeSpeedSquared = relativeVelocity.x ** 2 + relativeVelocity.y ** 2;
+      if (relativeSpeedSquared === 0) continue;
+      const timeSeconds = -((relativePosition.x * relativeVelocity.x) + (relativePosition.y * relativeVelocity.y)) / relativeSpeedSquared;
+      if (timeSeconds <= 0 || timeSeconds > 120) continue;
+      const closestHorizontal = Math.hypot(
+        relativePosition.x + relativeVelocity.x * timeSeconds,
+        relativePosition.y + relativeVelocity.y * timeSeconds,
+      );
+      const firstVerticalRate = first.targetAltitude > first.altitude ? first.performance.climbRateFpm / SECONDS_PER_MINUTE : first.targetAltitude < first.altitude ? -first.performance.descentRateFpm / SECONDS_PER_MINUTE : 0;
+      const secondVerticalRate = second.targetAltitude > second.altitude ? second.performance.climbRateFpm / SECONDS_PER_MINUTE : second.targetAltitude < second.altitude ? -second.performance.descentRateFpm / SECONDS_PER_MINUTE : 0;
+      const closestVertical = Math.abs((first.altitude + firstVerticalRate * timeSeconds) - (second.altitude + secondVerticalRate * timeSeconds));
+      if (closestHorizontal < 3 && closestVertical < 1000) {
+        conflicts.push({
+          pair: [first.callsign, second.callsign],
+          horizontalNm,
+          verticalFt,
+          severity: 'warning',
+          predicted: { timeSeconds, horizontalNm: closestHorizontal },
+        });
       }
     }
   }
