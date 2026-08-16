@@ -361,7 +361,9 @@ export function App() {
           trackHistory={state.trackHistory}
           pendingCallsigns={state.pendingInstructions.map((item) => item.command.callsign)}
           selectedCallsign={state.selectedCallsign}
+          coach={coach}
           onSelect={selectAircraft}
+          onApplyCoach={submitCoachCommand}
         />
         <FlightStripList
           aircraft={state.aircraft}
