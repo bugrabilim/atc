@@ -185,4 +185,13 @@ describe('stepGame', () => {
     expect(next.flowId).toBe('north-single');
     expect(next.eventLog.at(-1)?.message).toContain('OPERASYON DEĞİŞİKLİĞİ');
   });
+
+  it('closes an expert arrival runway temporarily for an operational inspection', () => {
+    const state = createInitialState(undefined, 'expert');
+    state.elapsedSeconds = 330;
+    const next = stepGame(state, worldWithFlow(world, state.flowId, state.peakSkill), 0.1);
+
+    expect(next.runwayAvailableAt['34L']).toBeGreaterThan(390);
+    expect(next.eventLog.at(-1)?.message).toContain('PİST KONTROLÜ');
+  });
 });
