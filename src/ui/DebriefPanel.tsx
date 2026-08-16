@@ -4,11 +4,14 @@ import type { GameState } from '../engine/types';
 interface DebriefPanelProps {
   report: DebriefReport;
   state: GameState;
+  achievementCount: number;
+  achievementTotal: number;
+  newAchievementIds: string[];
   onRestart: () => void;
   onContinue: () => void;
 }
 
-export function DebriefPanel({ report, state, onRestart, onContinue }: DebriefPanelProps) {
+export function DebriefPanel({ report, state, achievementCount, achievementTotal, newAchievementIds, onRestart, onContinue }: DebriefPanelProps) {
   return (
     <div className="debrief-backdrop" role="dialog" aria-modal="true" aria-label="Vardiya debrief raporu">
       <section className="debrief-panel">
@@ -34,7 +37,7 @@ export function DebriefPanel({ report, state, onRestart, onContinue }: DebriefPa
           <div><span className="eyebrow">SONRAKİ VARDİYA</span>{report.improvements.map((item) => <p key={item}>{item}</p>)}</div>
         </div>
         {report.awards.length > 0 ? (
-          <div className="debrief-awards"><span className="eyebrow">KAZANILAN ROZETLER</span><div>{report.awards.map((award) => <b key={award.id}>{award.label}</b>)}</div></div>
+          <div className="debrief-awards"><span className="eyebrow">VARDİYA BAŞARIMLARI · {achievementCount}/{achievementTotal}</span><div>{report.awards.map((award) => <b key={award.id} title={award.description}>{newAchievementIds.includes(award.id) ? 'YENİ · ' : ''}{award.label}</b>)}</div></div>
         ) : null}
         <div className="debrief-timeline">
           <span className="eyebrow">OPERASYON KAYDI</span>
