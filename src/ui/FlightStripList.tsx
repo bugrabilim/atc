@@ -49,6 +49,7 @@ export function FlightStripList({ aircraft, conflicts, selectedCallsign, elapsed
               className={`flight-strip${selected ? ' is-selected' : ''}${conflict ? ' has-conflict' : ''}`}
               onClick={() => onSelect(item.callsign)}
               aria-pressed={selected}
+              aria-label={`${item.callsign}, FL${String(Math.round(item.altitude / 100)).padStart(3, '0')}, ${Math.round(item.speed)} knot${conflict ? ', ayırma uyarısı' : ''}${item.priority ? ', öncelikli trafik' : ''}`}
             >
               <span className="flight-strip__lead">
                 <strong>{item.callsign}</strong>
