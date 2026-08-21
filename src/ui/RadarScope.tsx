@@ -263,7 +263,7 @@ function drawRadar(
     ctx.fillStyle = 'rgba(125, 214, 173, 0.62)';
     ctx.textAlign = 'left';
     ctx.font = '11px IBM Plex Mono, ui-monospace, monospace';
-    ctx.fillText(fix.id, point.x + 7, point.y + 3);
+    ctx.fillText(fix.label ?? fix.id, point.x + 7, point.y + 3);
   }
 
   for (const conflict of conflicts) {

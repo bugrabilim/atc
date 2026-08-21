@@ -13,6 +13,7 @@ import { createAircraft, HEAVY_PERFORMANCE, JET_PERFORMANCE } from './aircraftDa
 import { profileForSkill } from './skill';
 import { difficultyConfig, modeTrafficProfile } from './difficulty';
 import { AIRPORT_DEFINITIONS, type AirportDefinition, type AirportRunwayData } from './airportCatalog';
+import { airportOperationsById, type BoundaryId } from './airportOperations';
 
 export interface GameScenario {
   id: ScenarioId;
@@ -97,6 +98,7 @@ function flowForDirection(
 function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
   const runways = usableRunways(definition).sort((first, second) => second.lengthNm - first.lengthNm);
   if (runways.length === 0) throw new Error(`${definition.icao} has no usable runway data`);
+  const operationsPack = airportOperationsById.get(definition.id);
 
   const physicalRunways: Runway[] = runways.map((runway) => ({
     id: runway.lowId,
@@ -107,12 +109,13 @@ function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
     active: false,
     operation: 'inactive',
   }));
-  const boundaryFixes = [
-    { id: 'NORTH', position: pointAtBearing(0, BOUNDARY_DISTANCE_NM) },
-    { id: 'EAST', position: pointAtBearing(90, BOUNDARY_DISTANCE_NM) },
-    { id: 'SOUTH', position: pointAtBearing(180, BOUNDARY_DISTANCE_NM) },
-    { id: 'WEST', position: pointAtBearing(270, BOUNDARY_DISTANCE_NM) },
-  ];
+  const boundaryFixes = ([
+    ['NORTH', 0], ['EAST', 90], ['SOUTH', 180], ['WEST', 270],
+  ] as const).map(([id, bearing]) => ({
+    id,
+    label: operationsPack?.boundaryLabels[id as BoundaryId] ?? id,
+    position: pointAtBearing(bearing, BOUNDARY_DISTANCE_NM),
+  }));
   const finalFixes = runways.flatMap((runway) => [
     { id: `FINAL${runway.lowId}`, position: finalPoint(runway) },
     { id: `FINAL${runway.highId}`, position: finalPoint(runway, true) },
@@ -134,13 +137,7 @@ function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
     { id: `${definition.iata}-SW-DEPARTURE`, kind: 'departure' as const, fixIds: ['EXIT-SW'] },
   ];
 
-  const flowConfigurations = definition.id === 'ist'
-    ? [
-      { id: 'north-parallel', label: 'KUZEY · PARALEL', arrivalRunwayIds: ['34L', '35R'], departureRunwayIds: ['36'], windDirection: 350, windSpeedKt: 10, visibilityNm: 12, qnh: 1016 },
-      { id: 'north-single', label: 'KUZEY · TEK PİST', arrivalRunwayIds: ['34L'], departureRunwayIds: ['36'], windDirection: 340, windSpeedKt: 18, visibilityNm: 7, qnh: 1009 },
-      { id: 'north-lowvis', label: 'KUZEY · DÜŞÜK GÖRÜŞ', arrivalRunwayIds: ['35R'], departureRunwayIds: ['36'], windDirection: 2, windSpeedKt: 21, visibilityNm: 4, qnh: 1003 },
-    ]
-    : [
+  const flowConfigurations = operationsPack?.flows ?? [
       flowForDirection(definition, runways, false, 'primary', 12, 9),
       flowForDirection(definition, runways, true, 'reverse', 9, 15),
       flowForDirection(definition, runways, false, 'lowvis', 4, 20, true),
@@ -163,6 +160,15 @@ function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
       { id: 'EXIT-SW', procedureId: `${definition.iata}-SW-DEPARTURE` },
     ],
     flowConfigurations,
+    operations: operationsPack ? {
+      packVersion: operationsPack.packVersion,
+      referenceCycle: operationsPack.referenceCycle,
+      strategyLabel: operationsPack.strategyLabel,
+      trafficPattern: [...operationsPack.trafficPattern],
+      heavyArrivalEvery: operationsPack.heavyArrivalEvery,
+      procedureReferences: [...operationsPack.procedureReferences],
+      disruption: { ...operationsPack.disruption },
+    } : undefined,
     environment: {
       terrain: definition.terrain,
       urbanDensity: definition.urbanDensity,
@@ -231,6 +237,7 @@ function terrainFocus(definition: AirportDefinition) {
 
 export const scenarioCatalog: GameScenario[] = AIRPORT_DEFINITIONS.map((definition, index) => {
   const world = makeRealAirportWorld(definition);
+  const operationsPack = airportOperationsById.get(definition.id);
   const runwayCount = usableRunways(definition).length;
   return {
     id: definition.id,
@@ -240,8 +247,8 @@ export const scenarioCatalog: GameScenario[] = AIRPORT_DEFINITIONS.map((definiti
     passengers2025: definition.passengers2025,
     runwayCount,
     label: `${definition.iata} · ${definition.city.toUpperCase()}`,
-    briefing: `${definition.name}: ${runwayCount} fiziksel pist çifti, gerçek pist yönleri ve ${definition.city} çevresine göre taktik sektör görünümü.`,
-    focus: terrainFocus(definition),
+    briefing: operationsPack?.briefing ?? `${definition.name}: ${runwayCount} fiziksel pist çifti, gerçek pist yönleri ve ${definition.city} çevresine göre taktik sektör görünümü.`,
+    focus: operationsPack?.focus ?? terrainFocus(definition),
     world,
     initialAircraft: makeInitialAircraft(definition, world),
   };

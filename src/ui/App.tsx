@@ -601,6 +601,9 @@ export function App() {
           priorityTraffic={state.aircraft.filter((item) => item.priority)}
           events={state.eventLog}
           activeFlowLabel={activeFlow?.label ?? 'STANDART'}
+          operationsStrategy={activeWorld.operations?.strategyLabel}
+          operationsReference={activeWorld.operations?.referenceCycle}
+          procedureReferences={activeWorld.operations?.procedureReferences}
           pendingInstructionCount={state.pendingInstructions.length}
           tutorial={tutorial}
           onTutorialCommand={submitTutorialCommand}

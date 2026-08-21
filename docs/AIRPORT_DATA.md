@@ -26,11 +26,32 @@ for play, and how the 50-airport catalogue can be audited and refreshed.
 - Reciprocal runway operation: changing the wind/flow rotates and renames the
   same physical runway instead of drawing a duplicate.
 - Three replayable flow configurations per airport: normal direction, reverse
-  direction and reduced-capacity/low-visibility operation.
+  direction and reduced-capacity/low-visibility operation. The first five
+  flagship packs have a fourth researched flow and airport-specific traffic
+  cadence/event model.
 - Four controller boundary gates, an ILS-aligned final corridor for every
   runway end and two departure exits.
 - Airport-specific terrain class, city direction, water direction and mountain
   direction for a readable tactical map.
+
+## Flagship operations pack v1
+
+`src/engine/airportOperations.ts` is the versioned source of truth for the
+first five hand-authored operations packs. Version `2026.08.1` adds IST, LHR,
+LAX, JFK and ATL. Each pack contains four runway flows, a distinct
+arrival/departure cadence, heavy-aircraft cadence, named boundary feeds, a
+timed disruption/recovery and a source manifest with access date.
+
+| Airport | Tactical identity | Normal capacity | Reduced event |
+|:--|:--|:--|:--|
+| IST | Triple-independent runway bank | Two/three arrival streams | Black Sea wind shift merges arrivals to one runway |
+| LHR | Four-stack merge and runway alternation | One arrival + one departure runway | Alternation moves the entire arrival sequence |
+| LAX | North/south complex balancing | Two arrival + two departure runways | North-complex maintenance leaves the south complex |
+| JFK | Intersecting 22/31 flow | Parallel arrivals plus crossing departure pressure | Low visibility produces one arrival stream |
+| ATL | Five-parallel-runway throughput | Three arrival + two departure runways | Low-visibility interval collapses the arrival bank |
+
+The source/evidence notes and exact game adaptations are recorded in
+[`FLAGSHIP_AIRPORT_PACKS.md`](./FLAGSHIP_AIRPORT_PACKS.md).
 
 ## Accuracy boundary
 
