@@ -142,6 +142,14 @@ export function createAcademyState(scenario: GameScenario, lessonId: AcademyLess
   };
 }
 
+/** Keeps the first lesson waiting for an intentional target selection. The
+ * normal simulation automatically selects the first active aircraft when the
+ * current selection is empty, which would otherwise complete the lesson before
+ * the learner touches the radar. */
+export function shouldAdvanceAcademySimulation(state: GameState, lessonId: AcademyLessonId | null) {
+  return lessonId !== 'scope-basics' || Boolean(state.selectedCallsign);
+}
+
 export function evaluateAcademyLesson(state: GameState, world: RadarWorld, lessonId: AcademyLessonId): AcademyEvaluation {
   const arrivals = state.aircraft.filter((item) => item.phase === 'arrival');
   const selected = state.aircraft.find((item) => item.callsign === state.selectedCallsign) ?? state.aircraft[0] ?? null;

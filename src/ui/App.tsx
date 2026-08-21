@@ -16,7 +16,7 @@ import { controllerCoach, type CoachAdvice } from '../engine/controllerCoach';
 import { restoreSession, serializeSession, type SavedSession } from '../engine/session';
 import { AudioCuePlayer, type AudioCue } from './audioCues';
 import { DIFFICULTY_MODES, difficultyConfig, worldForMode } from '../engine/difficulty';
-import { ACADEMY_LESSONS, createAcademyState, evaluateAcademyLesson, isAcademyLessonId, type AcademyAction, type AcademyLessonId } from '../engine/academy';
+import { ACADEMY_LESSONS, createAcademyState, evaluateAcademyLesson, isAcademyLessonId, shouldAdvanceAcademySimulation, type AcademyAction, type AcademyLessonId } from '../engine/academy';
 import { AcademyPanel } from './AcademyPanel';
 
 interface CareerStats {
@@ -189,10 +189,10 @@ export function App() {
       const now = performance.now();
       const dt = (now - previous) / 1000;
       previous = now;
-      setState((current) => stepGame(current, activeWorld, dt));
+      setState((current) => shouldAdvanceAcademySimulation(current, academyLessonId) ? stepGame(current, activeWorld, dt) : current);
     }, 33);
     return () => window.clearInterval(timer);
-  }, [activeWorld]);
+  }, [academyLessonId, activeWorld]);
 
   useEffect(() => {
     if (!academyLessonId && !debriefOpen && goalComplete(state, goal)) {

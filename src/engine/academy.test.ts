@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { queueInstructions } from './radio';
-import { ACADEMY_LESSONS, createAcademyState, evaluateAcademyLesson } from './academy';
+import { ACADEMY_LESSONS, createAcademyState, evaluateAcademyLesson, shouldAdvanceAcademySimulation } from './academy';
 import { defaultScenario, worldWithFlow } from './scenario';
 
 function lessonWorld(state: ReturnType<typeof createAcademyState>) {
@@ -18,8 +18,10 @@ describe('academy', () => {
     const state = createAcademyState(defaultScenario, 'scope-basics');
     expect(state.mode).toBe('beginner');
     expect(state.selectedCallsign).toBeNull();
+    expect(shouldAdvanceAcademySimulation(state, 'scope-basics')).toBe(false);
     expect(evaluateAcademyLesson(state, lessonWorld(state), 'scope-basics').complete).toBe(false);
     const selected = { ...state, selectedCallsign: state.aircraft[0]!.callsign };
+    expect(shouldAdvanceAcademySimulation(selected, 'scope-basics')).toBe(true);
     expect(evaluateAcademyLesson(selected, lessonWorld(selected), 'scope-basics').complete).toBe(true);
   });
 
