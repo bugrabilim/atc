@@ -12,7 +12,7 @@ import { planTraffic } from './trafficDirector';
 import { createAircraft, HEAVY_PERFORMANCE, JET_PERFORMANCE } from './aircraftData';
 import { profileForSkill } from './skill';
 import { difficultyConfig, modeTrafficProfile } from './difficulty';
-import { AIRPORT_DEFINITIONS, type AirportDefinition, type AirportRunwayData } from './airportCatalog';
+import { AIRPORT_DEFINITIONS, airportDefinitionById, type AirportDefinition, type AirportRunwayData } from './airportCatalog';
 import { airportOperationsById, type BoundaryId } from './airportOperations';
 
 export interface GameScenario {
@@ -183,12 +183,12 @@ function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
   return worldWithFlow(base, base.flowConfigurations[0]!.id, 10);
 }
 
-function makeInitialAircraft(definition: AirportDefinition, world: RadarWorld): Aircraft[] {
-  const activeWorld = worldWithFlow(world, world.flowConfigurations[0]!.id, 10);
-  const primaryFlow = activeWorld.flowConfigurations[0]!;
-  const arrivals = primaryFlow.arrivalRunwayIds
+function makeInitialAircraft(definition: AirportDefinition, world: RadarWorld, flowId = world.flowConfigurations[0]!.id, skill = 10): Aircraft[] {
+  const activeWorld = worldWithFlow(world, flowId, skill);
+  const selectedFlow = activeWorld.flowConfigurations.find((flow) => flow.id === activeWorld.activeFlowId) ?? activeWorld.flowConfigurations[0]!;
+  const arrivals = selectedFlow.arrivalRunwayIds
     .map((runwayId) => activeWorld.runways.find((runway) => runway.id === runwayId))
-    .filter((runway): runway is Runway => Boolean(runway));
+    .filter((runway): runway is Runway => Boolean(runway?.active && (runway.operation === 'arrival' || runway.operation === 'mixed')));
   const departures = activeWorld.runways.filter((runway) => runway.active && (runway.operation === 'departure' || runway.operation === 'mixed'));
   const arrivalRunway = arrivals[0] ?? activeWorld.runways[0]!;
   const secondRunway = definition.id === 'ist' ? arrivalRunway : arrivals[1] ?? arrivalRunway;
@@ -291,11 +291,17 @@ export function worldWithFlow(world: RadarWorld, flowId: string, skill?: number)
   };
 }
 
-export function createInitialState(scenario: GameScenario = defaultScenario, mode: GameMode = 'normal'): GameState {
+export function createInitialState(scenario: GameScenario = defaultScenario, mode: GameMode = 'normal', requestedFlowId?: string): GameState {
   const config = difficultyConfig(mode);
-  const initialAircraft = structuredClone(scenario.initialAircraft.slice(0, config.initialAircraft));
+  const flowId = scenario.world.flowConfigurations.some((flow) => flow.id === requestedFlowId)
+    ? requestedFlowId!
+    : scenario.world.flowConfigurations[0]?.id ?? 'default';
+  const definition = airportDefinitionById.get(scenario.id);
+  const sourceAircraft = definition
+    ? makeInitialAircraft(definition, scenario.world, flowId, config.initialSkill)
+    : scenario.initialAircraft;
+  const initialAircraft = structuredClone(sourceAircraft.slice(0, config.initialAircraft));
   const trainingAircraft = initialAircraft.find((item) => item.phase === 'arrival');
-  const flowId = scenario.world.flowConfigurations[0]?.id ?? 'default';
   const initialProfile = modeTrafficProfile(mode, profileForSkill(config.initialSkill));
   const welcome = { id: 'welcome', type: 'info' as const, message: `Radar contact: ${trainingAircraft?.callsign ?? 'ilk geliş'}. Heading, irtifa ve hızla ${trainingAircraft?.assignedRunway ?? ''} finaline vektörle; sonra ILS'i silahlandır.` };
   return {

@@ -14,6 +14,21 @@ describe('session persistence', () => {
     expect(restored?.scenarioId).toBe('ist');
   });
 
+  it('retains a valid optional daily challenge identity', () => {
+    const state = createInitialState(defaultScenario, 'normal');
+    const restored = restoreSession(serializeSession('ist', state, 'daily-2026-08-22'), scenarioCatalog);
+    expect(restored?.dailyChallengeId).toBe('daily-2026-08-22');
+  });
+
+  it('drops malformed daily challenge metadata without rejecting the shift', () => {
+    const state = createInitialState(defaultScenario, 'normal');
+    const record = JSON.parse(serializeSession('ist', state)) as { dailyChallengeId?: string };
+    record.dailyChallengeId = 'daily-tampered';
+    const restored = restoreSession(JSON.stringify(record), scenarioCatalog);
+    expect(restored?.dailyChallengeId).toBeUndefined();
+    expect(restored?.scenarioId).toBe('ist');
+  });
+
   it('rejects sessions with unknown airport flows', () => {
     const state = createInitialState(defaultScenario);
     state.flowId = 'missing-flow';

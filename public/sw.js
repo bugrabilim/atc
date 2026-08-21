@@ -1,4 +1,4 @@
-const CACHE_NAME = 'airspace-control-core-v7-academy-mobile-deck';
+const CACHE_NAME = 'airspace-control-core-v8-daily-logbook';
 const CORE_ASSETS = ['/', '/manifest.webmanifest', '/icon.svg'];
 
 self.addEventListener('install', (event) => {

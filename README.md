@@ -23,6 +23,7 @@ Mobil ve masaüstü tarayıcılarda çalışan, klasik radar görünümüne sahi
 - İstanbul, Heathrow, LAX, JFK ve Atlanta için kaynaklı ve birbirinden farklı dört akışlı operasyon paketleri
 - İki–üç dakikalık 10 uygulamalı Flight Academy dersi ve kalıcı ders ilerlemesi
 - Telefonda radarı küçültmeyen, büyük dokunma hedefli açılır komut konsolu
+- Her gün aynı seed/akışla üretilen Daily Radar, günlük seri, 30 vardiyalık yerel logbook ve Web Share sonuç kartı
 
 ## Ürün araştırması ve yol haritası
 
@@ -30,6 +31,7 @@ Mobil ve masaüstü tarayıcılarda çalışan, klasik radar görünümüne sahi
 - [Endless ATC eşleşme raporu](docs/endless-atc-parity-report-tr.md)
 - [Havaalanı veri politikası](docs/AIRPORT_DATA.md)
 - [İlk beş havaalanı operasyon paketi: araştırma ve uygulama kaydı](docs/FLAGSHIP_AIRPORT_PACKS.md)
+- [Daily Radar, streak, logbook ve paylaşım veri modeli](docs/RETENTION_SYSTEMS.md)
 
 ## Komutlar
 

@@ -18,6 +18,18 @@ import { AudioCuePlayer, type AudioCue } from './audioCues';
 import { DIFFICULTY_MODES, difficultyConfig, worldForMode } from '../engine/difficulty';
 import { ACADEMY_LESSONS, createAcademyState, evaluateAcademyLesson, isAcademyLessonId, shouldAdvanceAcademySimulation, type AcademyAction, type AcademyLessonId } from '../engine/academy';
 import { AcademyPanel } from './AcademyPanel';
+import {
+  appendLogbook,
+  bestDailyStreak,
+  createShiftLogEntry,
+  currentDailyStreak,
+  dailyChallengeComplete,
+  dailyChallengeForDate,
+  sanitizeDailyCompletionDates,
+  sanitizeLogbook,
+  shareShiftText,
+  type ShiftLogEntry,
+} from '../engine/engagement';
 
 interface CareerStats {
   bestScore: number;
@@ -26,16 +38,22 @@ interface CareerStats {
   completedObjectives: number;
   badges: string[];
   scenarioBestScores: Record<string, number>;
+  completedDailyDates: string[];
+  logbook: ShiftLogEntry[];
 }
 
 const CAREER_STORAGE_KEY = 'airspace-control-career-v1';
 const SESSION_STORAGE_KEY = 'airspace-control-session-v1';
 const ACADEMY_STORAGE_KEY = 'airspace-control-academy-v1';
 
+function emptyCareerStats(): CareerStats {
+  return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0, badges: [], scenarioBestScores: {}, completedDailyDates: [], logbook: [] };
+}
+
 function loadCareerStats(): CareerStats {
   try {
     const value = window.localStorage.getItem(CAREER_STORAGE_KEY);
-    if (!value) return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0, badges: [], scenarioBestScores: {} };
+    if (!value) return emptyCareerStats();
     const parsed = JSON.parse(value) as Partial<CareerStats>;
     return {
       bestScore: typeof parsed.bestScore === 'number' ? parsed.bestScore : 0,
@@ -46,9 +64,11 @@ function loadCareerStats(): CareerStats {
       scenarioBestScores: parsed.scenarioBestScores && typeof parsed.scenarioBestScores === 'object'
         ? Object.fromEntries(Object.entries(parsed.scenarioBestScores).filter(([, score]) => typeof score === 'number' && Number.isFinite(score) && score >= 0))
         : {},
+      completedDailyDates: sanitizeDailyCompletionDates(parsed.completedDailyDates),
+      logbook: sanitizeLogbook(parsed.logbook),
     };
   } catch {
-    return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0, badges: [], scenarioBestScores: {} };
+    return emptyCareerStats();
   }
 }
 
@@ -81,6 +101,16 @@ function loadAcademyProgress(): AcademyLessonId[] {
 
 export function App() {
   const [savedSession] = useState<SavedSession | null>(loadSavedSession);
+  const [gameStarted, setGameStarted] = useState(() => Boolean(savedSession) || window.location.hostname === 'atc-tr-play.vercel.app');
+  const [todayDailyChallenge] = useState(() => dailyChallengeForDate(new Date(), scenarioCatalog));
+  const [activeDailyChallengeId, setActiveDailyChallengeId] = useState<string | null>(() => (
+    savedSession?.dailyChallengeId === todayDailyChallenge.id
+      && savedSession.scenarioId === todayDailyChallenge.scenarioId
+      && savedSession.state.mode === todayDailyChallenge.mode
+      && savedSession.state.flowId === todayDailyChallenge.flowId
+      ? todayDailyChallenge.id
+      : null
+  ));
   const [scenario, setScenario] = useState<GameScenario>(() => scenarioCatalog.find((item) => item.id === savedSession?.scenarioId) ?? defaultScenario);
   const [state, setState] = useState<GameState>(() => savedSession?.state ?? createInitialState(defaultScenario, 'beginner'));
   const [career, setCareer] = useState<CareerStats>(loadCareerStats);
@@ -93,6 +123,8 @@ export function App() {
     message: savedSession ? 'Kaydedilmiş vardiya duraklatıldı. Devam ile aynı trafikten sürdürebilirsin.' : 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. Çağrı kodunun ilk harflerini yazıp Tab ile tamamlayabilirsin.',
   });
   const [debriefOpen, setDebriefOpen] = useState(false);
+  const [debriefLogEntry, setDebriefLogEntry] = useState<ShiftLogEntry | null>(null);
+  const [shareFeedback, setShareFeedback] = useState('');
   const [landingOpen, setLandingOpen] = useState(() => window.location.hostname !== 'atc-tr-play.vercel.app');
   const [newAchievementIds, setNewAchievementIds] = useState<string[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(true);
@@ -103,12 +135,17 @@ export function App() {
   const shiftRecorded = useRef(false);
   const audioPlayer = useRef<AudioCuePlayer | null>(null);
   const academyLessonRef = useRef<AcademyLessonId | null>(null);
+  const activeDailyChallengeRef = useRef<string | null>(activeDailyChallengeId);
+  const gameStartedRef = useRef(gameStarted);
   const academyCompletionHandled = useRef(false);
-  const preAcademySnapshot = useRef<{ scenario: GameScenario; state: GameState } | null>(null);
+  const preAcademySnapshot = useRef<{ scenario: GameScenario; state: GameState; dailyChallengeId: string | null } | null>(null);
+  const activeDailyChallenge = activeDailyChallengeId === todayDailyChallenge.id ? todayDailyChallenge : null;
   const activeWorld = useMemo(() => worldWithFlow(worldForMode(scenario.world, state.mode), state.flowId, state.peakSkill), [scenario.world, state.flowId, state.mode, state.peakSkill]);
   const activeFlow = activeWorld.flowConfigurations.find((item) => item.id === state.flowId) ?? activeWorld.flowConfigurations[0];
-  const goal = useMemo(() => shiftGoal(state.mode), [state.mode]);
+  const goal = useMemo(() => activeDailyChallenge?.goal ?? shiftGoal(state.mode), [activeDailyChallenge, state.mode]);
   const progression = useMemo(() => careerProgression(career.badges, career.scenarioBestScores), [career.badges, career.scenarioBestScores]);
+  const dailyStreak = useMemo(() => currentDailyStreak(career.completedDailyDates), [career.completedDailyDates]);
+  const dailyBestStreak = useMemo(() => bestDailyStreak(career.completedDailyDates), [career.completedDailyDates]);
   const activeArrivalRunways = activeWorld.runways.filter((item) => item.active && (item.operation === 'arrival' || item.operation === 'mixed'));
   const trainingAircraft = scenario.initialAircraft.find((item) => item.phase === 'arrival');
 
@@ -128,10 +165,18 @@ export function App() {
     academyLessonRef.current = academyLessonId;
   }, [academyLessonId]);
 
+  useEffect(() => {
+    activeDailyChallengeRef.current = activeDailyChallengeId;
+  }, [activeDailyChallengeId]);
+
+  useEffect(() => {
+    gameStartedRef.current = gameStarted;
+  }, [gameStarted]);
+
   const persistSession = useCallback(() => {
-    if (academyLessonRef.current) return;
+    if (academyLessonRef.current || !gameStartedRef.current) return;
     try {
-      window.localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(scenarioRef.current.id, stateRef.current));
+      window.localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(scenarioRef.current.id, stateRef.current, activeDailyChallengeRef.current ?? undefined));
     } catch {
       // Storage can be unavailable in private or quota-limited browser contexts.
     }
@@ -170,20 +215,31 @@ export function App() {
     shiftRecorded.current = true;
     const objectiveComplete = goalComplete(state, goal);
     const awards = earnedAwards(state, goal);
+    const report = buildDebrief(state, goal);
+    const completedDaily = activeDailyChallenge ? dailyChallengeComplete(state, activeDailyChallenge) : false;
+    const logEntry = createShiftLogEntry(scenario, state, report, activeDailyChallenge?.id);
+    setDebriefLogEntry(logEntry);
+    setShareFeedback('');
     setNewAchievementIds(awards.map((award) => award.id).filter((id) => !careerRef.current.badges.includes(id)));
     setCareer((current) => {
+      const completedDailyDates = completedDaily
+        ? sanitizeDailyCompletionDates([...current.completedDailyDates, activeDailyChallenge!.dateKey])
+        : current.completedDailyDates;
       const next = {
         ...current,
         completedShifts: current.completedShifts + 1,
         completedObjectives: current.completedObjectives + (objectiveComplete ? 1 : 0),
         badges: [...new Set([...current.badges, ...awards.map((award) => award.id)])],
+        completedDailyDates,
+        logbook: appendLogbook(current.logbook, logEntry),
       };
       window.localStorage.setItem(CAREER_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
-  }, [academyLessonId, debriefOpen, goal, state]);
+  }, [academyLessonId, activeDailyChallenge, debriefOpen, goal, scenario, state]);
 
   useEffect(() => {
+    if (landingOpen) return;
     let previous = performance.now();
     const timer = window.setInterval(() => {
       const now = performance.now();
@@ -192,7 +248,7 @@ export function App() {
       setState((current) => shouldAdvanceAcademySimulation(current, academyLessonId) ? stepGame(current, activeWorld, dt) : current);
     }, 33);
     return () => window.clearInterval(timer);
-  }, [academyLessonId, activeWorld]);
+  }, [academyLessonId, activeWorld, landingOpen]);
 
   useEffect(() => {
     if (!academyLessonId && !debriefOpen && goalComplete(state, goal)) {
@@ -368,7 +424,13 @@ export function App() {
   const reset = () => {
     shiftRecorded.current = false;
     setNewAchievementIds([]);
-    setState(createInitialState(scenario, stateRef.current.mode));
+    setDebriefLogEntry(null);
+    setShareFeedback('');
+    const nextState = activeDailyChallenge
+      ? createInitialState(scenario, activeDailyChallenge.mode, activeDailyChallenge.flowId)
+      : createInitialState(scenario, stateRef.current.mode);
+    if (activeDailyChallenge) nextState.seed = activeDailyChallenge.seed;
+    setState(nextState);
     setCommand('');
     setFeedback({ type: 'info', message: 'Senaryo yeniden başlatıldı.' });
     setDebriefOpen(false);
@@ -382,9 +444,13 @@ export function App() {
     }
     shiftRecorded.current = false;
     setNewAchievementIds([]);
+    setDebriefLogEntry(null);
+    setShareFeedback('');
+    setActiveDailyChallengeId(null);
     setScenario(nextScenario);
     setAcademyLessonId(null);
-    setState(createInitialState(nextScenario, stateRef.current.mode));
+    const nextMode = progression.unlockedModeIds.includes(stateRef.current.mode) ? stateRef.current.mode : 'beginner';
+    setState(createInitialState(nextScenario, nextMode));
     setCommand('');
     setFeedback({ type: 'info', message: `${nextScenario.label} sektörü yüklendi.` });
     setDebriefOpen(false);
@@ -404,6 +470,9 @@ export function App() {
     }
     shiftRecorded.current = false;
     setNewAchievementIds([]);
+    setDebriefLogEntry(null);
+    setShareFeedback('');
+    setActiveDailyChallengeId(null);
     const config = difficultyConfig(mode);
     setAcademyLessonId(null);
     setState(createInitialState(scenario, mode));
@@ -425,25 +494,90 @@ export function App() {
   const startFromLanding = (nextScenario: GameScenario) => {
     preAcademySnapshot.current = null;
     setAcademyLessonId(null);
-    if (nextScenario.id !== scenario.id) {
+    setActiveDailyChallengeId(null);
+    if (nextScenario.id !== scenario.id || activeDailyChallengeRef.current) {
       shiftRecorded.current = false;
       setScenario(nextScenario);
-      setState(createInitialState(nextScenario, stateRef.current.mode));
+      const nextMode = progression.unlockedModeIds.includes(stateRef.current.mode) ? stateRef.current.mode : 'beginner';
+      setState(createInitialState(nextScenario, nextMode));
       setCommand('');
       try { window.localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* storage unavailable */ }
     }
+    setGameStarted(true);
     setLandingOpen(false);
   };
 
-  const resumeFromLanding = () => setLandingOpen(false);
+  const startDailyChallenge = () => {
+    const nextScenario = scenarioCatalog.find((item) => item.id === todayDailyChallenge.scenarioId);
+    if (!nextScenario) return;
+    const nextState = createInitialState(nextScenario, todayDailyChallenge.mode, todayDailyChallenge.flowId);
+    nextState.seed = todayDailyChallenge.seed;
+    shiftRecorded.current = false;
+    preAcademySnapshot.current = null;
+    setNewAchievementIds([]);
+    setDebriefLogEntry(null);
+    setShareFeedback('');
+    setActiveDailyChallengeId(todayDailyChallenge.id);
+    setAcademyLessonId(null);
+    setScenario(nextScenario);
+    setState(nextState);
+    setCommand('');
+    setFeedback({ type: 'info', message: `${todayDailyChallenge.goal.label} başladı · ${todayDailyChallenge.flowLabel} · sıfır ayırma kaybı.` });
+    setDebriefOpen(false);
+    setGameStarted(true);
+    setLandingOpen(false);
+    try { window.localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* storage unavailable */ }
+  };
+
+  const resumeFromLanding = () => {
+    setGameStarted(true);
+    setLandingOpen(false);
+  };
+
+  const returnToLanding = () => {
+    const pausedState = { ...stateRef.current, paused: true };
+    stateRef.current = pausedState;
+    setState(pausedState);
+    persistSession();
+    setLandingOpen(true);
+  };
+
+  const shareDebrief = async () => {
+    const report = buildDebrief(state, goal);
+    const entry = debriefLogEntry ?? createShiftLogEntry(scenario, state, report, activeDailyChallenge?.id);
+    const completedDates = activeDailyChallenge && dailyChallengeComplete(state, activeDailyChallenge)
+      ? sanitizeDailyCompletionDates([...career.completedDailyDates, activeDailyChallenge.dateKey])
+      : career.completedDailyDates;
+    const text = shareShiftText(entry, currentDailyStreak(completedDates));
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Airspace Control shift report', text });
+        setShareFeedback('SONUÇ PAYLAŞILDI');
+        return;
+      }
+      if (!navigator.clipboard) throw new Error('Clipboard is unavailable');
+      await navigator.clipboard.writeText(text);
+      setShareFeedback('SONUÇ KOPYALANDI');
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      try {
+        if (!navigator.clipboard) throw new Error('Clipboard is unavailable');
+        await navigator.clipboard.writeText(text);
+        setShareFeedback('SONUÇ KOPYALANDI');
+      } catch {
+        setShareFeedback('PAYLAŞIM KULLANILAMIYOR');
+      }
+    }
+  };
 
   const startAcademyLesson = (lessonId: AcademyLessonId) => {
-    if (!academyLessonRef.current) preAcademySnapshot.current = { scenario: scenarioRef.current, state: stateRef.current };
+    if (!academyLessonRef.current) preAcademySnapshot.current = { scenario: scenarioRef.current, state: stateRef.current, dailyChallengeId: activeDailyChallengeRef.current };
     academyCompletionHandled.current = false;
     shiftRecorded.current = false;
     setNewAchievementIds([]);
     setScenario(defaultScenario);
     setState(createAcademyState(defaultScenario, lessonId));
+    setActiveDailyChallengeId(null);
     setAcademyLessonId(lessonId);
     setCommand('');
     setFeedback({ type: 'info', message: `Academy dersi başladı: ${ACADEMY_LESSONS.find((item) => item.id === lessonId)?.title ?? lessonId}.` });
@@ -476,6 +610,7 @@ export function App() {
     setAcademyLessonId(null);
     setScenario(defaultScenario);
     setState(createInitialState(defaultScenario, 'beginner'));
+    setGameStarted(true);
     setFeedback({ type: 'success', message: 'Academy tamamlandı. İstanbul başlangıç vardiyası hazır.' });
   };
 
@@ -487,6 +622,7 @@ export function App() {
     if (snapshot) {
       setScenario(snapshot.scenario);
       setState(snapshot.state);
+      setActiveDailyChallengeId(snapshot.dailyChallengeId);
     }
     setLandingOpen(true);
   };
@@ -497,11 +633,17 @@ export function App() {
       selectedScenario={scenario}
       unlockedScenarioIds={progression.unlockedScenarioIds}
       scenarioBestScores={career.scenarioBestScores}
-      savedSession={Boolean(savedSession)}
+      savedSession={Boolean(savedSession) || gameStarted}
       completedAcademyLessonIds={academyCompletedLessonIds}
+      dailyChallenge={todayDailyChallenge}
+      dailyChallengeCompleted={career.completedDailyDates.includes(todayDailyChallenge.dateKey)}
+      currentDailyStreak={dailyStreak}
+      bestDailyStreak={dailyBestStreak}
+      logbook={career.logbook}
       onStart={startFromLanding}
       onResume={resumeFromLanding}
       onAcademyStart={startAcademyLesson}
+      onDailyChallengeStart={startDailyChallenge}
     />;
   }
 
@@ -541,6 +683,7 @@ export function App() {
               {scenarioCatalog.map((item) => (
                 <button key={item.id} type="button" disabled={!progression.unlockedScenarioIds.includes(item.id)} className={item.id === scenario.id ? 'is-active' : ''} onClick={() => selectScenario(item)}>{progression.unlockedScenarioIds.includes(item.id) ? item.label : `🔒 ${item.label}`}</button>
               ))}
+              <button type="button" onClick={returnToLanding}>ANA SAYFA / LOGBOOK</button>
               <button type="button" onClick={endShift}>BİTİR</button>
               <button type="button" onClick={reset}>YENİLE</button>
             </>
@@ -550,16 +693,16 @@ export function App() {
       </header>
 
       <div className="operation-bar" aria-label="Operasyon ve hava koşulları">
-        <span className="eyebrow">OPERASYON</span>
+        <span className="eyebrow">{activeDailyChallenge ? 'GÜNLÜK RADAR' : 'OPERASYON'}</span>
         <label>
           Pist akışı
-          <select value={state.flowId} onChange={(event) => selectFlow(event.target.value)}>
+          <select value={state.flowId} disabled={Boolean(activeDailyChallenge)} onChange={(event) => selectFlow(event.target.value)}>
             {activeWorld.flowConfigurations.map((flow) => <option key={flow.id} value={flow.id}>{flow.label}</option>)}
           </select>
         </label>
         <label>
           Mod
-          <select value={state.mode} onChange={(event) => selectMode(event.target.value as GameMode)}>
+          <select value={state.mode} disabled={Boolean(activeDailyChallenge)} onChange={(event) => selectMode(event.target.value as GameMode)}>
             {DIFFICULTY_MODES.map((mode) => <option key={mode.id} value={mode.id} disabled={!progression.unlockedModeIds.includes(mode.id)}>{progression.unlockedModeIds.includes(mode.id) ? mode.label : `🔒 ${mode.label}`}</option>)}
           </select>
         </label>
@@ -662,7 +805,22 @@ export function App() {
         onSelect={selectAircraft}
         onNext={selectNextAircraft}
       />
-      {debriefOpen ? <DebriefPanel report={buildDebrief(state, goal)} state={state} achievementCount={career.badges.length} achievementTotal={ACHIEVEMENT_TOTAL} newAchievementIds={newAchievementIds} onRestart={reset} onContinue={continueShift} /> : null}
+      {debriefOpen ? <DebriefPanel
+        report={buildDebrief(state, goal)}
+        state={state}
+        achievementCount={career.badges.length}
+        achievementTotal={ACHIEVEMENT_TOTAL}
+        newAchievementIds={newAchievementIds}
+        dailyChallengeLabel={activeDailyChallenge?.goal.label}
+        dailyChallengeCompleted={activeDailyChallenge ? dailyChallengeComplete(state, activeDailyChallenge) : undefined}
+        dailyStreak={activeDailyChallenge && dailyChallengeComplete(state, activeDailyChallenge)
+          ? currentDailyStreak([...career.completedDailyDates, activeDailyChallenge.dateKey])
+          : dailyStreak}
+        shareFeedback={shareFeedback}
+        onShare={() => void shareDebrief()}
+        onRestart={reset}
+        onContinue={continueShift}
+      /> : null}
     </main>
   );
 }

@@ -31,6 +31,12 @@ ATC-TR bugün boş bir başlangıç değildir. Mevcut depoda güçlü bir 2D rad
 6. Hikâyeli kariyer sezonları ve özgün olay zincirleri yoktur.
 7. Canlı ADS-B, 3D radar/kule, yer kontrolü, helikopter/SAR ve okyanus kontrolü yoktur.
 
+**22 Ağustos 2026 uygulama notu:** İlk iki açık, 10 derslik Flight Academy ve
+radar-first mobil komut konsoluyla kapatıldı. Üçüncü açık için IST, LHR, LAX,
+JFK ve ATL sürümlü operasyon paketleri eklendi. Dördüncü açığın çevrimdışı
+kısmı olan Daily Radar, streak, 30 vardiyalık logbook ve paylaşılabilir sonuç
+kartı tamamlandı; çevrimiçi liderlik tablosu Faz 4 kapsamında kalıyor.
+
 Doğru sıra, bütün bu açıkları aynı anda kapatmaya çalışmak değildir. Önce mobilde kusursuz 2D vardiya ve eğitim, ardından beş amiral havaalanında derinlik, sonra geri dönüş sistemleri ve çevrimiçi altyapı, en son canlı veri ile ileri operasyonlar yapılmalıdır.
 
 ## 2. Araştırma yöntemi ve kanıt sınıfları
@@ -891,6 +897,13 @@ Teslimatlar:
 Çıkış ölçütü:
 
 - Oyuncu her vardiyadan sonra neyi doğru/yanlış yaptığını ve sıradaki hedefini görebilir.
+
+**Uygulama durumu:** Ayrıntılı debrief ve 52 başarım mevcut; kalıcı logbook,
+UTC tabanlı günlük meydan okuma, streak, platform Web Share/clipboard sonuç
+kartı ve ana sayfadaki son vardiya görünümü eklendi. Havaalanı/zorluk
+madalyalarının ayrı görsel koleksiyon katmanı Faz 5 zenginleştirmesine,
+çevrimiçi karşılaştırma ise Faz 4'e bırakıldı. Veri sözleşmesi ve gizlilik
+sınırı `docs/RETENTION_SYSTEMS.md` dosyasında kayıtlıdır.
 
 ### Faz 4 — Hesap, bulut ve topluluk altyapısı
 

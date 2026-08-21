@@ -11,10 +11,11 @@ export interface SavedSession {
   scenarioId: GameScenario['id'];
   state: GameState;
   savedAt: number;
+  dailyChallengeId?: string;
 }
 
-export function serializeSession(scenarioId: GameScenario['id'], state: GameState) {
-  return JSON.stringify({ version: SESSION_VERSION, scenarioId, state, savedAt: Date.now() } satisfies SavedSession);
+export function serializeSession(scenarioId: GameScenario['id'], state: GameState, dailyChallengeId?: string) {
+  return JSON.stringify({ version: SESSION_VERSION, scenarioId, state, savedAt: Date.now(), dailyChallengeId } satisfies SavedSession);
 }
 
 function hasRequiredState(value: unknown): value is GameState {
@@ -47,6 +48,9 @@ export function restoreSession(serialized: string | null, scenarios: readonly Ga
       version: SESSION_VERSION,
       scenarioId: scenario.id,
       savedAt: typeof parsed.savedAt === 'number' ? parsed.savedAt : Date.now(),
+      dailyChallengeId: typeof parsed.dailyChallengeId === 'string' && /^daily-\d{4}-\d{2}-\d{2}$/.test(parsed.dailyChallengeId)
+        ? parsed.dailyChallengeId
+        : undefined,
       state: {
         ...state,
         mode,

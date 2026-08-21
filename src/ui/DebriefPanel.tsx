@@ -7,11 +7,16 @@ interface DebriefPanelProps {
   achievementCount: number;
   achievementTotal: number;
   newAchievementIds: string[];
+  dailyChallengeLabel?: string;
+  dailyChallengeCompleted?: boolean;
+  dailyStreak: number;
+  shareFeedback: string;
   onRestart: () => void;
   onContinue: () => void;
+  onShare: () => void;
 }
 
-export function DebriefPanel({ report, state, achievementCount, achievementTotal, newAchievementIds, onRestart, onContinue }: DebriefPanelProps) {
+export function DebriefPanel({ report, state, achievementCount, achievementTotal, newAchievementIds, dailyChallengeLabel, dailyChallengeCompleted, dailyStreak, shareFeedback, onRestart, onContinue, onShare }: DebriefPanelProps) {
   return (
     <div className="debrief-backdrop" role="dialog" aria-modal="true" aria-label="Vardiya debrief raporu">
       <section className="debrief-panel">
@@ -22,6 +27,7 @@ export function DebriefPanel({ report, state, achievementCount, achievementTotal
           <p>{report.summary}</p>
           <p className={report.objectiveComplete ? 'debrief-objective is-complete' : 'debrief-objective'}>{report.objectiveComplete ? 'HEDEF TAMAMLANDI · ' : 'HEDEF DURUMU · '}{report.objective}</p>
         </div>
+        {dailyChallengeLabel ? <div className={`debrief-daily${dailyChallengeCompleted ? ' is-complete' : ''}`}><span>{dailyChallengeCompleted ? '✓ GÜNLÜK GÖREV TAMAMLANDI' : 'GÜNLÜK GÖREV SONUCU'} · {dailyChallengeLabel}</span><b>{dailyStreak} GÜNLÜK SERİ</b></div> : null}
         <div className="debrief-metrics">
           <span>SKILL <b>{state.skill.toFixed(1)}</b></span>
           <span>PEAK <b>{state.peakSkill.toFixed(1)}</b></span>
@@ -44,6 +50,8 @@ export function DebriefPanel({ report, state, achievementCount, achievementTotal
           {state.eventTimeline.slice(-6).reverse().map((event) => <p key={event.id} className={`debrief-event debrief-event--${event.type}`}>{event.message}</p>)}
         </div>
         <div className="debrief-actions">
+          {shareFeedback ? <span role="status">{shareFeedback}</span> : null}
+          <button type="button" onClick={onShare}>SONUCU PAYLAŞ</button>
           <button type="button" onClick={onContinue}>VARDİYAYA DÖN</button>
           <button type="button" className="is-primary" onClick={onRestart}>YENİ VARDİYA</button>
         </div>
