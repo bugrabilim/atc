@@ -147,7 +147,7 @@ export function App() {
   const dailyStreak = useMemo(() => currentDailyStreak(career.completedDailyDates), [career.completedDailyDates]);
   const dailyBestStreak = useMemo(() => bestDailyStreak(career.completedDailyDates), [career.completedDailyDates]);
   const activeArrivalRunways = activeWorld.runways.filter((item) => item.active && (item.operation === 'arrival' || item.operation === 'mixed'));
-  const trainingAircraft = scenario.initialAircraft.find((item) => item.phase === 'arrival');
+  const trainingAircraft = state.aircraft.find((item) => item.phase === 'arrival');
 
   useEffect(() => {
     stateRef.current = state;
@@ -703,7 +703,10 @@ export function App() {
         <label>
           Mod
           <select value={state.mode} disabled={Boolean(activeDailyChallenge)} onChange={(event) => selectMode(event.target.value as GameMode)}>
-            {DIFFICULTY_MODES.map((mode) => <option key={mode.id} value={mode.id} disabled={!progression.unlockedModeIds.includes(mode.id)}>{progression.unlockedModeIds.includes(mode.id) ? mode.label : `🔒 ${mode.label}`}</option>)}
+            {DIFFICULTY_MODES.map((mode) => {
+              const available = progression.unlockedModeIds.includes(mode.id) || activeDailyChallenge?.mode === mode.id;
+              return <option key={mode.id} value={mode.id} disabled={!available}>{available ? mode.label : `🔒 ${mode.label}`}</option>;
+            })}
           </select>
         </label>
         {activeFlow ? <span>RÜZGÂR <b>{String(activeFlow.windDirection).padStart(3, '0')}°/{activeFlow.windSpeedKt}KT</b></span> : null}
