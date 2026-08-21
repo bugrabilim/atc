@@ -21,6 +21,14 @@ Mobil ve masaüstü tarayıcılarda çalışan, klasik radar görünümüne sahi
 - PWA manifesti ve çevrimdışı kabuk
 - Dört zorlukta tamamlanabilir vardiya hedefleri ve otomatik debrief
 - İstanbul paralel akış, çapraz rüzgâr ve tek pist senaryo paketleri
+- İki–üç dakikalık 10 uygulamalı Flight Academy dersi ve kalıcı ders ilerlemesi
+- Telefonda radarı küçültmeyen, büyük dokunma hedefli açılır komut konsolu
+
+## Ürün araştırması ve yol haritası
+
+- [Flatout ATC derin araştırma ve işlevsel eşleşme planı](docs/flatout-atc-research-tr.md)
+- [Endless ATC eşleşme raporu](docs/endless-atc-parity-report-tr.md)
+- [Havaalanı veri politikası](docs/AIRPORT_DATA.md)
 
 ## Komutlar
 

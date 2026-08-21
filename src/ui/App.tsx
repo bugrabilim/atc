@@ -16,6 +16,8 @@ import { controllerCoach, type CoachAdvice } from '../engine/controllerCoach';
 import { restoreSession, serializeSession, type SavedSession } from '../engine/session';
 import { AudioCuePlayer, type AudioCue } from './audioCues';
 import { DIFFICULTY_MODES, difficultyConfig, worldForMode } from '../engine/difficulty';
+import { ACADEMY_LESSONS, createAcademyState, evaluateAcademyLesson, isAcademyLessonId, type AcademyAction, type AcademyLessonId } from '../engine/academy';
+import { AcademyPanel } from './AcademyPanel';
 
 interface CareerStats {
   bestScore: number;
@@ -28,6 +30,7 @@ interface CareerStats {
 
 const CAREER_STORAGE_KEY = 'airspace-control-career-v1';
 const SESSION_STORAGE_KEY = 'airspace-control-session-v1';
+const ACADEMY_STORAGE_KEY = 'airspace-control-academy-v1';
 
 function loadCareerStats(): CareerStats {
   try {
@@ -63,6 +66,19 @@ function loadSavedSession(): SavedSession | null {
   }
 }
 
+function loadAcademyProgress(): AcademyLessonId[] {
+  try {
+    const value = window.localStorage.getItem(ACADEMY_STORAGE_KEY);
+    if (!value) return [];
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed)
+      ? [...new Set(parsed.filter((item): item is AcademyLessonId => typeof item === 'string' && isAcademyLessonId(item)))]
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 export function App() {
   const [savedSession] = useState<SavedSession | null>(loadSavedSession);
   const [scenario, setScenario] = useState<GameScenario>(() => scenarioCatalog.find((item) => item.id === savedSession?.scenarioId) ?? defaultScenario);
@@ -80,10 +96,15 @@ export function App() {
   const [landingOpen, setLandingOpen] = useState(() => window.location.hostname !== 'atc-tr-play.vercel.app');
   const [newAchievementIds, setNewAchievementIds] = useState<string[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [academyLessonId, setAcademyLessonId] = useState<AcademyLessonId | null>(null);
+  const [academyCompletedLessonIds, setAcademyCompletedLessonIds] = useState<AcademyLessonId[]>(loadAcademyProgress);
   const lastSpokenEvent = useRef<string | null>(null);
   const lastCuedEvent = useRef<string | null>(null);
   const shiftRecorded = useRef(false);
   const audioPlayer = useRef<AudioCuePlayer | null>(null);
+  const academyLessonRef = useRef<AcademyLessonId | null>(null);
+  const academyCompletionHandled = useRef(false);
+  const preAcademySnapshot = useRef<{ scenario: GameScenario; state: GameState } | null>(null);
   const activeWorld = useMemo(() => worldWithFlow(worldForMode(scenario.world, state.mode), state.flowId, state.peakSkill), [scenario.world, state.flowId, state.mode, state.peakSkill]);
   const activeFlow = activeWorld.flowConfigurations.find((item) => item.id === state.flowId) ?? activeWorld.flowConfigurations[0];
   const goal = useMemo(() => shiftGoal(state.mode), [state.mode]);
@@ -103,7 +124,12 @@ export function App() {
     careerRef.current = career;
   }, [career]);
 
+  useEffect(() => {
+    academyLessonRef.current = academyLessonId;
+  }, [academyLessonId]);
+
   const persistSession = useCallback(() => {
+    if (academyLessonRef.current) return;
     try {
       window.localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(scenarioRef.current.id, stateRef.current));
     } catch {
@@ -122,6 +148,7 @@ export function App() {
   }, [persistSession]);
 
   useEffect(() => {
+    if (academyLessonId) return;
     setCareer((current) => {
       const next = {
         ...current,
@@ -136,10 +163,10 @@ export function App() {
       window.localStorage.setItem(CAREER_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
-  }, [scenario.id, state.landed, state.score]);
+  }, [academyLessonId, scenario.id, state.landed, state.score]);
 
   useEffect(() => {
-    if (!debriefOpen || shiftRecorded.current) return;
+    if (academyLessonId || !debriefOpen || shiftRecorded.current) return;
     shiftRecorded.current = true;
     const objectiveComplete = goalComplete(state, goal);
     const awards = earnedAwards(state, goal);
@@ -154,7 +181,7 @@ export function App() {
       window.localStorage.setItem(CAREER_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
-  }, [debriefOpen, goal, state]);
+  }, [academyLessonId, debriefOpen, goal, state]);
 
   useEffect(() => {
     let previous = performance.now();
@@ -168,11 +195,11 @@ export function App() {
   }, [activeWorld]);
 
   useEffect(() => {
-    if (!debriefOpen && goalComplete(state, goal)) {
+    if (!academyLessonId && !debriefOpen && goalComplete(state, goal)) {
       setState((current) => ({ ...current, paused: true }));
       setDebriefOpen(true);
     }
-  }, [debriefOpen, goal, state]);
+  }, [academyLessonId, debriefOpen, goal, state]);
 
   const playCue = useCallback((cue: AudioCue) => {
     if (!audioEnabled) return;
@@ -182,6 +209,32 @@ export function App() {
     // interaction unlocks all later radio and warning cues automatically.
     void audioPlayer.current.unlock().then(() => audioPlayer.current?.play(cue));
   }, [audioEnabled]);
+
+  const academyEvaluation = useMemo(
+    () => academyLessonId ? evaluateAcademyLesson(state, activeWorld, academyLessonId) : null,
+    [academyLessonId, activeWorld, state],
+  );
+
+  useEffect(() => {
+    if (!academyLessonId || !academyEvaluation?.complete || academyCompletionHandled.current) return;
+    academyCompletionHandled.current = true;
+    setState((current) => ({ ...current, paused: true }));
+    setAcademyCompletedLessonIds((current) => {
+      if (current.includes(academyLessonId)) return current;
+      const next = [...current, academyLessonId];
+      try { window.localStorage.setItem(ACADEMY_STORAGE_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+      return next;
+    });
+    if (academyLessonId === ACADEMY_LESSONS.at(-1)?.id) {
+      setCareer((current) => {
+        if (current.badges.includes('beginner-complete')) return current;
+        const next = { ...current, badges: [...current.badges, 'beginner-complete'] };
+        try { window.localStorage.setItem(CAREER_STORAGE_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+        return next;
+      });
+    }
+    playCue('landing');
+  }, [academyEvaluation?.complete, academyLessonId, playCue]);
 
   useEffect(() => {
     if (!audioEnabled || !('speechSynthesis' in window)) return;
@@ -289,6 +342,12 @@ export function App() {
     if (issueCommand(`${guide.callsign} ${guide.command}`)) setCommand('');
   }, [issueCommand]);
   const coach = controllerCoach(state, activeWorld);
+  const effectiveCoach: CoachAdvice = academyLessonId ? {
+    tone: 'info',
+    label: 'ACADEMY',
+    title: 'DERS HEDEFİNİ TAMAMLA',
+    message: 'Academy kartındaki tek görevi uygula. Normal vardiya koçu ders boyunca devre dışıdır.',
+  } : coach;
   const submitCoachCommand = useCallback((advice: CoachAdvice) => {
     if (!advice.callsign || !advice.command) return;
     if (issueCommand(`${advice.callsign} ${advice.command}`)) setCommand('');
@@ -324,6 +383,7 @@ export function App() {
     shiftRecorded.current = false;
     setNewAchievementIds([]);
     setScenario(nextScenario);
+    setAcademyLessonId(null);
     setState(createInitialState(nextScenario, stateRef.current.mode));
     setCommand('');
     setFeedback({ type: 'info', message: `${nextScenario.label} sektörü yüklendi.` });
@@ -345,6 +405,7 @@ export function App() {
     shiftRecorded.current = false;
     setNewAchievementIds([]);
     const config = difficultyConfig(mode);
+    setAcademyLessonId(null);
     setState(createInitialState(scenario, mode));
     setCommand('');
     setFeedback({ type: 'info', message: `${config.label} modu başladı · ${config.description}` });
@@ -362,6 +423,8 @@ export function App() {
   };
 
   const startFromLanding = (nextScenario: GameScenario) => {
+    preAcademySnapshot.current = null;
+    setAcademyLessonId(null);
     if (nextScenario.id !== scenario.id) {
       shiftRecorded.current = false;
       setScenario(nextScenario);
@@ -374,6 +437,60 @@ export function App() {
 
   const resumeFromLanding = () => setLandingOpen(false);
 
+  const startAcademyLesson = (lessonId: AcademyLessonId) => {
+    if (!academyLessonRef.current) preAcademySnapshot.current = { scenario: scenarioRef.current, state: stateRef.current };
+    academyCompletionHandled.current = false;
+    shiftRecorded.current = false;
+    setNewAchievementIds([]);
+    setScenario(defaultScenario);
+    setState(createAcademyState(defaultScenario, lessonId));
+    setAcademyLessonId(lessonId);
+    setCommand('');
+    setFeedback({ type: 'info', message: `Academy dersi başladı: ${ACADEMY_LESSONS.find((item) => item.id === lessonId)?.title ?? lessonId}.` });
+    setDebriefOpen(false);
+    setLandingOpen(false);
+  };
+
+  const applyAcademyAction = (action: AcademyAction) => {
+    if (action.kind === 'select') {
+      selectAircraft(action.callsign);
+      return;
+    }
+    if (action.command) issueCommand(`${action.callsign} ${action.command}`);
+  };
+
+  const restartAcademyLesson = () => {
+    if (academyLessonId) startAcademyLesson(academyLessonId);
+  };
+
+  const nextAcademyLesson = () => {
+    if (!academyLessonId) return;
+    const index = ACADEMY_LESSONS.findIndex((item) => item.id === academyLessonId);
+    const next = ACADEMY_LESSONS[index + 1];
+    if (next) {
+      startAcademyLesson(next.id);
+      return;
+    }
+    academyCompletionHandled.current = false;
+    preAcademySnapshot.current = null;
+    setAcademyLessonId(null);
+    setScenario(defaultScenario);
+    setState(createInitialState(defaultScenario, 'beginner'));
+    setFeedback({ type: 'success', message: 'Academy tamamlandı. İstanbul başlangıç vardiyası hazır.' });
+  };
+
+  const exitAcademy = () => {
+    academyCompletionHandled.current = false;
+    const snapshot = preAcademySnapshot.current;
+    preAcademySnapshot.current = null;
+    setAcademyLessonId(null);
+    if (snapshot) {
+      setScenario(snapshot.scenario);
+      setState(snapshot.state);
+    }
+    setLandingOpen(true);
+  };
+
   if (landingOpen) {
     return <LandingPage
       scenarios={scenarioCatalog}
@@ -381,13 +498,15 @@ export function App() {
       unlockedScenarioIds={progression.unlockedScenarioIds}
       scenarioBestScores={career.scenarioBestScores}
       savedSession={Boolean(savedSession)}
+      completedAcademyLessonIds={academyCompletedLessonIds}
       onStart={startFromLanding}
       onResume={resumeFromLanding}
+      onAcademyStart={startAcademyLesson}
     />;
   }
 
   return (
-    <main className="app-shell app-shell--mobile-v2">
+    <main className={`app-shell app-shell--mobile-v2${academyLessonId ? ' app-shell--academy' : ''}`}>
       <header className="top-bar">
         <div className="brand-lockup">
           <span className="brand-mark" aria-hidden="true">◉</span>
@@ -410,12 +529,22 @@ export function App() {
         <details className="session-menu">
           <summary aria-label="Oyun menüsü">MENÜ</summary>
           <div className="session-menu__panel">
-            <span>SENARYO</span>
-          {scenarioCatalog.map((item) => (
-            <button key={item.id} type="button" disabled={!progression.unlockedScenarioIds.includes(item.id)} className={item.id === scenario.id ? 'is-active' : ''} onClick={() => selectScenario(item)}>{progression.unlockedScenarioIds.includes(item.id) ? item.label : `🔒 ${item.label}`}</button>
-          ))}
-          <button type="button" onClick={endShift}>BİTİR</button>
-          <button type="button" onClick={reset}>YENİLE</button>
+          {academyLessonId ? (
+            <>
+              <span>FLIGHT ACADEMY</span>
+              <button type="button" onClick={restartAcademyLesson}>DERSİ YENİDEN BAŞLAT</button>
+              <button type="button" onClick={exitAcademy}>ACADEMY’DEN ÇIK</button>
+            </>
+          ) : (
+            <>
+              <span>SENARYO</span>
+              {scenarioCatalog.map((item) => (
+                <button key={item.id} type="button" disabled={!progression.unlockedScenarioIds.includes(item.id)} className={item.id === scenario.id ? 'is-active' : ''} onClick={() => selectScenario(item)}>{progression.unlockedScenarioIds.includes(item.id) ? item.label : `🔒 ${item.label}`}</button>
+              ))}
+              <button type="button" onClick={endShift}>BİTİR</button>
+              <button type="button" onClick={reset}>YENİLE</button>
+            </>
+          )}
           </div>
         </details>
       </header>
@@ -475,7 +604,7 @@ export function App() {
           pendingInstructionCount={state.pendingInstructions.length}
           tutorial={tutorial}
           onTutorialCommand={submitTutorialCommand}
-          coach={coach}
+          coach={effectiveCoach}
           onCoachCommand={submitCoachCommand}
         />
       </div>
@@ -488,7 +617,7 @@ export function App() {
           trackHistory={state.trackHistory}
           pendingCallsigns={state.pendingInstructions.map((item) => item.command.callsign)}
           selectedCallsign={state.selectedCallsign}
-          coach={coach}
+          coach={effectiveCoach}
           onSelect={selectAircraft}
           onApplyCoach={submitCoachCommand}
         />
@@ -500,6 +629,17 @@ export function App() {
           elapsedSeconds={state.elapsedSeconds}
           onSelect={selectAircraft}
         />
+        {academyLessonId && academyEvaluation ? (
+          <AcademyPanel
+            lessonId={academyLessonId}
+            completedLessonIds={academyCompletedLessonIds}
+            evaluation={academyEvaluation}
+            onAction={applyAcademyAction}
+            onRestart={restartAcademyLesson}
+            onNext={nextAcademyLesson}
+            onExit={exitAcademy}
+          />
+        ) : null}
       </div>
 
       <CommandPanel
@@ -509,7 +649,7 @@ export function App() {
         procedures={activeWorld.procedures}
         selectedCallsign={state.selectedCallsign}
         mode={state.mode}
-        coach={coach}
+        coach={effectiveCoach}
         value={command}
         feedback={feedback}
         onChange={setCommand}

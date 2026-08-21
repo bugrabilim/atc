@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { difficultyConfig } from '../engine/difficulty';
 import type { Aircraft, GameMode, Procedure } from '../engine/types';
 import type { CoachAdvice } from '../engine/controllerCoach';
@@ -45,7 +45,10 @@ export function CommandPanel({
   onNext,
 }: CommandPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [touchControlsOpen, setTouchControlsOpen] = useState(false);
+  const [sheetExpanded, setSheetExpanded] = useState(false);
+  const [activeVector, setActiveVector] = useState<'heading' | 'altitude' | 'speed'>('heading');
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const previousSelectedCallsign = useRef(selectedCallsign);
   const selected = aircraft.find((item) => item.callsign === selectedCallsign) ?? null;
   const modeConfig = difficultyConfig(mode);
   const primaryFix = fixIds.find((item) => item.startsWith('FINAL')) ?? fixIds[0];
@@ -58,6 +61,11 @@ export function CommandPanel({
     ...(selected?.approach ? [{ label: 'GO-AROUND', command: 'GA' }] : []),
     ...(mode !== 'beginner' ? baseQuickCommands : [{ label: 'NORMAL SPD', command: 'RN' }]),
   ];
+
+  useEffect(() => {
+    if (selectedCallsign && previousSelectedCallsign.current !== selectedCallsign) setSheetExpanded(true);
+    previousSelectedCallsign.current = selectedCallsign;
+  }, [selectedCallsign]);
 
   const useQuickCommand = (command: string) => {
     if (!selectedCallsign) return;
@@ -93,7 +101,7 @@ export function CommandPanel({
   };
 
   return (
-    <section className="command-panel" aria-label="ATC komut paneli">
+    <section className={`command-panel${sheetExpanded ? ' is-expanded' : ' is-collapsed'}${selected ? ' has-selection' : ''}`} aria-label="ATC komut paneli">
       <div className="selected-aircraft">
         <div>
           <span className="eyebrow">SEÇİLİ UÇAK</span>
@@ -108,17 +116,23 @@ export function CommandPanel({
             <span>WTC <b>{selected.wakeCategory}</b></span>
           </div>
         ) : null}
-        <button type="button" className="next-aircraft" onClick={onNext}>SONRAKİ · TAB</button>
+        <div className="selected-aircraft__actions">
+          <button type="button" className="next-aircraft" onClick={onNext}>SONRAKİ</button>
+          <button type="button" className="sheet-expander" aria-expanded={sheetExpanded} onClick={() => setSheetExpanded((current) => !current)}>{sheetExpanded ? 'KAPAT ⌄' : 'KOMUTLAR ⌃'}</button>
+        </div>
       </div>
 
-      <button type="button" className="touch-controls-toggle" aria-expanded={touchControlsOpen} onClick={() => setTouchControlsOpen((current) => !current)}>
-        {touchControlsOpen ? 'VEKTÖRLERİ KAPAT' : 'HEADING · ALTITUDE · SPEED'} <span>{touchControlsOpen ? '⌄' : '⌃'}</span>
-      </button>
-      <div className={`command-panel__advanced${touchControlsOpen ? ' is-open' : ''}`}>
+      <div className="command-panel__body">
+        <div className="vector-mode-tabs" role="tablist" aria-label="Kontrol türü">
+          <button type="button" role="tab" aria-selected={activeVector === 'heading'} className={activeVector === 'heading' ? 'is-active' : ''} onClick={() => setActiveVector('heading')}><span>YÖN</span><b>{selected ? String(Math.round(selected.targetHeading)).padStart(3, '0') : '---'}°</b></button>
+          <button type="button" role="tab" aria-selected={activeVector === 'altitude'} className={activeVector === 'altitude' ? 'is-active' : ''} onClick={() => setActiveVector('altitude')}><span>İRTİFA</span><b>{selected ? `FL${String(Math.round(selected.targetAltitude / 100)).padStart(3, '0')}` : '---'}</b></button>
+          <button type="button" role="tab" aria-selected={activeVector === 'speed'} className={activeVector === 'speed' ? 'is-active' : ''} onClick={() => setActiveVector('speed')}><span>HIZ</span><b>{selected ? Math.round(selected.targetSpeed) : '---'}</b></button>
+        </div>
+      <div className="command-panel__advanced is-open">
         <div className="vector-control" aria-label="Dokunmatik vektör kontrolleri">
-          <div><span>HEADING</span><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', -30)}>−30°</button><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', -10)}>−10°</button><b>{selected ? String(Math.round(selected.targetHeading)).padStart(3, '0') : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', 10)}>+10°</button><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', 30)}>+30°</button></div>
-          <div><span>ALTITUDE</span><button type="button" disabled={!selected} onClick={() => relativeCommand('altitude', -1000)}>−1000</button><b>{selected ? `FL${String(Math.round(selected.targetAltitude / 100)).padStart(3, '0')}` : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('altitude', 1000)}>+1000</button></div>
-          <div><span>SPEED</span><button type="button" disabled={!selected} onClick={() => relativeCommand('speed', -20)}>−20</button><b>{selected ? Math.round(selected.targetSpeed) : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('speed', 20)}>+20</button></div>
+          <div className={activeVector === 'heading' ? 'is-active' : ''} data-vector="heading"><span>HEADING</span><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', -30)}>−30°</button><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', -10)}>−10°</button><b>{selected ? String(Math.round(selected.targetHeading)).padStart(3, '0') : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', 10)}>+10°</button><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', 30)}>+30°</button></div>
+          <div className={activeVector === 'altitude' ? 'is-active' : ''} data-vector="altitude"><span>ALTITUDE</span><button type="button" disabled={!selected} onClick={() => relativeCommand('altitude', -1000)}>−1000</button><b>{selected ? `FL${String(Math.round(selected.targetAltitude / 100)).padStart(3, '0')}` : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('altitude', 1000)}>+1000</button></div>
+          <div className={activeVector === 'speed' ? 'is-active' : ''} data-vector="speed"><span>SPEED</span><button type="button" disabled={!selected} onClick={() => relativeCommand('speed', -20)}>−20</button><b>{selected ? Math.round(selected.targetSpeed) : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('speed', 20)}>+20</button></div>
         </div>
 
         {coach.command && coach.callsign === selectedCallsign ? (
@@ -144,7 +158,8 @@ export function CommandPanel({
         ))}
       </div>
 
-      <div className="command-entry">
+      <button type="button" className="keyboard-toggle" aria-expanded={keyboardOpen} onClick={() => setKeyboardOpen((current) => !current)}>⌨ KOMUT SATIRI {keyboardOpen ? 'KAPAT' : 'AÇ'}</button>
+      <div className={`command-entry${keyboardOpen ? ' is-open' : ''}`}>
         <span className="command-prompt" aria-hidden="true">›</span>
         <input
           ref={inputRef}
@@ -161,6 +176,7 @@ export function CommandPanel({
       </div>
       <div className={`command-feedback command-feedback--${feedback.type}`} role="status">
         {feedback.message}
+      </div>
       </div>
     </section>
   );

@@ -702,3 +702,143 @@ button { touch-action: manipulation; }
   .top-bar { height: 46px; }
   .command-panel { max-height: 38dvh; }
 }
+
+/* Academy and radar-first command deck. These rules are the canonical final
+   layer for the current mobile shell; older exploratory passes above remain
+   for desktop compatibility and are intentionally overridden here. */
+.workspace { position: relative; }
+.vector-mode-tabs, .keyboard-toggle, .sheet-expander { display: none; }
+.command-panel__body { display: contents; }
+.selected-aircraft__actions { display: flex; align-items: center; gap: 6px; }
+
+.landing-academy { border-top: 1px solid rgba(110, 243, 176, .14); }
+.academy-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.academy-card { min-height: 92px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; padding: 14px; color: #dff8ec; border: 1px solid rgba(110,243,176,.16); border-radius: 8px; background: rgba(6, 22, 15, .86); text-align: left; cursor: pointer; }
+.academy-card:hover { border-color: rgba(110,243,176,.55); background: rgba(12, 42, 29, .92); }
+.academy-card > span { color: #6f9884; font: 800 10px IBM Plex Mono, monospace; }
+.academy-card strong, .academy-card small { display: block; }
+.academy-card strong { color: #effff7; font: 800 12px IBM Plex Mono, monospace; text-transform: uppercase; }
+.academy-card small { margin-top: 5px; color: #789b8a; font: 700 8px IBM Plex Mono, monospace; }
+.academy-card > b { color: var(--green); font: 800 18px IBM Plex Mono, monospace; }
+.academy-card.is-complete { border-color: rgba(110,243,176,.42); background: rgba(12, 51, 34, .8); }
+
+.academy-panel { position: absolute; z-index: 7; top: 12px; left: 12px; width: min(380px, calc(100% - 24px)); padding: 15px; color: #dff8ec; border: 1px solid rgba(103,232,196,.48); border-radius: 10px; background: rgba(3, 17, 12, .96); box-shadow: 0 18px 44px rgba(0,0,0,.46); backdrop-filter: blur(12px); }
+.academy-panel__topline { display: flex; align-items: center; justify-content: space-between; color: var(--cyan); font: 800 10px IBM Plex Mono, monospace; letter-spacing: .08em; }
+.academy-panel__topline button { min-height: 36px; padding: 0 8px; color: #88aa9a; border: 0; background: transparent; font: 800 9px IBM Plex Mono, monospace; cursor: pointer; }
+.academy-panel__progress { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin: 10px 0 14px; }
+.academy-panel__progress i { height: 3px; border-radius: 99px; background: #1b382b; }
+.academy-panel__progress i.is-active { background: var(--cyan); box-shadow: 0 0 9px rgba(103,232,196,.6); }
+.academy-panel__progress i.is-done { background: var(--green); }
+.academy-panel__duration { color: #789b8a; font: 800 9px IBM Plex Mono, monospace; }
+.academy-panel h2 { margin: 6px 0 8px; color: #effff7; font: 800 21px IBM Plex Mono, monospace; }
+.academy-panel p { margin: 0; color: #9abbaa; font: 500 12px/1.45 Manrope, sans-serif; }
+.academy-panel > strong { display: block; margin-top: 12px; color: var(--green); font: 800 12px IBM Plex Mono, monospace; }
+.academy-panel > small { display: block; margin-top: 6px; color: #8eafa0; font: 600 10px/1.4 IBM Plex Mono, monospace; }
+.academy-panel__actions { display: flex; gap: 7px; margin-top: 13px; }
+.academy-panel__actions button, .academy-panel__primary { min-height: 46px; padding: 0 13px; color: #b9d6c8; border: 1px solid rgba(110,243,176,.22); border-radius: 6px; background: #0a1d15; font: 800 9px IBM Plex Mono, monospace; cursor: pointer; }
+.academy-panel__actions .academy-panel__primary, .academy-panel__primary { color: #03140d; border-color: var(--green); background: var(--green); }
+.academy-panel__complete > span { color: var(--green); font: 800 10px IBM Plex Mono, monospace; }
+.academy-panel__complete .academy-panel__primary { width: 100%; margin-top: 14px; }
+.academy-panel.is-complete { border-color: rgba(110,243,176,.72); }
+.app-shell--academy .operation-bar, .app-shell--academy .game-status { display: none; }
+.app-shell--academy { grid-template-rows: auto 0 0 minmax(0, 1fr) auto; }
+.app-shell--academy .radar-queue, .app-shell--academy .radar-decision { display: none; }
+
+@media (max-width: 900px) {
+  .academy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  html, body, #root { height: 100%; min-height: 0; overflow: hidden; }
+  body { overscroll-behavior: none; }
+  .app-shell, .app-shell.app-shell--academy {
+    height: 100dvh;
+    min-height: 0;
+    grid-template-rows: 54px 42px 42px minmax(0, 1fr);
+    overflow: hidden;
+  }
+  .app-shell.app-shell--academy { grid-template-rows: 54px 0 0 minmax(0, 1fr); }
+  .top-bar { height: 54px; min-height: 0; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-rows: 1fr; gap: 6px; overflow: visible; }
+  .session-actions { grid-column: 2; }
+  .session-menu { grid-column: 3; }
+  .session-actions button { min-width: 46px; min-height: 44px; height: 44px; }
+  .session-actions button:nth-child(n + 2) { display: none; }
+  .session-menu summary { min-width: 52px; min-height: 44px; height: 44px; }
+  .operation-bar { height: 42px; }
+  .game-status, .mission-panel { height: 42px; }
+  .workspace, .radar-frame { width: 100%; height: 100%; min-height: 0; }
+  .radar-tools { top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); }
+  .radar-tools button { min-width: 44px; min-height: 44px; }
+
+  .command-panel {
+    position: fixed;
+    z-index: 20;
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    width: auto;
+    max-height: min(48dvh, 430px);
+    padding: 8px 10px max(10px, env(safe-area-inset-bottom));
+    overflow: hidden;
+    border: 1px solid rgba(110,243,176,.28);
+    border-radius: 12px;
+    background: rgba(4, 17, 12, .97);
+    box-shadow: 0 -12px 34px rgba(0,0,0,.55);
+    backdrop-filter: blur(14px);
+  }
+  .selected-aircraft { min-height: 54px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; margin: 0; }
+  .selected-aircraft strong { font-size: 18px; }
+  .selected-aircraft__metrics { justify-content: end; gap: 9px; font-size: 11px; }
+  .selected-aircraft__metrics span:nth-child(n + 4) { display: none; }
+  .selected-aircraft__actions { justify-content: end; }
+  .next-aircraft { min-width: 48px; min-height: 44px; height: 44px; padding: 0 8px; font-size: 0; }
+  .next-aircraft::after { content: 'TAB'; font-size: 10px; }
+  .sheet-expander { min-width: 86px; min-height: 44px; display: block; padding: 0 9px; color: #06150f; border: 1px solid var(--green); border-radius: 6px; background: var(--green); font: 800 9px IBM Plex Mono, monospace; }
+  .command-panel__body { display: none; padding-top: 7px; overflow-y: auto; overscroll-behavior: contain; }
+  .command-panel.is-expanded .command-panel__body { display: block; }
+  .vector-mode-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin-bottom: 7px; }
+  .vector-mode-tabs button { min-height: 52px; display: grid; place-content: center; gap: 3px; padding: 4px; color: #87aa99; border: 1px solid rgba(110,243,176,.18); border-radius: 6px; background: #071a12; font-family: IBM Plex Mono, monospace; }
+  .vector-mode-tabs button span { font-size: 8px; font-weight: 800; }
+  .vector-mode-tabs button b { color: #e5fff2; font-size: 12px; }
+  .vector-mode-tabs button.is-active { color: #03140d; border-color: var(--cyan); background: var(--cyan); }
+  .vector-mode-tabs button.is-active b { color: #03140d; }
+  .command-panel__advanced { display: block; }
+  .vector-control { display: block; margin: 0 0 7px; padding: 0; overflow: visible; }
+  .vector-control > div { display: none; width: 100%; min-height: 48px; gap: 5px; }
+  .vector-control > div.is-active { display: grid; }
+  .vector-control > div[data-vector='heading'] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .vector-control > div[data-vector='altitude'], .vector-control > div[data-vector='speed'] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .vector-control span { display: none; }
+  .vector-control b { min-width: 0; display: grid; place-items: center; font-size: 12px; }
+  .vector-control button { min-width: 0; min-height: 48px; padding: 0 3px; font-size: 11px; }
+  .coach-command { display: none; }
+  .quick-command-row { gap: 6px; margin-bottom: 7px; }
+  .quick-command { min-width: 104px; min-height: 48px; font-size: 10px; }
+  .keyboard-toggle { width: 100%; min-height: 44px; display: block; color: #9bbdad; border: 1px solid rgba(110,243,176,.18); border-radius: 6px; background: #071711; font: 800 9px IBM Plex Mono, monospace; }
+  .command-entry { display: none; height: 54px; margin-top: 6px; }
+  .command-entry.is-open { display: flex; }
+  .command-entry input { min-width: 0; font-size: 16px; }
+  .send-command { min-width: 92px; min-height: 46px; height: 46px; }
+  .command-feedback { min-height: 19px; padding-top: 5px; font-size: 10px; }
+
+  .academy-panel { top: 8px; left: 8px; width: calc(100% - 16px); max-width: none; padding: 11px; }
+  .academy-panel__topline button { min-height: 44px; }
+  .academy-panel__progress { margin: 6px 0 9px; }
+  .academy-panel h2 { margin: 4px 0 6px; font-size: 17px; }
+  .academy-panel p { display: none; }
+  .academy-panel > strong { margin-top: 6px; font-size: 11px; }
+  .academy-panel > small { margin-top: 4px; font-size: 9px; }
+  .academy-panel__actions { margin-top: 9px; }
+  .academy-panel__actions button, .academy-panel__primary { min-height: 48px; }
+  .academy-grid { grid-template-columns: 1fr; }
+  .academy-card { min-height: 76px; }
+}
+
+@media (max-width: 640px) and (orientation: landscape) and (max-height: 560px) {
+  .app-shell, .app-shell.app-shell--academy { grid-template-rows: 48px minmax(0, 1fr); }
+  .top-bar { height: 48px; }
+  .operation-bar, .game-status { display: none; }
+  .command-panel { max-height: min(64dvh, 340px); bottom: max(6px, env(safe-area-inset-bottom)); }
+  .selected-aircraft { min-height: 46px; }
+  .academy-panel { width: min(330px, 48vw); }
+}

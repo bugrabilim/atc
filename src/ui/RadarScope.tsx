@@ -245,7 +245,7 @@ function drawRadar(
       }
     }
     ctx.fillStyle = color;
-    ctx.font = '700 12px IBM Plex Mono, ui-monospace, monospace';
+    ctx.font = '700 13px IBM Plex Mono, ui-monospace, monospace';
     ctx.textAlign = 'center';
     ctx.fillText(runway.id, to.x, to.y - 7);
     ctx.fillText(runway.reciprocal, from.x, from.y + 13);
@@ -262,7 +262,7 @@ function drawRadar(
     ctx.stroke();
     ctx.fillStyle = 'rgba(125, 214, 173, 0.62)';
     ctx.textAlign = 'left';
-    ctx.font = '9px IBM Plex Mono, ui-monospace, monospace';
+    ctx.font = '11px IBM Plex Mono, ui-monospace, monospace';
     ctx.fillText(fix.id, point.x + 7, point.y + 3);
   }
 
@@ -281,7 +281,8 @@ function drawRadar(
   }
 
   labelBoxes.clear();
-  for (const item of aircraft) {
+  const renderAircraft = [...aircraft].sort((first, second) => Number(first.callsign === selectedCallsign) - Number(second.callsign === selectedCallsign));
+  for (const item of renderAircraft) {
     const point = worldToScreen(item.position, viewport);
     const selected = selectedCallsign === item.callsign;
     const conflict = conflictFor(item.callsign, conflicts);
@@ -364,13 +365,10 @@ function drawRadar(
       ctx.strokeStyle = color;
       ctx.lineWidth = pendingReadback ? 2 : 1;
       ctx.beginPath();
-      ctx.arc(point.x, point.y, selected ? 12 : 10, 0, Math.PI * 2);
+      ctx.arc(point.x, point.y, selected ? 18 : 10, 0, Math.PI * 2);
       ctx.stroke();
     }
 
-    const offset = labelOffsets[item.callsign] ?? { x: 15, y: -25 };
-    const label = { x: point.x + offset.x, y: point.y + offset.y };
-    drawLine(ctx, point, label, color);
     const trend = aircraftTrend(item);
     const trendSymbol = trend === 'climb' ? '↑' : trend === 'descend' ? '↓' : '—';
     const currentFlightLevel = String(Math.round(item.altitude / 100)).padStart(3, '0');
@@ -382,18 +380,24 @@ function drawRadar(
     const expandedLabel = !compactScope || selected || Boolean(conflict) || pendingReadback;
     const boxWidth = expandedLabel ? (compactScope ? 154 : 174) : 116;
     const boxHeight = expandedLabel ? (conflict?.predicted ? 66 : arrival ? 56 : 43) : 34;
-    ctx.fillStyle = 'rgba(1, 10, 7, .84)';
+    const offset = labelOffsets[item.callsign] ?? { x: 15, y: -25 };
+    const label = {
+      x: Math.max(4, Math.min(width - boxWidth - 4, point.x + offset.x)),
+      y: Math.max(17, Math.min(height - boxHeight + 9, point.y + offset.y)),
+    };
+    drawLine(ctx, point, label, color);
+    ctx.fillStyle = selected ? 'rgba(1, 10, 7, .96)' : 'rgba(1, 10, 7, .9)';
     ctx.fillRect(label.x, label.y - 13, boxWidth, boxHeight);
     ctx.strokeStyle = `${color}66`;
     ctx.strokeRect(label.x, label.y - 13, boxWidth, boxHeight);
     labelBoxes.set(item.callsign, { callsign: item.callsign, x: label.x, y: label.y - 13, width: boxWidth, height: boxHeight });
-    ctx.font = `${selected ? '700' : '600'} ${expandedLabel ? 12 : 11}px IBM Plex Mono, ui-monospace, monospace`;
+    ctx.font = `${selected ? '800' : '700'} ${selected ? 14 : 12}px IBM Plex Mono, ui-monospace, monospace`;
     ctx.fillStyle = color;
     ctx.textAlign = 'left';
     ctx.fillText(`${item.callsign}  ${item.wakeCategory}`, label.x + 4, label.y - 2);
     ctx.fillText(`${currentFlightLevel}${trendSymbol}${targetFlightLevel}  ${Math.round(item.speed)}/${Math.round(item.groundSpeed)}`, label.x + 4, label.y + 10);
     if (!expandedLabel) continue;
-    ctx.font = '700 10px IBM Plex Mono, ui-monospace, monospace';
+    ctx.font = '700 11px IBM Plex Mono, ui-monospace, monospace';
     ctx.fillStyle = pendingReadback ? '#ffb648' : item.approach?.status === 'tower' ? '#8cffc5' : color;
     ctx.fillText(`${pendingReadback ? 'READBACK · ' : ''}${statusText(item)}`, label.x + 4, label.y + 21);
     if (arrival) {
@@ -525,17 +529,6 @@ export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCa
       setMeasurement((current) => !current || current.to ? { from: worldPoint } : { ...current, to: worldPoint });
       return;
     }
-    const label = [...labelBoxes.current.values()].find((box) => pointer.x >= box.x && pointer.x <= box.x + box.width && pointer.y >= box.y && pointer.y <= box.y + box.height);
-    if (label) {
-      onSelect(label.callsign);
-      // A tap on a datablock is a selection on touch devices. Reserving label
-      // dragging for mouse/pen input prevents a tiny finger movement from
-      // moving a label instead of selecting the intended aircraft.
-      if (event.pointerType === 'touch') return;
-      dragRef.current = { kind: 'label', pointerId: event.pointerId, callsign: label.callsign, last: pointer };
-      event.currentTarget.setPointerCapture(event.pointerId);
-      return;
-    }
     let closest: { callsign: string; distance: number } | null = null;
     const hitRadius = event.pointerType === 'touch' ? 44 : 28;
     for (const item of aircraft) {
@@ -545,6 +538,17 @@ export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCa
     }
     if (closest) {
       onSelect(closest.callsign);
+      return;
+    }
+    const label = [...labelBoxes.current.values()].reverse().find((box) => pointer.x >= box.x && pointer.x <= box.x + box.width && pointer.y >= box.y && pointer.y <= box.y + box.height);
+    if (label) {
+      onSelect(label.callsign);
+      // A tap on a datablock is a selection on touch devices. Reserving label
+      // dragging for mouse/pen input prevents a tiny finger movement from
+      // moving a label instead of selecting the intended aircraft.
+      if (event.pointerType === 'touch') return;
+      dragRef.current = { kind: 'label', pointerId: event.pointerId, callsign: label.callsign, last: pointer };
+      event.currentTarget.setPointerCapture(event.pointerId);
       return;
     }
     dragRef.current = { kind: 'pan', pointerId: event.pointerId, last: pointer };
