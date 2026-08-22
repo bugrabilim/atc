@@ -1196,7 +1196,7 @@ button { touch-action: manipulation; }
 
 .app-shell .radar-tools {
   z-index: 18;
-  top: 72px;
+  top: 132px;
   right: 328px;
   gap: 4px;
 }

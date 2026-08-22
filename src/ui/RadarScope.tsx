@@ -258,6 +258,9 @@ function drawRadar(
     ctx.fillText(runway.reciprocal, from.x, from.y + 13);
   }
 
+  const selectedAircraft = aircraft.find((item) => item.callsign === selectedCallsign);
+  const selectedRouteFix = selectedAircraft?.navigation?.fixIds[selectedAircraft.navigation.currentLegIndex];
+  const fixLabelBoxes: { x: number; y: number; width: number; height: number }[] = [];
   for (const fix of world.fixes) {
     const point = worldToScreen(fix.position, viewport);
     ctx.strokeStyle = 'rgba(110, 163, 183, 0.48)';
@@ -267,10 +270,24 @@ function drawRadar(
     ctx.lineTo(point.x - 4, point.y + 3);
     ctx.closePath();
     ctx.stroke();
+    const distanceFromAirport = Math.hypot(point.x - airport.x, point.y - airport.y);
+    const fixText = fix.label ?? fix.id;
+    const labelWidth = Math.max(30, fixText.length * 5.5);
+    const candidate = { x: point.x + 6, y: point.y - 6, width: labelWidth, height: 12 };
+    const labelOverlaps = fixLabelBoxes.some((box) => (
+      candidate.x < box.x + box.width + 4
+      && candidate.x + candidate.width + 4 > box.x
+      && candidate.y < box.y + box.height + 3
+      && candidate.y + candidate.height + 3 > box.y
+    ));
+    const showLabel = fix.id === selectedRouteFix
+      || (distanceFromAirport > Math.max(72, 6 * scale) && !labelOverlaps);
+    if (!showLabel) continue;
+    fixLabelBoxes.push(candidate);
     ctx.fillStyle = 'rgba(137, 176, 193, 0.46)';
     ctx.textAlign = 'left';
     ctx.font = '9px IBM Plex Mono, ui-monospace, monospace';
-    ctx.fillText(fix.label ?? fix.id, point.x + 7, point.y + 3);
+    ctx.fillText(fixText, point.x + 7, point.y + 3);
   }
 
   for (const conflict of conflicts) {
