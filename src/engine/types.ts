@@ -111,6 +111,8 @@ export interface Runway {
 
 export interface Fix {
   id: string;
+  /** Human-readable chart label. The stable id remains the command/save key. */
+  label?: string;
   position: Vector2;
 }
 
@@ -144,6 +146,29 @@ export interface FlowConfiguration {
   qnh: number;
 }
 
+export interface AirportDisruptionProfile {
+  /** Stable airport-specific event key, used in replay/debrief logs. */
+  id: string;
+  triggerSeconds: number;
+  durationSeconds: number;
+  reducedFlowId: string;
+  recoveryFlowId: string;
+  message: string;
+  recoveryMessage: string;
+}
+
+/** Runtime portion of a versioned airport operations pack. It intentionally
+ * describes a tactical game sector, not navigation-grade procedure data. */
+export interface AirportOperationsProfile {
+  packVersion: string;
+  referenceCycle: string;
+  strategyLabel: string;
+  trafficPattern: AircraftPhase[];
+  heavyArrivalEvery: number;
+  procedureReferences: string[];
+  disruption: AirportDisruptionProfile;
+}
+
 export interface RadarWorld {
   airport: string;
   sectorName: string;
@@ -155,6 +180,7 @@ export interface RadarWorld {
   trafficExits: TrafficExit[];
   flowConfigurations: FlowConfiguration[];
   activeFlowId?: string;
+  operations?: AirportOperationsProfile;
   /** Geographic context used by the tactical sector chart. Stylized shapes
    are game-only and are never a substitute for current aeronautical charts. */
   environment?: {

@@ -100,42 +100,54 @@ function pointAtBearing(bearing: number, distance: number): Vector2 {
 function drawGeographicContext(ctx: CanvasRenderingContext2D, viewport: Viewport, world: RadarWorld) {
   const { width, height, scale } = viewport;
   const environment = world.environment;
-  const terrainColor = environment?.terrain === 'desert' ? '#0e1008'
-    : environment?.terrain === 'mountain' || environment?.terrain === 'highland' ? '#07100b'
-      : environment?.terrain === 'coastal' || environment?.terrain === 'island' ? '#03100e'
-        : '#04100b';
+  const terrainColor = environment?.terrain === 'desert' ? '#171b26'
+    : environment?.terrain === 'mountain' || environment?.terrain === 'highland' ? '#111a28'
+      : environment?.terrain === 'coastal' || environment?.terrain === 'island' ? '#0c1929'
+        : '#101b2b';
   ctx.fillStyle = terrainColor;
   ctx.fillRect(0, 0, width, height);
 
   // A chart grid reads like a terminal-area map rather than a decorative
   // circular scope, while still preserving instant distance orientation.
   ctx.save();
-  ctx.strokeStyle = 'rgba(91, 160, 126, .08)';
+  ctx.strokeStyle = 'rgba(119, 157, 190, .07)';
   ctx.lineWidth = 1;
   const gridStep = Math.max(56, 10 * scale);
-  for (let x = (width / 2) % gridStep; x < width; x += gridStep) drawLine(ctx, { x, y: 0 }, { x, y: height }, 'rgba(91, 160, 126, .08)');
-  for (let y = (height / 2) % gridStep; y < height; y += gridStep) drawLine(ctx, { x: 0, y }, { x: width, y }, 'rgba(91, 160, 126, .08)');
+  for (let x = (width / 2) % gridStep; x < width; x += gridStep) drawLine(ctx, { x, y: 0 }, { x, y: height }, 'rgba(119, 157, 190, .07)');
+  for (let y = (height / 2) % gridStep; y < height; y += gridStep) drawLine(ctx, { x: 0, y }, { x: width, y }, 'rgba(119, 157, 190, .07)');
   ctx.restore();
 
   if (!environment) return;
   const airport = worldToScreen({ x: 0, y: 0 }, viewport);
 
   if (environment.waterBearing !== undefined) {
-    const waterCenter = worldToScreen(pointAtBearing(environment.waterBearing, world.rangeNm * .82), viewport);
+    const bearing = environment.waterBearing * Math.PI / 180;
+    const shoreDistance = world.rangeNm * scale * .34;
+    const chartSpan = Math.max(width, height) * 1.8;
     ctx.save();
-    ctx.translate(waterCenter.x, waterCenter.y);
-    ctx.rotate(environment.waterBearing * Math.PI / 180);
-    ctx.fillStyle = 'rgba(5, 42, 48, .62)';
-    ctx.strokeStyle = 'rgba(91, 183, 181, .26)';
-    ctx.lineWidth = 2;
+    ctx.translate(airport.x, airport.y);
+    ctx.rotate(bearing);
+    ctx.fillStyle = 'rgba(8, 42, 67, .58)';
     ctx.beginPath();
-    ctx.ellipse(0, 0, world.rangeNm * scale * .78, world.rangeNm * scale * .48, 0, 0, Math.PI * 2);
+    ctx.moveTo(-chartSpan, -chartSpan);
+    ctx.lineTo(chartSpan, -chartSpan);
+    for (let x = chartSpan; x >= -chartSpan; x -= 24) {
+      const wave = Math.sin(x / 94) * 13 + Math.sin(x / 41) * 5;
+      ctx.lineTo(x, -shoreDistance + wave);
+    }
+    ctx.closePath();
     ctx.fill();
-    ctx.stroke();
-    for (let offset = -2; offset <= 2; offset += 1) {
+
+    for (let contour = 0; contour < 3; contour += 1) {
       ctx.beginPath();
-      ctx.ellipse(offset * 25, offset * 9, world.rangeNm * scale * (.52 + offset * .035), world.rangeNm * scale * (.25 + offset * .018), 0, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(91, 183, 181, .09)';
+      for (let x = -chartSpan; x <= chartSpan; x += 24) {
+        const wave = Math.sin(x / 94) * 13 + Math.sin(x / 41) * 5;
+        const y = -shoreDistance + wave - contour * 24;
+        if (x === -chartSpan) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = contour === 0 ? 'rgba(96, 164, 201, .3)' : 'rgba(96, 164, 201, .08)';
+      ctx.lineWidth = contour === 0 ? 1.4 : 1;
       ctx.stroke();
     }
     ctx.restore();
@@ -147,8 +159,8 @@ function drawGeographicContext(ctx: CanvasRenderingContext2D, viewport: Viewport
     ctx.save();
     ctx.translate(ridge.x, ridge.y);
     ctx.rotate(bearing * Math.PI / 180);
-    ctx.strokeStyle = 'rgba(188, 164, 103, .27)';
-    ctx.fillStyle = 'rgba(99, 83, 45, .12)';
+    ctx.strokeStyle = 'rgba(173, 155, 121, .2)';
+    ctx.fillStyle = 'rgba(99, 83, 45, .08)';
     for (let layer = 0; layer < 4; layer += 1) {
       ctx.beginPath();
       const span = (13 + layer * 4) * scale;
@@ -163,38 +175,33 @@ function drawGeographicContext(ctx: CanvasRenderingContext2D, viewport: Viewport
   }
 
   const cityCenter = worldToScreen(pointAtBearing(environment.cityBearing, world.rangeNm * .52), viewport);
-  const cityRadius = (environment.urbanDensity === 'metropolis' ? 12 : 8) * scale;
+  const cityRadius = Math.min(54, (environment.urbanDensity === 'metropolis' ? 4.8 : 3.4) * scale);
   ctx.save();
-  ctx.beginPath();
-  ctx.ellipse(cityCenter.x, cityCenter.y, cityRadius * 1.45, cityRadius, environment.cityBearing * Math.PI / 180, 0, Math.PI * 2);
-  ctx.clip();
-  ctx.fillStyle = 'rgba(81, 111, 96, .12)';
-  ctx.fillRect(cityCenter.x - cityRadius * 1.6, cityCenter.y - cityRadius * 1.2, cityRadius * 3.2, cityRadius * 2.4);
   ctx.translate(cityCenter.x, cityCenter.y);
   ctx.rotate((environment.cityBearing + 22) * Math.PI / 180);
-  for (let offset = -cityRadius * 1.5; offset <= cityRadius * 1.5; offset += Math.max(14, scale * 2.4)) {
-    drawLine(ctx, { x: offset, y: -cityRadius * 1.2 }, { x: offset, y: cityRadius * 1.2 }, 'rgba(143, 181, 160, .16)');
-    drawLine(ctx, { x: -cityRadius * 1.6, y: offset }, { x: cityRadius * 1.6, y: offset }, 'rgba(143, 181, 160, .12)');
+  for (let offset = -cityRadius; offset <= cityRadius; offset += Math.max(12, scale * 1.8)) {
+    drawLine(ctx, { x: offset, y: -cityRadius * .8 }, { x: offset, y: cityRadius * .8 }, 'rgba(139, 166, 184, .12)');
+    drawLine(ctx, { x: -cityRadius * 1.1, y: offset }, { x: cityRadius * 1.1, y: offset }, 'rgba(139, 166, 184, .09)');
   }
   ctx.restore();
 
-  ctx.fillStyle = 'rgba(147, 205, 177, .5)';
-  ctx.font = '700 11px IBM Plex Mono, ui-monospace, monospace';
+  ctx.fillStyle = 'rgba(151, 181, 199, .43)';
+  ctx.font = '700 9px IBM Plex Mono, ui-monospace, monospace';
   ctx.textAlign = 'center';
-  ctx.fillText(environment.city.toUpperCase(), cityCenter.x, cityCenter.y - cityRadius - 8);
-  ctx.fillStyle = 'rgba(110, 243, 176, .72)';
-  ctx.fillRect(airport.x - 3, airport.y - 3, 6, 6);
+  ctx.fillText(environment.city.toUpperCase(), cityCenter.x, cityCenter.y - cityRadius - 6);
+  ctx.fillStyle = 'rgba(91, 226, 181, .8)';
+  ctx.fillRect(airport.x - 2, airport.y - 2, 4, 4);
   ctx.textAlign = 'left';
-  ctx.fillText(`${environment.icao} · ELEV ${environment.elevationFt}FT`, airport.x + 9, airport.y - 9);
+  ctx.fillText(`${environment.icao} · ${environment.elevationFt}FT`, airport.x + 7, airport.y - 7);
 
   // Compact scale instead of range rings; on phones it remains readable and
   // does not cover aircraft labels.
   const scaleLength = 10 * scale;
   const scaleY = height - 30;
-  drawLine(ctx, { x: 16, y: scaleY }, { x: 16 + scaleLength, y: scaleY }, 'rgba(110, 243, 176, .55)', 2);
-  drawLine(ctx, { x: 16, y: scaleY - 4 }, { x: 16, y: scaleY + 4 }, 'rgba(110, 243, 176, .55)', 2);
-  drawLine(ctx, { x: 16 + scaleLength, y: scaleY - 4 }, { x: 16 + scaleLength, y: scaleY + 4 }, 'rgba(110, 243, 176, .55)', 2);
-  ctx.fillStyle = 'rgba(110, 243, 176, .55)';
+  drawLine(ctx, { x: 16, y: scaleY }, { x: 16 + scaleLength, y: scaleY }, 'rgba(91, 226, 181, .48)', 2);
+  drawLine(ctx, { x: 16, y: scaleY - 4 }, { x: 16, y: scaleY + 4 }, 'rgba(91, 226, 181, .48)', 2);
+  drawLine(ctx, { x: 16 + scaleLength, y: scaleY - 4 }, { x: 16 + scaleLength, y: scaleY + 4 }, 'rgba(91, 226, 181, .48)', 2);
+  ctx.fillStyle = 'rgba(91, 226, 181, .48)';
   ctx.font = '700 10px IBM Plex Mono, ui-monospace, monospace';
   ctx.fillText('10 NM', 16, scaleY - 8);
 }
@@ -219,8 +226,8 @@ function drawRadar(
 
   const airport = worldToScreen({ x: 0, y: 0 }, viewport);
   const glow = ctx.createRadialGradient(airport.x, airport.y, 5, airport.x, airport.y, Math.max(width, height) * 0.7);
-  glow.addColorStop(0, 'rgba(18, 80, 57, 0.16)');
-  glow.addColorStop(0.7, 'rgba(4, 25, 19, 0.05)');
+  glow.addColorStop(0, 'rgba(28, 98, 112, 0.12)');
+  glow.addColorStop(0.7, 'rgba(9, 28, 45, 0.04)');
   glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, width, height);
@@ -232,38 +239,55 @@ function drawRadar(
     const vector = { x: Math.sin(radians) * half, y: -Math.cos(radians) * half };
     const from = { x: midpoint.x - vector.x, y: midpoint.y - vector.y };
     const to = { x: midpoint.x + vector.x, y: midpoint.y + vector.y };
-    const color = runway.active ? '#6ef3b0' : 'rgba(86, 142, 115, 0.3)';
+    const color = runway.active ? '#5be2b5' : 'rgba(104, 139, 157, 0.28)';
     drawLine(ctx, from, to, color, runway.active ? 3 : 2);
     if (runway.active && (runway.operation === 'arrival' || runway.operation === 'mixed')) {
       const outbound = { x: -Math.sin(radians), y: Math.cos(radians) };
       const extensionEnd = { x: from.x + outbound.x * 18 * scale, y: from.y + outbound.y * 18 * scale };
-      drawLine(ctx, from, extensionEnd, 'rgba(110, 243, 176, 0.34)', 1, [7, 6]);
+      drawLine(ctx, from, extensionEnd, 'rgba(91, 226, 181, 0.3)', 1, [7, 6]);
       for (const ringNm of [3, 6, 9, 12, 15]) {
         const tick = { x: from.x + outbound.x * ringNm * scale, y: from.y + outbound.y * ringNm * scale };
         const perpendicular = { x: outbound.y * 4, y: -outbound.x * 4 };
-        drawLine(ctx, { x: tick.x - perpendicular.x, y: tick.y - perpendicular.y }, { x: tick.x + perpendicular.x, y: tick.y + perpendicular.y }, 'rgba(110, 243, 176, 0.34)');
+        drawLine(ctx, { x: tick.x - perpendicular.x, y: tick.y - perpendicular.y }, { x: tick.x + perpendicular.x, y: tick.y + perpendicular.y }, 'rgba(91, 226, 181, 0.3)');
       }
     }
     ctx.fillStyle = color;
-    ctx.font = '700 12px IBM Plex Mono, ui-monospace, monospace';
+    ctx.font = '700 11px IBM Plex Mono, ui-monospace, monospace';
     ctx.textAlign = 'center';
     ctx.fillText(runway.id, to.x, to.y - 7);
     ctx.fillText(runway.reciprocal, from.x, from.y + 13);
   }
 
+  const selectedAircraft = aircraft.find((item) => item.callsign === selectedCallsign);
+  const selectedRouteFix = selectedAircraft?.navigation?.fixIds[selectedAircraft.navigation.currentLegIndex];
+  const fixLabelBoxes: { x: number; y: number; width: number; height: number }[] = [];
   for (const fix of world.fixes) {
     const point = worldToScreen(fix.position, viewport);
-    ctx.strokeStyle = 'rgba(93, 190, 147, 0.6)';
+    ctx.strokeStyle = 'rgba(110, 163, 183, 0.48)';
     ctx.beginPath();
     ctx.moveTo(point.x, point.y - 4);
     ctx.lineTo(point.x + 4, point.y + 3);
     ctx.lineTo(point.x - 4, point.y + 3);
     ctx.closePath();
     ctx.stroke();
-    ctx.fillStyle = 'rgba(125, 214, 173, 0.62)';
+    const distanceFromAirport = Math.hypot(point.x - airport.x, point.y - airport.y);
+    const fixText = fix.label ?? fix.id;
+    const labelWidth = Math.max(30, fixText.length * 5.5);
+    const candidate = { x: point.x + 6, y: point.y - 6, width: labelWidth, height: 12 };
+    const labelOverlaps = fixLabelBoxes.some((box) => (
+      candidate.x < box.x + box.width + 4
+      && candidate.x + candidate.width + 4 > box.x
+      && candidate.y < box.y + box.height + 3
+      && candidate.y + candidate.height + 3 > box.y
+    ));
+    const showLabel = fix.id === selectedRouteFix
+      || (distanceFromAirport > Math.max(72, 6 * scale) && !labelOverlaps);
+    if (!showLabel) continue;
+    fixLabelBoxes.push(candidate);
+    ctx.fillStyle = 'rgba(137, 176, 193, 0.46)';
     ctx.textAlign = 'left';
     ctx.font = '9px IBM Plex Mono, ui-monospace, monospace';
-    ctx.fillText(fix.id, point.x + 7, point.y + 3);
+    ctx.fillText(fixText, point.x + 7, point.y + 3);
   }
 
   for (const conflict of conflicts) {
@@ -281,7 +305,8 @@ function drawRadar(
   }
 
   labelBoxes.clear();
-  for (const item of aircraft) {
+  const renderAircraft = [...aircraft].sort((first, second) => Number(first.callsign === selectedCallsign) - Number(second.callsign === selectedCallsign));
+  for (const item of renderAircraft) {
     const point = worldToScreen(item.position, viewport);
     const selected = selectedCallsign === item.callsign;
     const conflict = conflictFor(item.callsign, conflicts);
@@ -364,45 +389,69 @@ function drawRadar(
       ctx.strokeStyle = color;
       ctx.lineWidth = pendingReadback ? 2 : 1;
       ctx.beginPath();
-      ctx.arc(point.x, point.y, selected ? 12 : 10, 0, Math.PI * 2);
+      ctx.arc(point.x, point.y, selected ? 18 : 10, 0, Math.PI * 2);
       ctx.stroke();
     }
 
-    const offset = labelOffsets[item.callsign] ?? { x: 15, y: -25 };
-    const label = { x: point.x + offset.x, y: point.y + offset.y };
-    drawLine(ctx, point, label, color);
     const trend = aircraftTrend(item);
     const trendSymbol = trend === 'climb' ? '↑' : trend === 'descend' ? '↓' : '—';
     const currentFlightLevel = String(Math.round(item.altitude / 100)).padStart(3, '0');
     const targetFlightLevel = String(Math.round(item.targetAltitude / 100)).padStart(3, '0');
-    // On a phone, keeping every desktop-sized data block makes the tactical
-    // picture unreadable. The selected or hazardous target stays expanded;
-    // routine traffic gets an intentionally compact, still-readable label.
-    const compactScope = viewport.width < 600;
-    const expandedLabel = !compactScope || selected || Boolean(conflict) || pendingReadback;
-    const boxWidth = expandedLabel ? (compactScope ? 154 : 174) : 116;
-    const boxHeight = expandedLabel ? (conflict?.predicted ? 66 : arrival ? 56 : 43) : 34;
-    ctx.fillStyle = 'rgba(1, 10, 7, .84)';
+    // Routine traffic stays compact at every viewport size. Detailed blocks
+    // are reserved for the selected aircraft or an operational exception.
+    const expandedLabel = selected || Boolean(conflict) || pendingReadback;
+    const boxWidth = expandedLabel ? (viewport.width < 600 ? 146 : 154) : 108;
+    const boxHeight = expandedLabel ? (conflict?.predicted ? 61 : arrival ? 52 : 41) : 30;
+    const seed = [...item.callsign].reduce((sum, character) => sum + character.charCodeAt(0), 0) % 4;
+    const automaticOffsets = [
+      { x: 15, y: -24 },
+      { x: -boxWidth - 15, y: -24 },
+      { x: 15, y: 28 },
+      { x: -boxWidth - 15, y: 28 },
+    ];
+    const offset = labelOffsets[item.callsign] ?? automaticOffsets[seed];
+    const initialLeft = Math.max(4, Math.min(width - boxWidth - 4, point.x + offset.x));
+    const initialTop = Math.max(4, Math.min(height - boxHeight - 4, point.y + offset.y - 13));
+    const verticalStep = boxHeight + 6;
+    const positions = [0, verticalStep, -verticalStep, verticalStep * 2, -verticalStep * 2];
+    const boxLeft = initialLeft;
+    let boxTop = initialTop;
+    for (const shift of positions) {
+      const candidateTop = Math.max(4, Math.min(height - boxHeight - 4, initialTop + shift));
+      const overlaps = [...labelBoxes.values()].some((box) => (
+        initialLeft < box.x + box.width + 4
+        && initialLeft + boxWidth + 4 > box.x
+        && candidateTop < box.y + box.height + 4
+        && candidateTop + boxHeight + 4 > box.y
+      ));
+      if (!overlaps) {
+        boxTop = candidateTop;
+        break;
+      }
+    }
+    const label = { x: boxLeft, y: boxTop + 13 };
+    drawLine(ctx, point, label, color);
+    ctx.fillStyle = selected ? 'rgba(7, 15, 27, .97)' : 'rgba(8, 18, 31, .9)';
     ctx.fillRect(label.x, label.y - 13, boxWidth, boxHeight);
     ctx.strokeStyle = `${color}66`;
     ctx.strokeRect(label.x, label.y - 13, boxWidth, boxHeight);
     labelBoxes.set(item.callsign, { callsign: item.callsign, x: label.x, y: label.y - 13, width: boxWidth, height: boxHeight });
-    ctx.font = `${selected ? '700' : '600'} ${expandedLabel ? 12 : 11}px IBM Plex Mono, ui-monospace, monospace`;
+    ctx.font = `${selected ? '800' : '700'} ${selected ? 12 : 10}px IBM Plex Mono, ui-monospace, monospace`;
     ctx.fillStyle = color;
     ctx.textAlign = 'left';
-    ctx.fillText(`${item.callsign}  ${item.wakeCategory}`, label.x + 4, label.y - 2);
-    ctx.fillText(`${currentFlightLevel}${trendSymbol}${targetFlightLevel}  ${Math.round(item.speed)}/${Math.round(item.groundSpeed)}`, label.x + 4, label.y + 10);
+    ctx.fillText(`${item.callsign}  ${item.wakeCategory}`, label.x + 4, label.y - 3);
+    ctx.fillText(`${currentFlightLevel}${trendSymbol}${targetFlightLevel}  ${Math.round(item.speed)}`, label.x + 4, label.y + 9);
     if (!expandedLabel) continue;
-    ctx.font = '700 10px IBM Plex Mono, ui-monospace, monospace';
+    ctx.font = '700 9px IBM Plex Mono, ui-monospace, monospace';
     ctx.fillStyle = pendingReadback ? '#ffb648' : item.approach?.status === 'tower' ? '#8cffc5' : color;
-    ctx.fillText(`${pendingReadback ? 'READBACK · ' : ''}${statusText(item)}`, label.x + 4, label.y + 21);
+    ctx.fillText(`${pendingReadback ? 'READBACK · ' : ''}${statusText(item)}`, label.x + 4, label.y + 20);
     if (arrival) {
       ctx.fillStyle = arrival.sequence === 1 ? '#67e8c4' : '#a7cabb';
-      ctx.fillText(`QUEUE #${arrival.sequence} · ${arrival.runwayId} · ${Math.ceil(arrival.etaSeconds / 60)}m`, label.x + 4, label.y + 34);
+      ctx.fillText(`#${arrival.sequence} · ${arrival.runwayId} · ${Math.ceil(arrival.etaSeconds / 60)} MIN`, label.x + 4, label.y + 32);
     }
     if (conflict?.predicted) {
       ctx.fillStyle = '#ffb648';
-      ctx.fillText(`CPA ${conflict.predicted.horizontalNm.toFixed(1)}NM / ${Math.round(conflict.predicted.timeSeconds)}s`, label.x + 4, label.y + (arrival ? 47 : 37));
+      ctx.fillText(`CPA ${conflict.predicted.horizontalNm.toFixed(1)}NM / ${Math.round(conflict.predicted.timeSeconds)}s`, label.x + 4, label.y + (arrival ? 44 : 34));
     }
   }
 
@@ -419,8 +468,8 @@ function drawRadar(
     }
   }
 
-  ctx.fillStyle = 'rgba(110, 243, 176, 0.45)';
-  ctx.font = '11px IBM Plex Mono, ui-monospace, monospace';
+  ctx.fillStyle = 'rgba(124, 170, 188, 0.38)';
+  ctx.font = '9px IBM Plex Mono, ui-monospace, monospace';
   ctx.textAlign = 'left';
   ctx.fillText(`TACTICAL CHART · ${Math.round(Math.min(width, height) / scale / 2)}NM · ${world.airport} · GAME ONLY`, 14, height - 14);
 }
@@ -525,17 +574,6 @@ export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCa
       setMeasurement((current) => !current || current.to ? { from: worldPoint } : { ...current, to: worldPoint });
       return;
     }
-    const label = [...labelBoxes.current.values()].find((box) => pointer.x >= box.x && pointer.x <= box.x + box.width && pointer.y >= box.y && pointer.y <= box.y + box.height);
-    if (label) {
-      onSelect(label.callsign);
-      // A tap on a datablock is a selection on touch devices. Reserving label
-      // dragging for mouse/pen input prevents a tiny finger movement from
-      // moving a label instead of selecting the intended aircraft.
-      if (event.pointerType === 'touch') return;
-      dragRef.current = { kind: 'label', pointerId: event.pointerId, callsign: label.callsign, last: pointer };
-      event.currentTarget.setPointerCapture(event.pointerId);
-      return;
-    }
     let closest: { callsign: string; distance: number } | null = null;
     const hitRadius = event.pointerType === 'touch' ? 44 : 28;
     for (const item of aircraft) {
@@ -545,6 +583,17 @@ export function RadarScope({ world, aircraft, conflicts, trackHistory, pendingCa
     }
     if (closest) {
       onSelect(closest.callsign);
+      return;
+    }
+    const label = [...labelBoxes.current.values()].reverse().find((box) => pointer.x >= box.x && pointer.x <= box.x + box.width && pointer.y >= box.y && pointer.y <= box.y + box.height);
+    if (label) {
+      onSelect(label.callsign);
+      // A tap on a datablock is a selection on touch devices. Reserving label
+      // dragging for mouse/pen input prevents a tiny finger movement from
+      // moving a label instead of selecting the intended aircraft.
+      if (event.pointerType === 'touch') return;
+      dragRef.current = { kind: 'label', pointerId: event.pointerId, callsign: label.callsign, last: pointer };
+      event.currentTarget.setPointerCapture(event.pointerId);
       return;
     }
     dragRef.current = { kind: 'pan', pointerId: event.pointerId, last: pointer };

@@ -184,11 +184,11 @@ describe('stepGame', () => {
 
   it('moves advanced shifts to a reduced-capacity operational flow', () => {
     const state = createInitialState(undefined, 'advanced');
-    state.elapsedSeconds = 210;
+    state.elapsedSeconds = world.operations?.disruption.triggerSeconds ?? 210;
     state.flowId = 'north-parallel';
     const next = stepGame(state, worldWithFlow(world, state.flowId, state.peakSkill), 0.1);
 
-    expect(next.flowId).not.toBe('north-parallel');
+    expect(next.flowId).toBe(world.operations?.disruption.reducedFlowId);
     expect(worldWithFlow(world, next.flowId).runways.filter((item) => item.operation === 'arrival')).toHaveLength(1);
     expect(next.eventLog.at(-1)?.message).toContain('OPERASYON DEĞİŞİKLİĞİ');
   });
@@ -205,13 +205,33 @@ describe('stepGame', () => {
 
   it('recovers the higher-capacity flow after an operational disruption', () => {
     const state = createInitialState(undefined, 'advanced');
-    state.elapsedSeconds = 420;
+    state.elapsedSeconds = (world.operations?.disruption.triggerSeconds ?? 210) + (world.operations?.disruption.durationSeconds ?? 210);
     state.flowId = 'north-single';
     state.eventTimeline.push({ id: 'flow-change-advanced-210', type: 'warning', message: 'fixture' });
     const next = stepGame(state, worldWithFlow(world, state.flowId, state.peakSkill), 0.1);
 
-    expect(next.flowId).toBe('north-parallel');
+    expect(next.flowId).toBe(world.operations?.disruption.recoveryFlowId);
     expect(next.eventTimeline.some((event) => event.id.startsWith('flow-recovery-'))).toBe(true);
+  });
+
+  it('executes the configured disruption and recovery for every flagship airport', () => {
+    for (const airportId of ['ist', 'lhr', 'lax', 'jfk', 'atl'] as const) {
+      const scenario = scenarioCatalog.find((item) => item.id === airportId);
+      if (!scenario?.world.operations) throw new Error(`Missing operations pack for ${airportId}`);
+      const disruption = scenario.world.operations.disruption;
+      const changedState = createInitialState(scenario, 'advanced');
+      changedState.elapsedSeconds = disruption.triggerSeconds;
+      changedState.flowId = scenario.world.flowConfigurations[0]!.id;
+      const changed = stepGame(changedState, worldWithFlow(scenario.world, changedState.flowId, changedState.peakSkill), 0.1);
+      expect(changed.flowId).toBe(disruption.reducedFlowId);
+
+      const recoveryState = createInitialState(scenario, 'advanced');
+      recoveryState.elapsedSeconds = disruption.triggerSeconds + disruption.durationSeconds;
+      recoveryState.flowId = disruption.reducedFlowId;
+      recoveryState.eventTimeline.push({ id: `flow-change-${disruption.id}-fixture`, type: 'warning', message: 'fixture' });
+      const recovered = stepGame(recoveryState, worldWithFlow(scenario.world, recoveryState.flowId, recoveryState.peakSkill), 0.1);
+      expect(recovered.flowId).toBe(disruption.recoveryFlowId);
+    }
   });
 
   it('closes an expert arrival runway temporarily for an operational inspection', () => {

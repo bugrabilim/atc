@@ -9,6 +9,7 @@ interface MissionPanelProps {
   scenarioLabel: string;
   scenarioBriefing: string;
   scenarioFocus: string;
+  missionPrefix?: string;
   goal: ShiftGoal;
   score: number;
   landed: number;
@@ -32,6 +33,9 @@ interface MissionPanelProps {
   priorityTraffic: Aircraft[];
   events: GameEvent[];
   activeFlowLabel: string;
+  operationsStrategy?: string;
+  operationsReference?: string;
+  procedureReferences?: string[];
   pendingInstructionCount: number;
   tutorial: TrainingGuide | null;
   onTutorialCommand: (guide: TrainingGuide) => void;
@@ -39,7 +43,7 @@ interface MissionPanelProps {
   onCoachCommand: (advice: CoachAdvice) => void;
 }
 
-export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, scenarioFocus, goal, score, landed, handoffs, trafficLevel, skill, peakSkill, targetAircraft, bestScore, bestLandings, completedShifts, completedObjectives, badgeCount, achievementTotal, achievementIds, scenarioBestScore, nextUnlockLabel, nextUnlockDescription, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
+export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, scenarioFocus, missionPrefix, goal, score, landed, handoffs, trafficLevel, skill, peakSkill, targetAircraft, bestScore, bestLandings, completedShifts, completedObjectives, badgeCount, achievementTotal, achievementIds, scenarioBestScore, nextUnlockLabel, nextUnlockDescription, trainingCallsign, trainingRunway, priorityTraffic, events, activeFlowLabel, operationsStrategy, operationsReference, procedureReferences, pendingInstructionCount, tutorial, onTutorialCommand, coach, onCoachCommand }: MissionPanelProps) {
   // Radar ilk ekranda her zaman öncelikli. Yardım ve ayrıntılar isteğe bağlı
   // çekmecelerdedir; özellikle telefonda taktik alanı sıkıştırmazlar.
   const [helpOpen, setHelpOpen] = useState(false);
@@ -64,7 +68,7 @@ export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, 
     <section className="mission-panel" aria-label="Oyun görevi ve skor">
       <div className="mission-primary">
         <span className="eyebrow">GÖREV</span>
-        <strong>{mission}</strong>
+        <strong>{missionPrefix}{mission}</strong>
         <small className="mission-briefing"><b>{scenarioLabel}</b> · {scenarioBriefing} <em>Odak: {scenarioFocus}</em></small>
         {mode === 'beginner' && tutorial?.command ? (
           <button type="button" className="mission-primary__action" onClick={() => onTutorialCommand(tutorial)}>
@@ -98,6 +102,9 @@ export function MissionPanel({ aircraft, mode, scenarioLabel, scenarioBriefing, 
           <span>VARDİYA <b>{landed}/{goal.targetLandings} iniş · {handoffs}/{goal.targetHandoffs} handoff</b></span>
           <span>YOĞUNLUK <b>{trafficLevel}/5</b></span>
           <span>AKIŞ <b>{activeFlowLabel}</b></span>
+          {operationsStrategy ? <span>PAKET <b>{operationsStrategy}</b></span> : null}
+          {operationsReference ? <span>REFERANS <b>{operationsReference}</b></span> : null}
+          {procedureReferences?.length ? <span>PROSEDÜR ODAĞI <b>{procedureReferences.join(' · ')}</b></span> : null}
           {pendingInstructionCount > 0 ? <span>READBACK <b>{pendingInstructionCount}</b></span> : null}
           <span>KARİYER <b>{controllerRank(bestScore)} · {bestLandings} iniş · {completedObjectives}/{completedShifts} hedef · {badgeCount}/{achievementTotal} başarım</b></span>
         </div>

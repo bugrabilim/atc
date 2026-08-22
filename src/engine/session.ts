@@ -3,18 +3,21 @@ import type { GameMode, GameState } from './types';
 import { createAircraft, HEAVY_PERFORMANCE, JET_PERFORMANCE } from './aircraftData';
 import { INITIAL_SKILL, profileForSkill } from './skill';
 import { modeTrafficProfile } from './difficulty';
+import { isCareerEpisodeId, type CareerEpisodeId } from './careerSeason';
 
-export const SESSION_VERSION = 3;
+export const SESSION_VERSION = 4;
 
 export interface SavedSession {
   version: typeof SESSION_VERSION;
   scenarioId: GameScenario['id'];
   state: GameState;
   savedAt: number;
+  dailyChallengeId?: string;
+  careerEpisodeId?: CareerEpisodeId;
 }
 
-export function serializeSession(scenarioId: GameScenario['id'], state: GameState) {
-  return JSON.stringify({ version: SESSION_VERSION, scenarioId, state, savedAt: Date.now() } satisfies SavedSession);
+export function serializeSession(scenarioId: GameScenario['id'], state: GameState, dailyChallengeId?: string, careerEpisodeId?: CareerEpisodeId) {
+  return JSON.stringify({ version: SESSION_VERSION, scenarioId, state, savedAt: Date.now(), dailyChallengeId, careerEpisodeId } satisfies SavedSession);
 }
 
 function hasRequiredState(value: unknown): value is GameState {
@@ -37,7 +40,7 @@ export function restoreSession(serialized: string | null, scenarios: readonly Ga
     const parsedVersion = (parsed as { version?: number }).version;
     const scenario = scenarios.find((item) => item.id === parsed.scenarioId);
     const state = parsed.state;
-    if ((parsedVersion !== 1 && parsedVersion !== 2 && parsedVersion !== SESSION_VERSION) || !scenario || !hasRequiredState(state)) return null;
+    if ((parsedVersion !== 1 && parsedVersion !== 2 && parsedVersion !== 3 && parsedVersion !== SESSION_VERSION) || !scenario || !hasRequiredState(state)) return null;
     if (!scenario.world.flowConfigurations.some((item) => item.id === state.flowId)) return null;
     const legacyState = state as GameState & { mode?: GameMode; skill?: number; peakSkill?: number; targetAircraft?: number; seed?: number; commandHistory?: GameState['commandHistory'] };
     const mode: GameMode = legacyState.mode === 'beginner' || legacyState.mode === 'normal' || legacyState.mode === 'advanced' || legacyState.mode === 'expert' ? legacyState.mode : 'normal';
@@ -47,6 +50,10 @@ export function restoreSession(serialized: string | null, scenarios: readonly Ga
       version: SESSION_VERSION,
       scenarioId: scenario.id,
       savedAt: typeof parsed.savedAt === 'number' ? parsed.savedAt : Date.now(),
+      dailyChallengeId: typeof parsed.dailyChallengeId === 'string' && /^daily-\d{4}-\d{2}-\d{2}$/.test(parsed.dailyChallengeId)
+        ? parsed.dailyChallengeId
+        : undefined,
+      careerEpisodeId: isCareerEpisodeId(parsed.careerEpisodeId) ? parsed.careerEpisodeId : undefined,
       state: {
         ...state,
         mode,
