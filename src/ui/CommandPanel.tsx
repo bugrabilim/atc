@@ -19,6 +19,7 @@ interface CommandPanelProps {
   onCoachCommand: (advice: CoachAdvice) => void;
   onSelect: (callsign: string) => void;
   onNext: () => void;
+  onClose: () => void;
 }
 
 const baseQuickCommands = [
@@ -43,6 +44,7 @@ export function CommandPanel({
   onCoachCommand,
   onSelect,
   onNext,
+  onClose,
 }: CommandPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
@@ -64,6 +66,7 @@ export function CommandPanel({
 
   useEffect(() => {
     if (selectedCallsign && previousSelectedCallsign.current !== selectedCallsign) setSheetExpanded(true);
+    if (!selectedCallsign) setSheetExpanded(false);
     previousSelectedCallsign.current = selectedCallsign;
   }, [selectedCallsign]);
 
@@ -119,6 +122,7 @@ export function CommandPanel({
         <div className="selected-aircraft__actions">
           <button type="button" className="next-aircraft" onClick={onNext}>SONRAKİ</button>
           <button type="button" className="sheet-expander" aria-expanded={sheetExpanded} onClick={() => setSheetExpanded((current) => !current)}>{sheetExpanded ? 'KAPAT ⌄' : 'KOMUTLAR ⌃'}</button>
+          <button type="button" className="close-command-panel" aria-label="Komut panelini kapat" onClick={onClose}>×</button>
         </div>
       </div>
 

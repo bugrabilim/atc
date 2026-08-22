@@ -398,6 +398,11 @@ export function App() {
     playCue('select');
   }, [playCue]);
 
+  const clearAircraftSelection = useCallback(() => {
+    setState((current) => ({ ...current, selectedCallsign: null }));
+    setFeedback({ type: 'info', message: 'Radar izleniyor. Komut vermek için bir uçağa dokun.' });
+  }, []);
+
   const issueCommand = useCallback((input: string) => {
     const snapshot = stateRef.current;
     const parsed = parseCommandBatch(
@@ -788,10 +793,11 @@ export function App() {
           </div>
         </div>
         <div className="top-status">
-          <span><i className="status-dot" /> SİSTEM AKTİF</span>
-          <span>AKTİF PİSTLER <b>{activeWorld.runways.filter((item) => item.active).map((item) => item.id).join(' · ')}</b></span>
+          <span className="hud-score">PUAN <b>{state.score.toLocaleString('tr-TR')}</b></span>
+          <span>İNİŞ <b>{state.landed}/{goal.targetLandings}</b></span>
+          <span>TRAFİK <b>{state.aircraft.length}</b></span>
+          {activeFlow ? <span>RÜZGÂR <b>{String(activeFlow.windDirection).padStart(3, '0')}°/{activeFlow.windSpeedKt}KT</b></span> : null}
           <span>SAAT <b>{formatClock(state.elapsedSeconds)}</b></span>
-          <span>SKILL <b>{state.skill.toFixed(1)}</b> / PEAK <b>{state.peakSkill.toFixed(1)}</b></span>
         </div>
         <div className="session-actions">
           <button type="button" onClick={togglePause}>{state.paused ? 'DEVAM' : 'DUR'}</button>
@@ -938,6 +944,7 @@ export function App() {
         onCoachCommand={submitCoachCommand}
         onSelect={selectAircraft}
         onNext={selectNextAircraft}
+        onClose={clearAircraftSelection}
       />
       {debriefOpen ? <DebriefPanel
         report={buildDebrief(state, goal)}
