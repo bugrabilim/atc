@@ -64,6 +64,11 @@ export function CommandPanel({
     ...(selected?.approach ? [{ label: 'GO-AROUND', command: 'GA' }] : []),
     ...(mode !== 'beginner' ? baseQuickCommands : [{ label: 'NORMAL SPD', command: 'RN' }]),
   ];
+  const quickCommandGroups = [
+    { id: 'approach', label: 'APPROACH', commands: quickCommands.filter((item) => /^(ILS|LOC|GO-AROUND|STAR|SID)/.test(item.label)) },
+    { id: 'navigation', label: 'DIRECT / HOLD', commands: quickCommands.filter((item) => /^(DCT|HOLD)/.test(item.label)) },
+    { id: 'management', label: 'SPEED / SECTOR', commands: quickCommands.filter((item) => !/^(ILS|LOC|GO-AROUND|STAR|SID|DCT|HOLD)/.test(item.label)) },
+  ].filter((group) => group.commands.length > 0);
 
   useEffect(() => {
     if (selectedCallsign && previousSelectedCallsign.current !== selectedCallsign) setSheetExpanded(true);
@@ -84,6 +89,17 @@ export function CommandPanel({
         ? `A${Math.max(10, Math.min(450, Math.round((selected.targetAltitude + delta) / 100)))}`
         : `S${Math.max(selected.performance.minSpeed, Math.min(selected.performance.maxSpeed, Math.round(selected.targetSpeed + delta)))}`;
     useQuickCommand(command);
+  };
+
+  const setHeadingFromPointer = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!selected || !window.matchMedia('(min-width: 701px)').matches) return;
+    if ((event.target as HTMLElement).closest('button')) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const offsetX = event.clientX - bounds.left - bounds.width / 2;
+    const offsetY = event.clientY - bounds.top - bounds.height / 2;
+    if (Math.hypot(offsetX, offsetY) < bounds.width * .27) return;
+    const heading = Math.round((((Math.atan2(offsetX, -offsetY) * 180 / Math.PI) + 360) % 360) / 10) * 10 % 360;
+    useQuickCommand(`H${String(heading).padStart(3, '0')}`);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -139,6 +155,8 @@ export function CommandPanel({
             className={activeVector === 'heading' ? 'is-active' : ''}
             data-vector="heading"
             style={{ '--target-heading': `${selected?.targetHeading ?? 0}deg` } as CSSProperties}
+            onPointerDown={setHeadingFromPointer}
+            title="Halkaya dokunarak 10 derecelik heading seç"
           >
             <span>HEADING</span><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', -30)}>−30°</button><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', -10)}>−10°</button><b>{selected ? String(Math.round(selected.targetHeading)).padStart(3, '0') : '---'}</b><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', 10)}>+10°</button><button type="button" disabled={!selected} onClick={() => relativeCommand('heading', 30)}>+30°</button>
             <i className="heading-cardinal heading-cardinal--north" aria-hidden="true">N</i>
@@ -161,17 +179,24 @@ export function CommandPanel({
 
       <details className="command-section" open={clearancesOpen} onToggle={(event) => setClearancesOpen(event.currentTarget.open)}>
         <summary><span>KLİRENSLER</span><b>{quickCommands.length}</b></summary>
-        <div className="quick-command-row" aria-label="Hızlı komutlar">
-          {quickCommands.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              className="quick-command"
-              disabled={!selectedCallsign}
-              onClick={() => useQuickCommand(item.command)}
-            >
-              {item.label}
-            </button>
+        <div className="quick-command-groups">
+          {quickCommandGroups.map((group) => (
+            <section className="quick-command-group" key={group.id} aria-label={group.label}>
+              <span>{group.label}</span>
+              <div className="quick-command-row">
+                {group.commands.map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    className="quick-command"
+                    disabled={!selectedCallsign}
+                    onClick={() => useQuickCommand(item.command)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       </details>
