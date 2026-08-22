@@ -926,6 +926,10 @@ Teslimatlar:
 - Aynı kullanıcı web ve mobil arasında ilerlemesini kaybetmeden geçebilir.
 - Hata raporuna ilgili deterministik oturum bilgisi eklenebilir.
 
+**Uygulama kararı:** Supabase veya eşdeğer bulut bağlantısı kurulmadığı için
+Buğra'nın 2026-08-22 kararıyla bu faz ertelendi. Yerel/şifresiz kullanım
+korunuyor; hiçbir sahte çevrimiçi liderlik verisi gösterilmiyor.
+
 ### Faz 5 — Özgün hikâyeli kariyer
 
 **Amaç:** Flatout'un yaşayan vardiya hissine özgün içerikle ulaşmak.
@@ -943,6 +947,12 @@ Teslimatlar:
 Çıkış ölçütü:
 
 - Bölüm sonucu oyuncunun gerçek performansına göre en az üç anlamlı biçimde değişir.
+
+**Uygulama durumu:** `Istanbul Control — First Watch` adıyla yedi özgün bölüm,
+zaman/iniş/handoff tetikleyicili olay motoru, deterministik öncelikli trafik ve
+kapasite değişikliği, üç kademeli bölüm sonucu, performans bayrakları, bölüm
+briefing/debrief metinleri ve kalıcı logbook anlatıları eklendi. Veri ve test
+sözleşmesi `docs/FIRST_WATCH_SEASON.md` dosyasında kayıtlıdır.
 
 ### Faz 6 — İstanbul canlı trafik pilotu
 

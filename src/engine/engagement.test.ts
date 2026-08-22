@@ -72,4 +72,21 @@ describe('daily radar and shift logbook', () => {
     expect(shareShiftText(entry, 4)).toContain('DAILY RADAR');
     expect(shareShiftText(entry, 4)).toContain('STREAK 4 DAYS');
   });
+
+  it('persists validated story metadata in the shared shift logbook', () => {
+    const scenario = scenarioCatalog[0]!;
+    const state = createInitialState(scenario, 'beginner');
+    const entry = createShiftLogEntry(
+      scenario,
+      state,
+      buildDebrief(state),
+      undefined,
+      new Date('2026-08-22T12:00:00.000Z'),
+      { episodeId: 'first-contact', narrative: 'İlk vardiya kaydı.', performanceFlags: ['clean-separation'] },
+    );
+    expect(sanitizeLogbook([entry])).toEqual([entry]);
+    expect(shareShiftText(entry, 0)).toContain('FIRST WATCH');
+    expect(sanitizeLogbook([{ ...entry, careerEpisodeId: 'unknown' }])).toEqual([]);
+    expect(sanitizeLogbook([{ ...entry, careerPerformanceFlags: ['not-a-flag'] }])).toEqual([]);
+  });
 });

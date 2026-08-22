@@ -2,6 +2,7 @@ import type { GameScenario } from './scenario';
 import type { DebriefReport, ShiftGoal } from './progression';
 import { goalComplete } from './progression';
 import type { GameMode, GameState, ScenarioId, SessionMetrics } from './types';
+import { isCareerEpisodeId, isCareerPerformanceFlag, type CareerEpisodeId, type CareerPerformanceFlag } from './careerSeason';
 
 const DAY_MS = 86_400_000;
 const FLAGSHIP_IDS = ['ist', 'lhr', 'lax', 'jfk', 'atl'] as const;
@@ -42,6 +43,15 @@ export interface ShiftLogEntry {
   objectiveComplete: boolean;
   metrics: SessionMetrics;
   dailyChallengeId?: string;
+  careerEpisodeId?: CareerEpisodeId;
+  careerNarrative?: string;
+  careerPerformanceFlags?: CareerPerformanceFlag[];
+}
+
+export interface ShiftStoryMetadata {
+  episodeId: CareerEpisodeId;
+  narrative: string;
+  performanceFlags: CareerPerformanceFlag[];
 }
 
 export function utcDateKey(date = new Date()) {
@@ -139,6 +149,7 @@ export function createShiftLogEntry(
   report: DebriefReport,
   dailyChallengeId?: string,
   completedAt = new Date(),
+  story?: ShiftStoryMetadata,
 ): ShiftLogEntry {
   return {
     id: `${completedAt.getTime()}-${scenario.id}-${state.seed}`,
@@ -155,6 +166,9 @@ export function createShiftLogEntry(
     objectiveComplete: report.objectiveComplete,
     metrics: { ...state.metrics },
     dailyChallengeId,
+    careerEpisodeId: story?.episodeId,
+    careerNarrative: story?.narrative,
+    careerPerformanceFlags: story ? [...new Set(story.performanceFlags)] : undefined,
   };
 }
 
@@ -190,7 +204,12 @@ export function sanitizeLogbook(value: unknown): ShiftLogEntry[] {
       && typeof entry.peakSkill === 'number' && entry.peakSkill >= 0
       && validGrade(entry.grade)
       && typeof entry.objectiveComplete === 'boolean'
-      && validMetrics(entry.metrics);
+      && validMetrics(entry.metrics)
+      && (entry.careerEpisodeId === undefined || isCareerEpisodeId(entry.careerEpisodeId))
+      && (entry.careerNarrative === undefined || typeof entry.careerNarrative === 'string')
+      && (entry.careerPerformanceFlags === undefined || (
+        Array.isArray(entry.careerPerformanceFlags) && entry.careerPerformanceFlags.every(isCareerPerformanceFlag)
+      ));
   }).slice(0, LOGBOOK_LIMIT);
 }
 
@@ -203,9 +222,9 @@ const modeLabels: Record<GameMode, string> = {
 };
 
 export function shareShiftText(entry: ShiftLogEntry, streak: number) {
-  const daily = entry.dailyChallengeId ? 'DAILY RADAR' : 'SHIFT REPORT';
+  const shiftKind = entry.dailyChallengeId ? 'DAILY RADAR' : entry.careerEpisodeId ? 'FIRST WATCH' : 'SHIFT REPORT';
   return [
-    `AIRSPACE CONTROL // ${daily}`,
+    `AIRSPACE CONTROL // ${shiftKind}`,
     `${entry.airportLabel} · ${modeLabels[entry.mode]} · GRADE ${entry.grade}`,
     `SCORE ${entry.score} · ${entry.landed} LANDINGS · ${entry.handoffs} HANDOFFS · PEAK ${entry.peakSkill.toFixed(1)}`,
     `SAFETY ${entry.metrics.separationLosses === 0 ? 'CLEAR' : `${entry.metrics.separationLosses} LOSS`} · STREAK ${streak} DAY${streak === 1 ? '' : 'S'}`,

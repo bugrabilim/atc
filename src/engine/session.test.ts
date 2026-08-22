@@ -29,6 +29,18 @@ describe('session persistence', () => {
     expect(restored?.scenarioId).toBe('ist');
   });
 
+  it('retains valid story identity and drops malformed story metadata', () => {
+    const state = createInitialState(defaultScenario, 'beginner', 'north-parallel');
+    const restored = restoreSession(serializeSession('ist', state, undefined, 'first-contact'), scenarioCatalog);
+    expect(restored?.careerEpisodeId).toBe('first-contact');
+
+    const record = JSON.parse(serializeSession('ist', state)) as { careerEpisodeId?: string };
+    record.careerEpisodeId = 'tampered-episode';
+    const sanitized = restoreSession(JSON.stringify(record), scenarioCatalog);
+    expect(sanitized?.careerEpisodeId).toBeUndefined();
+    expect(sanitized?.scenarioId).toBe('ist');
+  });
+
   it('rejects sessions with unknown airport flows', () => {
     const state = createInitialState(defaultScenario);
     state.flowId = 'missing-flow';

@@ -24,6 +24,7 @@ Mobil ve masaüstü tarayıcılarda çalışan, klasik radar görünümüne sahi
 - İki–üç dakikalık 10 uygulamalı Flight Academy dersi ve kalıcı ders ilerlemesi
 - Telefonda radarı küçültmeyen, büyük dokunma hedefli açılır komut konsolu
 - Her gün aynı seed/akışla üretilen Daily Radar, günlük seri, 30 vardiyalık yerel logbook ve Web Share sonuç kartı
+- Performansa göre üç farklı sonuç üreten, olay tetikleyicili yedi bölümlük `Istanbul Control — First Watch` kariyer sezonu
 
 ## Ürün araştırması ve yol haritası
 
@@ -32,6 +33,7 @@ Mobil ve masaüstü tarayıcılarda çalışan, klasik radar görünümüne sahi
 - [Havaalanı veri politikası](docs/AIRPORT_DATA.md)
 - [İlk beş havaalanı operasyon paketi: araştırma ve uygulama kaydı](docs/FLAGSHIP_AIRPORT_PACKS.md)
 - [Daily Radar, streak, logbook ve paylaşım veri modeli](docs/RETENTION_SYSTEMS.md)
+- [Istanbul Control — First Watch sezon tasarımı ve uygulama sözleşmesi](docs/FIRST_WATCH_SEASON.md)
 
 ## Komutlar
 

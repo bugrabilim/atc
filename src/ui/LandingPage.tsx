@@ -4,6 +4,8 @@ import type { ScenarioId } from '../engine/types';
 import { ACADEMY_LESSONS, type AcademyLessonId } from '../engine/academy';
 import type { DailyChallenge, ShiftLogEntry } from '../engine/engagement';
 import { DailyChallengePanel } from './DailyChallengePanel';
+import type { CareerEpisode, CareerEpisodeId, CareerOutcomeTier } from '../engine/careerSeason';
+import { CareerSeasonPanel } from './CareerSeasonPanel';
 
 interface LandingPageProps {
   scenarios: GameScenario[];
@@ -17,13 +19,16 @@ interface LandingPageProps {
   currentDailyStreak: number;
   bestDailyStreak: number;
   logbook: ShiftLogEntry[];
+  completedCareerEpisodeIds: CareerEpisodeId[];
+  careerBestOutcomes: Partial<Record<CareerEpisodeId, CareerOutcomeTier>>;
   onStart: (scenario: GameScenario) => void;
   onResume: () => void;
   onAcademyStart: (lessonId: AcademyLessonId) => void;
   onDailyChallengeStart: () => void;
+  onCareerEpisodeStart: (episode: CareerEpisode) => void;
 }
 
-export function LandingPage({ scenarios, selectedScenario, unlockedScenarioIds, scenarioBestScores, savedSession, completedAcademyLessonIds, dailyChallenge, dailyChallengeCompleted, currentDailyStreak, bestDailyStreak, logbook, onStart, onResume, onAcademyStart, onDailyChallengeStart }: LandingPageProps) {
+export function LandingPage({ scenarios, selectedScenario, unlockedScenarioIds, scenarioBestScores, savedSession, completedAcademyLessonIds, dailyChallenge, dailyChallengeCompleted, currentDailyStreak, bestDailyStreak, logbook, completedCareerEpisodeIds, careerBestOutcomes, onStart, onResume, onAcademyStart, onDailyChallengeStart, onCareerEpisodeStart }: LandingPageProps) {
   const firstUnlocked = scenarios.find((item) => unlockedScenarioIds.includes(item.id as ScenarioId)) ?? selectedScenario;
   const [airportQuery, setAirportQuery] = useState('');
   const [showAllAirports, setShowAllAirports] = useState(false);
@@ -38,7 +43,7 @@ export function LandingPage({ scenarios, selectedScenario, unlockedScenarioIds, 
       <header className="landing-header">
         <nav className="landing-nav" aria-label="Primary navigation">
           <a className="landing-brand" href="#top" aria-label="Airspace Control home"><span className="landing-brand__mark">✦</span><span><strong>AIRSPACE CONTROL</strong><small>BY BUMBA GAMES</small></span></a>
-          <div className="landing-nav__links"><a href="#experience">Experience</a><a href="#daily">Daily</a><a href="#academy">Academy</a><a href="#airports">Airports</a><a href="#how">How it works</a></div>
+          <div className="landing-nav__links"><a href="#experience">Experience</a><a href="#career">Career</a><a href="#daily">Daily</a><a href="#academy">Academy</a><a href="#airports">Airports</a><a href="#how">How it works</a></div>
           <button type="button" className="landing-nav__cta" onClick={() => onStart(firstUnlocked)}>START FREE <span>↗</span></button>
         </nav>
       </header>
@@ -49,6 +54,8 @@ export function LandingPage({ scenarios, selectedScenario, unlockedScenarioIds, 
       </section>
 
       <section id="experience" className="landing-section landing-experience" aria-labelledby="experience-title"><div className="landing-section__heading"><span className="landing-kicker">WHY AIRSPACE CONTROL?</span><h2 id="experience-title">More than a game.<br /><em>A real control room mindset.</em></h2></div><div className="landing-feature-grid"><article className="landing-feature"><span className="landing-feature__icon">⌁</span><h3>Take the scope</h3><p>Track inbound traffic, select flights and guide every aircraft through an intuitive command panel.</p></article><article className="landing-feature"><span className="landing-feature__icon">↗</span><h3>Your calls matter</h3><p>Make the right heading, altitude, speed and runway decisions at exactly the right moment.</p></article><article className="landing-feature"><span className="landing-feature__icon">✦</span><h3>Build your career</h3><p>Master every airport, unlock new scenarios and complete a career collection of 52 achievements.</p></article></div></section>
+
+      <CareerSeasonPanel completedEpisodeIds={completedCareerEpisodeIds} bestOutcomes={careerBestOutcomes} logbook={logbook} onStart={onCareerEpisodeStart} />
 
       <DailyChallengePanel challenge={dailyChallenge} completed={dailyChallengeCompleted} currentStreak={currentDailyStreak} bestStreak={bestDailyStreak} logbook={logbook} onStart={onDailyChallengeStart} />
 
