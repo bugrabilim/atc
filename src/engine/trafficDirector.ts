@@ -78,10 +78,16 @@ function planArrival(index: number, activeAircraft: readonly Aircraft[], world: 
   const forceHeavy = heavyCadence > 0 && (scheduleIndex + 1) % heavyCadence === 0;
   const fleetPool = forceHeavy ? arrivalFleet.filter((item) => item.performance === heavy) : arrivalFleet;
   const fleet = fleetPool[variant % fleetPool.length];
-  const altitude = 7000 + ((variant * 1100) % 7000);
-  const speed = fleet.performance === heavy
+  const entryFix = world.fixes.find((fix) => fix.id === entry.id);
+  const generatedAltitude = 7000 + ((variant * 1100) % 7000);
+  const altitude = Math.max(
+    entryFix?.minimumAltitudeFt ?? 0,
+    Math.min(entryFix?.maximumAltitudeFt ?? Number.POSITIVE_INFINITY, generatedAltitude),
+  );
+  const generatedSpeed = fleet.performance === heavy
     ? 240 + ((variant * 11) % 38)
     : 225 + ((variant * 17) % 68);
+  const speed = Math.min(entryFix?.maximumSpeedKt ?? Number.POSITIVE_INFINITY, generatedSpeed);
   const heading = (headingTo(entry.position, { x: 0, y: 0 }) + ((variant % 3) - 1) * 12 + 360) % 360;
   const aircraft = createAircraft({
     callsign,

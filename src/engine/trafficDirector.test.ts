@@ -90,6 +90,9 @@ describe('traffic director', () => {
     expect(plan.aircraft.phase).toBe('arrival');
     expect(['IRNMN2', 'RYDRR2', 'WAYVE1']).toContain(plan.aircraft.navigation?.procedure);
     expect(plan.message).toContain('gelişinde');
+    const entryFix = activeWorld.fixes.find((fix) => fix.id === plan.aircraft.navigation?.fixIds[0]);
+    expect(plan.aircraft.altitude).toBeGreaterThanOrEqual(entryFix?.minimumAltitudeFt ?? 0);
+    expect(plan.aircraft.speed).toBeLessThanOrEqual(entryFix?.maximumSpeedKt ?? Number.POSITIVE_INFINITY);
   });
 
   it('guarantees a heavy arrival at an airport-specific cadence and displays the named feed', () => {
