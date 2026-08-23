@@ -41,6 +41,26 @@ describe('airport scenario catalog', () => {
     }
   });
 
+  it('loads verified flagship procedures as executable routes', () => {
+    const expected = {
+      ist: ['RIXEN1W', 'VICEN1S'],
+      lhr: ['BNN-STACK', 'LAM-STACK', 'BIG-STACK', 'OCK-STACK'],
+      lax: ['IRNMN2', 'RYDRR2', 'WAYVE1'],
+      jfk: ['CAMRN5', 'PARCH4', 'PAWLN1', 'PUCKY1'],
+      atl: ['SITTH3-09', 'SITTH3-08', 'GNDLF3'],
+    } as const;
+
+    for (const [airportId, procedureIds] of Object.entries(expected)) {
+      const scenario = scenarioCatalog.find((item) => item.id === airportId);
+      expect(scenario, airportId).toBeTruthy();
+      for (const procedureId of procedureIds) {
+        const procedure = scenario?.world.procedures.find((item) => item.id === procedureId);
+        expect(procedure?.source, `${airportId}/${procedureId}`).toBe('published');
+        expect(procedure?.fixIds.length, `${airportId}/${procedureId}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
   it('can generate arrivals and departures from each packaged flow', () => {
     for (const scenario of scenarioCatalog) {
       for (const flow of scenario.world.flowConfigurations) {

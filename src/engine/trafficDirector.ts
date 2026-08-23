@@ -67,9 +67,11 @@ function planArrival(index: number, activeAircraft: readonly Aircraft[], world: 
   const runway = chooseArrivalRunway(activeAircraft, world, index, seed);
   const entriesForRunway = world.trafficEntries.filter((entry) => entry.compatibleRunwayIds.includes(runway.id));
   const fallbackEntries = world.trafficEntries;
-  const entryPool = entriesForRunway.length > 0 ? entriesForRunway : fallbackEntries;
+  const publishedEntries = entriesForRunway.filter((entry) => world.procedures.find((procedure) => procedure.id === entry.procedureId)?.source === 'published');
+  const entryPool = publishedEntries.length > 0 ? publishedEntries : entriesForRunway.length > 0 ? entriesForRunway : fallbackEntries;
   const entry = entryPool[trafficVariant(index, seed, 1) % entryPool.length];
   if (!entry) throw new Error('Traffic director requires at least one boundary entry');
+  const procedure = world.procedures.find((item) => item.id === entry.procedureId);
 
   const variant = trafficVariant(index, seed, 2);
   const heavyCadence = world.operations?.heavyArrivalEvery ?? 0;
@@ -95,10 +97,13 @@ function planArrival(index: number, activeAircraft: readonly Aircraft[], world: 
     turnDirection: 'shortest',
     performance: fleet.performance,
     assignedRunway: runway.id,
+    navigation: procedure?.source === 'published'
+      ? { mode: 'route', fixIds: [...procedure.fixIds], currentLegIndex: 0, procedure: procedure.id }
+      : undefined,
   });
   return {
     aircraft,
-    message: `${callsign} ${fleet.type} · radar contact · ${world.fixes.find((fix) => fix.id === entry.id)?.label ?? entry.id} sınırı · ${Math.round(altitude / 100)} flight level · planlanan pist ${runway.id} · vektör bekliyor`,
+    message: `${callsign} ${fleet.type} · radar contact · ${world.fixes.find((fix) => fix.id === entry.id)?.label ?? entry.id} sınırı · ${Math.round(altitude / 100)} flight level · planlanan pist ${runway.id}${procedure?.source === 'published' ? ` · ${procedure.id} gelişinde` : ' · vektör bekliyor'}`,
   };
 }
 
@@ -109,7 +114,9 @@ function planDeparture(index: number, activeAircraft: readonly Aircraft[], world
       || trafficVariant(index, seed, first.id.length + 11) % 5 - trafficVariant(index, seed, second.id.length + 11) % 5
       || first.id.localeCompare(second.id)
   ))[0];
-  const exit = world.trafficExits[trafficVariant(index, seed, 8) % world.trafficExits.length];
+  const compatibleExits = world.trafficExits.filter((item) => !item.compatibleRunwayIds || item.compatibleRunwayIds.includes(runway?.id ?? ''));
+  const exitPool = compatibleExits.length > 0 ? compatibleExits : world.trafficExits;
+  const exit = exitPool[trafficVariant(index, seed, 8) % exitPool.length];
   const procedure = world.procedures.find((item) => item.id === exit?.procedureId);
   if (!runway || !procedure) return null;
   const variant = trafficVariant(index, seed, 9);

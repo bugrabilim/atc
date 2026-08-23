@@ -55,12 +55,19 @@ export function CommandPanel({
   const selected = aircraft.find((item) => item.callsign === selectedCallsign) ?? null;
   const modeConfig = difficultyConfig(mode);
   const primaryFix = fixIds.find((item) => item.startsWith('FINAL')) ?? fixIds[0];
-  const matchingProcedure = selected ? procedures.find((item) => item.kind === selected.phase) : undefined;
+  const matchingProcedures = selected ? procedures.filter((item) => (
+    item.kind === selected.phase
+    && (!item.compatibleRunwayIds?.length || !selected.assignedRunway || item.compatibleRunwayIds.includes(selected.assignedRunway))
+    && item.source === 'published'
+  )).slice(0, 4) : [];
   const quickCommands = [
     ...runwayIds.slice(0, 2).map((runwayId) => ({ label: `ILS ${runwayId}`, command: `ILS ${runwayId}` })),
     ...(mode !== 'beginner' ? runwayIds.slice(0, 2).map((runwayId) => ({ label: `LOC ${runwayId}`, command: `LOC ${runwayId}` })) : []),
     ...(modeConfig.showAdvancedCommands && primaryFix ? [{ label: `DCT ${primaryFix}`, command: `DCT ${primaryFix}` }, { label: `HOLD ${primaryFix}`, command: `HOLD ${primaryFix}` }] : []),
-    ...(modeConfig.showAdvancedCommands && matchingProcedure ? [{ label: `${matchingProcedure.kind === 'arrival' ? 'STAR' : 'SID'} ${matchingProcedure.id}`, command: `${matchingProcedure.kind === 'arrival' ? 'STAR' : 'SID'} ${matchingProcedure.id}` }] : []),
+    ...(modeConfig.showAdvancedCommands ? matchingProcedures.map((procedure) => ({
+      label: `${procedure.kind === 'arrival' ? 'STAR' : 'SID'} ${procedure.id}`,
+      command: `${procedure.kind === 'arrival' ? 'STAR' : 'SID'} ${procedure.id}`,
+    })) : []),
     ...(selected?.approach ? [{ label: 'GO-AROUND', command: 'GA' }] : []),
     ...(mode !== 'beginner' ? baseQuickCommands : [{ label: 'NORMAL SPD', command: 'RN' }]),
   ];

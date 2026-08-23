@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { guideNavigation } from './navigation';
-import { initialState, world } from './scenario';
+import { initialState, scenarioCatalog, world } from './scenario';
 
 describe('guideNavigation', () => {
   it('turns a direct clearance toward its active fix', () => {
@@ -42,5 +42,19 @@ describe('guideNavigation', () => {
     // From the eastern edge of a right-hand hold, the tangential target is south.
     expect(result.aircraft.targetHeading).toBeGreaterThan(165);
     expect(result.aircraft.targetHeading).toBeLessThan(195);
+  });
+
+  it('applies published altitude and speed constraints on an active leg', () => {
+    const laxWorld = scenarioCatalog.find((scenario) => scenario.id === 'lax')?.world;
+    if (!laxWorld) throw new Error('Missing LAX world');
+    const aircraft = structuredClone(initialState.aircraft[1]);
+    aircraft.targetAltitude = 16000;
+    aircraft.targetSpeed = 290;
+    aircraft.navigation = { mode: 'route', fixIds: ['CLIFY'], currentLegIndex: 0, procedure: 'RYDRR2' };
+
+    const result = guideNavigation(aircraft, laxWorld);
+
+    expect(result.aircraft.targetAltitude).toBe(8000);
+    expect(result.aircraft.targetSpeed).toBe(210);
   });
 });

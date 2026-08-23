@@ -24,6 +24,17 @@ export function guideNavigation(aircraft: Aircraft, world: RadarWorld): { aircra
   if (!fix) return { aircraft: { ...aircraft, navigation: undefined } };
 
   const fixDistance = distance(aircraft.position, fix.position);
+  const constrainedAircraft = {
+    ...aircraft,
+    targetAltitude: fix.maximumAltitudeFt !== undefined && aircraft.targetAltitude > fix.maximumAltitudeFt
+      ? fix.maximumAltitudeFt
+      : fix.minimumAltitudeFt !== undefined && aircraft.targetAltitude < fix.minimumAltitudeFt
+        ? fix.minimumAltitudeFt
+        : aircraft.targetAltitude,
+    targetSpeed: fix.maximumSpeedKt !== undefined
+      ? Math.min(aircraft.targetSpeed, fix.maximumSpeedKt)
+      : aircraft.targetSpeed,
+  };
   if (navigation.mode === 'hold' && navigation.holding) {
     // A stable right-hand orbit gives HOLD a predictable controller tool instead
     // of repeatedly steering straight at the fix. The small radial correction
@@ -36,7 +47,7 @@ export function guideNavigation(aircraft: Aircraft, world: RadarWorld): { aircra
       : normalizeHeading(radial + 90 + radialCorrection);
     return {
       aircraft: {
-        ...aircraft,
+        ...constrainedAircraft,
         targetHeading,
         turnDirection: 'shortest',
       },
@@ -46,20 +57,20 @@ export function guideNavigation(aircraft: Aircraft, world: RadarWorld): { aircra
   if (fixDistance <= FIX_PASS_DISTANCE_NM) {
     if (navigation.mode === 'hold') {
       return {
-        aircraft: { ...aircraft, navigation: { ...navigation, holding: true } },
+        aircraft: { ...constrainedAircraft, navigation: { ...navigation, holding: true } },
         event: eventFor(aircraft, `${aircraft.callsign} · ${fixId} üzerinde hold başladı`),
       };
     }
     if (navigation.mode === 'direct' || navigation.currentLegIndex >= navigation.fixIds.length - 1) {
       return {
-        aircraft: { ...aircraft, navigation: undefined },
+        aircraft: { ...constrainedAircraft, navigation: undefined },
         event: eventFor(aircraft, `${aircraft.callsign} · ${fixId} geçildi, serbest vektör`),
       };
     }
     const nextLegIndex = navigation.currentLegIndex + 1;
     return {
       aircraft: {
-        ...aircraft,
+        ...constrainedAircraft,
         navigation: { ...navigation, currentLegIndex: nextLegIndex },
       },
       event: eventFor(aircraft, `${aircraft.callsign} · ${fixId} geçildi, sonraki nokta ${navigation.fixIds[nextLegIndex]}`),
@@ -68,7 +79,7 @@ export function guideNavigation(aircraft: Aircraft, world: RadarWorld): { aircra
 
   return {
     aircraft: {
-      ...aircraft,
+      ...constrainedAircraft,
       targetHeading: bearingTo(aircraft.position, fix.position),
       turnDirection: 'shortest',
     },

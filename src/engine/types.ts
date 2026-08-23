@@ -114,6 +114,10 @@ export interface Fix {
   /** Human-readable chart label. The stable id remains the command/save key. */
   label?: string;
   position: Vector2;
+  /** Optional chart-derived crossing constraints used by route guidance. */
+  minimumAltitudeFt?: number;
+  maximumAltitudeFt?: number;
+  maximumSpeedKt?: number;
 }
 
 export interface Procedure {
@@ -121,6 +125,8 @@ export interface Procedure {
   kind: 'arrival' | 'departure';
   runwayId?: string;
   fixIds: string[];
+  compatibleRunwayIds?: string[];
+  source?: 'published' | 'game';
 }
 
 export interface TrafficEntry {
@@ -133,6 +139,7 @@ export interface TrafficEntry {
 export interface TrafficExit {
   id: string;
   procedureId: string;
+  compatibleRunwayIds?: string[];
 }
 
 export interface FlowConfiguration {

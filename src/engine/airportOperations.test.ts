@@ -15,7 +15,9 @@ describe('flagship airport operations packs', () => {
       expect(pack.flows).toHaveLength(4);
       expect(pack.sources.length).toBeGreaterThanOrEqual(2);
       expect(pack.sources.every((source) => source.url.startsWith('https://'))).toBe(true);
-      expect(pack.sources.every((source) => source.accessedOn === '2026-08-22')).toBe(true);
+      expect(pack.sources.every((source) => source.accessedOn === '2026-08-24')).toBe(true);
+      expect(pack.procedures.length).toBeGreaterThan(0);
+      expect(pack.procedures.every((procedure) => procedure.fixes.length > 0)).toBe(true);
       expect(pack.gameOnlyNotice).toContain('not for navigation');
       expect(pack.trafficPattern[0]).toBe('arrival');
       expect(pack.trafficPattern[3]).toBe('departure');

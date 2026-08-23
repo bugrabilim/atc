@@ -136,6 +136,36 @@ function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
     { id: `${definition.iata}-NE-DEPARTURE`, kind: 'departure' as const, fixIds: ['EXIT-NE'] },
     { id: `${definition.iata}-SW-DEPARTURE`, kind: 'departure' as const, fixIds: ['EXIT-SW'] },
   ];
+  const publishedFixes = operationsPack?.procedures.flatMap((procedure) => procedure.fixes.map((fix) => ({
+    id: fix.id,
+    label: fix.id,
+    position: pointAtBearing(fix.bearing, fix.distanceNm),
+    minimumAltitudeFt: fix.minimumAltitudeFt,
+    maximumAltitudeFt: fix.maximumAltitudeFt,
+    maximumSpeedKt: fix.maximumSpeedKt,
+  }))) ?? [];
+  const uniquePublishedFixes = [...new Map(publishedFixes.map((fix) => [fix.id, fix])).values()];
+  const publishedProcedures = operationsPack?.procedures.map((procedure) => ({
+    id: procedure.id,
+    kind: procedure.kind,
+    fixIds: procedure.fixes.map((fix) => fix.id),
+    compatibleRunwayIds: [...procedure.compatibleRunwayIds],
+    source: 'published' as const,
+  })) ?? [];
+  const publishedArrivalEntries = publishedProcedures.filter((procedure) => procedure.kind === 'arrival').map((procedure) => {
+    const entryFix = uniquePublishedFixes.find((fix) => fix.id === procedure.fixIds[0])!;
+    return {
+      id: entryFix.id,
+      position: { ...entryFix.position },
+      procedureId: procedure.id,
+      compatibleRunwayIds: [...(procedure.compatibleRunwayIds ?? allRunwayIds)],
+    };
+  });
+  const publishedDepartureExits = publishedProcedures.filter((procedure) => procedure.kind === 'departure').map((procedure) => ({
+    id: procedure.fixIds.at(-1)!,
+    procedureId: procedure.id,
+    compatibleRunwayIds: [...(procedure.compatibleRunwayIds ?? allRunwayIds)],
+  }));
 
   const flowConfigurations = operationsPack?.flows ?? [
       flowForDirection(definition, runways, false, 'primary', 12, 9),
@@ -147,15 +177,16 @@ function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
     sectorName: `${definition.icao} · ${definition.city.toUpperCase()} APPROACH`,
     rangeNm: definition.terrain === 'mountain' || definition.terrain === 'highland' || definition.terrain === 'desert' ? 46 : TRAFFIC_RANGE_NM,
     runways: physicalRunways,
-    fixes: [...boundaryFixes, ...finalFixes, ...exitFixes],
-    procedures: [...vectorProcedures, ...approachProcedures, ...departureProcedures],
-    trafficEntries: boundaryFixes.map((fix) => ({
+    fixes: [...boundaryFixes, ...finalFixes, ...exitFixes, ...uniquePublishedFixes],
+    procedures: [...publishedProcedures, ...vectorProcedures, ...approachProcedures, ...departureProcedures],
+    trafficEntries: [...publishedArrivalEntries, ...boundaryFixes.map((fix) => ({
       id: fix.id,
       position: { ...fix.position },
       procedureId: `${fix.id}-VECTOR`,
       compatibleRunwayIds: allRunwayIds,
-    })),
+    }))],
     trafficExits: [
+      ...publishedDepartureExits,
       { id: 'EXIT-NE', procedureId: `${definition.iata}-NE-DEPARTURE` },
       { id: 'EXIT-SW', procedureId: `${definition.iata}-SW-DEPARTURE` },
     ],

@@ -81,6 +81,17 @@ describe('traffic director', () => {
     }
   });
 
+  it('puts compatible flagship arrivals on their chart-derived route', () => {
+    const laxScenario = scenarioCatalog.find((scenario) => scenario.id === 'lax');
+    if (!laxScenario) throw new Error('Missing LAX scenario');
+    const activeWorld = worldWithFlow(laxScenario.world, 'lax-primary', 10);
+    const plan = planTraffic(0, [], activeWorld, 73);
+
+    expect(plan.aircraft.phase).toBe('arrival');
+    expect(['IRNMN2', 'RYDRR2', 'WAYVE1']).toContain(plan.aircraft.navigation?.procedure);
+    expect(plan.message).toContain('gelişinde');
+  });
+
   it('guarantees a heavy arrival at an airport-specific cadence and displays the named feed', () => {
     const heavyArrival = planTraffic(7, [], world, 73);
     expect(['B789', 'A330', 'B77W', 'A388']).toContain(heavyArrival.aircraft.type);
