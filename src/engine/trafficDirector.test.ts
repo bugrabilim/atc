@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createInitialState, world, worldWithFlow } from './scenario';
+import { createInitialState, scenarioCatalog, world, worldWithFlow } from './scenario';
 import { flowCapacity, planTraffic } from './trafficDirector';
 
 describe('traffic director', () => {
@@ -70,5 +70,21 @@ describe('traffic director', () => {
     expect(runwayIds.size).toBeGreaterThan(1);
     expect(types.size).toBeGreaterThan(2);
     expect(planTraffic(18, [], world, 1459)).toEqual(planTraffic(18, [], world, 1459));
+  });
+
+  it('uses each flagship airport traffic bank instead of one global cadence', () => {
+    for (const airportId of ['ist', 'lhr', 'lax', 'jfk', 'atl'] as const) {
+      const airportWorld = scenarioCatalog.find((scenario) => scenario.id === airportId)?.world;
+      if (!airportWorld?.operations) throw new Error(`Missing operations pack for ${airportId}`);
+      const phases = airportWorld.operations.trafficPattern.map((_, index) => planTraffic(index, [], airportWorld, 17).aircraft.phase);
+      expect(phases).toEqual(airportWorld.operations.trafficPattern);
+    }
+  });
+
+  it('guarantees a heavy arrival at an airport-specific cadence and displays the named feed', () => {
+    const heavyArrival = planTraffic(7, [], world, 73);
+    expect(['B789', 'A330', 'B77W', 'A388']).toContain(heavyArrival.aircraft.type);
+    expect(heavyArrival.aircraft.phase).toBe('arrival');
+    expect(heavyArrival.message).toMatch(/BLACK SEA|ANATOLIA|MARMARA|THRACE/);
   });
 });

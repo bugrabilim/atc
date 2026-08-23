@@ -20,7 +20,20 @@ Mobil ve masaüstü tarayıcılarda çalışan, klasik radar görünümüne sahi
 - Pilot readback kuyruğu ve isteğe bağlı tarayıcı TTS sesi
 - PWA manifesti ve çevrimdışı kabuk
 - Dört zorlukta tamamlanabilir vardiya hedefleri ve otomatik debrief
-- İstanbul paralel akış, çapraz rüzgâr ve tek pist senaryo paketleri
+- İstanbul, Heathrow, LAX, JFK ve Atlanta için kaynaklı ve birbirinden farklı dört akışlı operasyon paketleri
+- İki–üç dakikalık 10 uygulamalı Flight Academy dersi ve kalıcı ders ilerlemesi
+- Telefonda radarı küçültmeyen, büyük dokunma hedefli açılır komut konsolu
+- Her gün aynı seed/akışla üretilen Daily Radar, günlük seri, 30 vardiyalık yerel logbook ve Web Share sonuç kartı
+- Performansa göre üç farklı sonuç üreten, olay tetikleyicili yedi bölümlük `Istanbul Control — First Watch` kariyer sezonu
+
+## Ürün araştırması ve yol haritası
+
+- [Flatout ATC derin araştırma ve işlevsel eşleşme planı](docs/flatout-atc-research-tr.md)
+- [Endless ATC eşleşme raporu](docs/endless-atc-parity-report-tr.md)
+- [Havaalanı veri politikası](docs/AIRPORT_DATA.md)
+- [İlk beş havaalanı operasyon paketi: araştırma ve uygulama kaydı](docs/FLAGSHIP_AIRPORT_PACKS.md)
+- [Daily Radar, streak, logbook ve paylaşım veri modeli](docs/RETENTION_SYSTEMS.md)
+- [Istanbul Control — First Watch sezon tasarımı ve uygulama sözleşmesi](docs/FIRST_WATCH_SEASON.md)
 
 ## Komutlar
 
@@ -94,4 +107,4 @@ Google Play için Android Studio’dan imzalı `.aab`, App Store için Xcode’d
 
 ## Özgünlük ve veri notu
 
-Pist yerleşimi, prosedürler ve çağrı kodları tamamen kurgusaldır. Proje başka bir oyunun kodunu, markasını veya görsel varlıklarını içermez. Oyun gerçek uçuş operasyonu için kullanılmaz.
+Pist kimlikleri ve göreli geometri, `docs/AIRPORT_DATA.md` içinde kaynaklandırılan halka açık veriden türetilir. Taktik sektörler, sınır kapıları, trafik ritmi, olay zamanlaması ve vektör yolları oyun için özgün biçimde uyarlanmıştır; seyrüsefer verisi değildir. Proje başka bir oyunun kodunu, markasını veya görsel varlıklarını içermez. Oyun gerçek uçuş operasyonu için kullanılmaz.

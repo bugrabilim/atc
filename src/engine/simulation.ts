@@ -99,12 +99,25 @@ function trafficCompression(state: GameState, elapsedSeconds: number) {
 
 function operationalFlowChange(state: GameState, world: RadarWorld, elapsedSeconds: number) {
   const config = difficultyConfig(state.mode);
+  const disruption = world.operations?.disruption;
   // Higher difficulties deliberately disrupt a comfortable runway setup once
   // per shift. This creates a real controller decision: preserve a sequence,
   // then absorb a reduced-capacity flow instead of repeating one static board.
-  if (!config.showAdvancedCommands || elapsedSeconds < 210) return null;
+  if (!config.showAdvancedCommands || elapsedSeconds < (disruption?.triggerSeconds ?? 210)) return null;
   if (hasOperationalEvent(state, 'flow-change-')) return null;
   const current = world.flowConfigurations.find((item) => item.id === state.flowId);
+  if (disruption) {
+    const next = world.flowConfigurations.find((item) => item.id === disruption.reducedFlowId);
+    if (!next || !current || next.id === current.id) return null;
+    return {
+      flowId: next.id,
+      event: {
+        id: `flow-change-${disruption.id}-${Math.round(elapsedSeconds)}`,
+        type: 'warning' as const,
+        message: disruption.message,
+      },
+    };
+  }
   const alternatives = world.flowConfigurations.filter((item) => item.id !== state.flowId);
   const next = [...alternatives].sort((first, second) => {
     const firstCapacity = first.arrivalRunwayIds.length + first.departureRunwayIds.length;
@@ -124,9 +137,23 @@ function operationalFlowChange(state: GameState, world: RadarWorld, elapsedSecon
 
 /** Restores a higher-capacity configuration after the disruption window. */
 function operationalFlowRecovery(state: GameState, world: RadarWorld, elapsedSeconds: number) {
-  if (!difficultyConfig(state.mode).showAdvancedCommands || elapsedSeconds < 420) return null;
+  const disruption = world.operations?.disruption;
+  const recoveryAt = disruption ? disruption.triggerSeconds + disruption.durationSeconds : 420;
+  if (!difficultyConfig(state.mode).showAdvancedCommands || elapsedSeconds < recoveryAt) return null;
   if (!hasOperationalEvent(state, 'flow-change-') || hasOperationalEvent(state, 'flow-recovery-')) return null;
   const current = world.flowConfigurations.find((item) => item.id === state.flowId);
+  if (disruption) {
+    const recovered = world.flowConfigurations.find((item) => item.id === disruption.recoveryFlowId);
+    if (!current || !recovered || recovered.id === current.id) return null;
+    return {
+      flowId: recovered.id,
+      event: {
+        id: `flow-recovery-${disruption.id}-${Math.round(elapsedSeconds)}`,
+        type: 'success' as const,
+        message: disruption.recoveryMessage,
+      },
+    };
+  }
   const recovered = [...world.flowConfigurations].sort((first, second) => {
     const firstCapacity = first.arrivalRunwayIds.length + first.departureRunwayIds.length;
     const secondCapacity = second.arrivalRunwayIds.length + second.departureRunwayIds.length;

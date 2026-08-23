@@ -16,6 +16,33 @@ import { controllerCoach, type CoachAdvice } from '../engine/controllerCoach';
 import { restoreSession, serializeSession, type SavedSession } from '../engine/session';
 import { AudioCuePlayer, type AudioCue } from './audioCues';
 import { DIFFICULTY_MODES, difficultyConfig, worldForMode } from '../engine/difficulty';
+import { ACADEMY_LESSONS, createAcademyState, evaluateAcademyLesson, isAcademyLessonId, shouldAdvanceAcademySimulation, type AcademyAction, type AcademyLessonId } from '../engine/academy';
+import { AcademyPanel } from './AcademyPanel';
+import {
+  appendLogbook,
+  bestDailyStreak,
+  createShiftLogEntry,
+  currentDailyStreak,
+  dailyChallengeComplete,
+  dailyChallengeForDate,
+  sanitizeDailyCompletionDates,
+  sanitizeLogbook,
+  shareShiftText,
+  type ShiftLogEntry,
+} from '../engine/engagement';
+import {
+  applyCareerEpisodeEvents,
+  bestCareerOutcome,
+  careerEpisodeById,
+  evaluateCareerEpisode,
+  sanitizeCareerOutcomes,
+  sanitizeCompletedCareerEpisodes,
+  unlockedCareerEpisodeIds,
+  type CareerEpisode,
+  type CareerEpisodeId,
+  type CareerEpisodeResult,
+  type CareerOutcomeTier,
+} from '../engine/careerSeason';
 
 interface CareerStats {
   bestScore: number;
@@ -24,15 +51,27 @@ interface CareerStats {
   completedObjectives: number;
   badges: string[];
   scenarioBestScores: Record<string, number>;
+  completedDailyDates: string[];
+  logbook: ShiftLogEntry[];
+  completedCareerEpisodeIds: CareerEpisodeId[];
+  careerBestOutcomes: Partial<Record<CareerEpisodeId, CareerOutcomeTier>>;
 }
 
 const CAREER_STORAGE_KEY = 'airspace-control-career-v1';
 const SESSION_STORAGE_KEY = 'airspace-control-session-v1';
+const ACADEMY_STORAGE_KEY = 'airspace-control-academy-v1';
+
+function emptyCareerStats(): CareerStats {
+  return {
+    bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0, badges: [], scenarioBestScores: {},
+    completedDailyDates: [], logbook: [], completedCareerEpisodeIds: [], careerBestOutcomes: {},
+  };
+}
 
 function loadCareerStats(): CareerStats {
   try {
     const value = window.localStorage.getItem(CAREER_STORAGE_KEY);
-    if (!value) return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0, badges: [], scenarioBestScores: {} };
+    if (!value) return emptyCareerStats();
     const parsed = JSON.parse(value) as Partial<CareerStats>;
     return {
       bestScore: typeof parsed.bestScore === 'number' ? parsed.bestScore : 0,
@@ -43,9 +82,13 @@ function loadCareerStats(): CareerStats {
       scenarioBestScores: parsed.scenarioBestScores && typeof parsed.scenarioBestScores === 'object'
         ? Object.fromEntries(Object.entries(parsed.scenarioBestScores).filter(([, score]) => typeof score === 'number' && Number.isFinite(score) && score >= 0))
         : {},
+      completedDailyDates: sanitizeDailyCompletionDates(parsed.completedDailyDates),
+      logbook: sanitizeLogbook(parsed.logbook),
+      completedCareerEpisodeIds: sanitizeCompletedCareerEpisodes(parsed.completedCareerEpisodeIds),
+      careerBestOutcomes: sanitizeCareerOutcomes(parsed.careerBestOutcomes),
     };
   } catch {
-    return { bestScore: 0, bestLandings: 0, completedShifts: 0, completedObjectives: 0, badges: [], scenarioBestScores: {} };
+    return emptyCareerStats();
   }
 }
 
@@ -63,8 +106,40 @@ function loadSavedSession(): SavedSession | null {
   }
 }
 
+function loadAcademyProgress(): AcademyLessonId[] {
+  try {
+    const value = window.localStorage.getItem(ACADEMY_STORAGE_KEY);
+    if (!value) return [];
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed)
+      ? [...new Set(parsed.filter((item): item is AcademyLessonId => typeof item === 'string' && isAcademyLessonId(item)))]
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 export function App() {
   const [savedSession] = useState<SavedSession | null>(loadSavedSession);
+  const [gameStarted, setGameStarted] = useState(() => Boolean(savedSession) || window.location.hostname === 'atc-tr-play.vercel.app');
+  const [todayDailyChallenge] = useState(() => dailyChallengeForDate(new Date(), scenarioCatalog));
+  const [activeDailyChallengeId, setActiveDailyChallengeId] = useState<string | null>(() => (
+    !savedSession?.careerEpisodeId
+      && savedSession?.dailyChallengeId === todayDailyChallenge.id
+      && savedSession.scenarioId === todayDailyChallenge.scenarioId
+      && savedSession.state.mode === todayDailyChallenge.mode
+      && savedSession.state.flowId === todayDailyChallenge.flowId
+      ? todayDailyChallenge.id
+      : null
+  ));
+  const [activeCareerEpisodeId, setActiveCareerEpisodeId] = useState<CareerEpisodeId | null>(() => {
+    const episode = careerEpisodeById(savedSession?.careerEpisodeId);
+    return episode
+      && savedSession?.scenarioId === episode.scenarioId
+      && savedSession.state.mode === episode.mode
+      ? episode.id
+      : null;
+  });
   const [scenario, setScenario] = useState<GameScenario>(() => scenarioCatalog.find((item) => item.id === savedSession?.scenarioId) ?? defaultScenario);
   const [state, setState] = useState<GameState>(() => savedSession?.state ?? createInitialState(defaultScenario, 'beginner'));
   const [career, setCareer] = useState<CareerStats>(loadCareerStats);
@@ -77,19 +152,34 @@ export function App() {
     message: savedSession ? 'Kaydedilmiş vardiya duraklatıldı. Devam ile aynı trafikten sürdürebilirsin.' : 'Uçağa dokun, hızlı komut seç veya klavyeden komut yaz. Çağrı kodunun ilk harflerini yazıp Tab ile tamamlayabilirsin.',
   });
   const [debriefOpen, setDebriefOpen] = useState(false);
+  const [debriefLogEntry, setDebriefLogEntry] = useState<ShiftLogEntry | null>(null);
+  const [debriefCareerResult, setDebriefCareerResult] = useState<CareerEpisodeResult | null>(null);
+  const [shareFeedback, setShareFeedback] = useState('');
   const [landingOpen, setLandingOpen] = useState(() => window.location.hostname !== 'atc-tr-play.vercel.app');
   const [newAchievementIds, setNewAchievementIds] = useState<string[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [academyLessonId, setAcademyLessonId] = useState<AcademyLessonId | null>(null);
+  const [academyCompletedLessonIds, setAcademyCompletedLessonIds] = useState<AcademyLessonId[]>(loadAcademyProgress);
   const lastSpokenEvent = useRef<string | null>(null);
   const lastCuedEvent = useRef<string | null>(null);
   const shiftRecorded = useRef(false);
   const audioPlayer = useRef<AudioCuePlayer | null>(null);
+  const academyLessonRef = useRef<AcademyLessonId | null>(null);
+  const activeDailyChallengeRef = useRef<string | null>(activeDailyChallengeId);
+  const activeCareerEpisodeRef = useRef<CareerEpisodeId | null>(activeCareerEpisodeId);
+  const gameStartedRef = useRef(gameStarted);
+  const academyCompletionHandled = useRef(false);
+  const preAcademySnapshot = useRef<{ scenario: GameScenario; state: GameState; dailyChallengeId: string | null; careerEpisodeId: CareerEpisodeId | null } | null>(null);
+  const activeDailyChallenge = activeDailyChallengeId === todayDailyChallenge.id ? todayDailyChallenge : null;
+  const activeCareerEpisode = careerEpisodeById(activeCareerEpisodeId);
   const activeWorld = useMemo(() => worldWithFlow(worldForMode(scenario.world, state.mode), state.flowId, state.peakSkill), [scenario.world, state.flowId, state.mode, state.peakSkill]);
   const activeFlow = activeWorld.flowConfigurations.find((item) => item.id === state.flowId) ?? activeWorld.flowConfigurations[0];
-  const goal = useMemo(() => shiftGoal(state.mode), [state.mode]);
+  const goal = useMemo(() => activeCareerEpisode?.goal ?? activeDailyChallenge?.goal ?? shiftGoal(state.mode), [activeCareerEpisode, activeDailyChallenge, state.mode]);
   const progression = useMemo(() => careerProgression(career.badges, career.scenarioBestScores), [career.badges, career.scenarioBestScores]);
+  const dailyStreak = useMemo(() => currentDailyStreak(career.completedDailyDates), [career.completedDailyDates]);
+  const dailyBestStreak = useMemo(() => bestDailyStreak(career.completedDailyDates), [career.completedDailyDates]);
   const activeArrivalRunways = activeWorld.runways.filter((item) => item.active && (item.operation === 'arrival' || item.operation === 'mixed'));
-  const trainingAircraft = scenario.initialAircraft.find((item) => item.phase === 'arrival');
+  const trainingAircraft = state.aircraft.find((item) => item.phase === 'arrival');
 
   useEffect(() => {
     stateRef.current = state;
@@ -103,9 +193,31 @@ export function App() {
     careerRef.current = career;
   }, [career]);
 
+  useEffect(() => {
+    academyLessonRef.current = academyLessonId;
+  }, [academyLessonId]);
+
+  useEffect(() => {
+    activeDailyChallengeRef.current = activeDailyChallengeId;
+  }, [activeDailyChallengeId]);
+
+  useEffect(() => {
+    activeCareerEpisodeRef.current = activeCareerEpisodeId;
+  }, [activeCareerEpisodeId]);
+
+  useEffect(() => {
+    gameStartedRef.current = gameStarted;
+  }, [gameStarted]);
+
   const persistSession = useCallback(() => {
+    if (academyLessonRef.current || !gameStartedRef.current) return;
     try {
-      window.localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(scenarioRef.current.id, stateRef.current));
+      window.localStorage.setItem(SESSION_STORAGE_KEY, serializeSession(
+        scenarioRef.current.id,
+        stateRef.current,
+        activeDailyChallengeRef.current ?? undefined,
+        activeCareerEpisodeRef.current ?? undefined,
+      ));
     } catch {
       // Storage can be unavailable in private or quota-limited browser contexts.
     }
@@ -122,6 +234,7 @@ export function App() {
   }, [persistSession]);
 
   useEffect(() => {
+    if (academyLessonId) return;
     setCareer((current) => {
       const next = {
         ...current,
@@ -136,43 +249,79 @@ export function App() {
       window.localStorage.setItem(CAREER_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
-  }, [scenario.id, state.landed, state.score]);
+  }, [academyLessonId, scenario.id, state.landed, state.score]);
 
   useEffect(() => {
-    if (!debriefOpen || shiftRecorded.current) return;
+    if (academyLessonId || !debriefOpen || shiftRecorded.current) return;
     shiftRecorded.current = true;
     const objectiveComplete = goalComplete(state, goal);
     const awards = earnedAwards(state, goal);
+    const report = buildDebrief(state, goal);
+    const completedDaily = activeDailyChallenge ? dailyChallengeComplete(state, activeDailyChallenge) : false;
+    const careerResult = activeCareerEpisode ? evaluateCareerEpisode(state, activeCareerEpisode, report) : null;
+    const logEntry = createShiftLogEntry(
+      scenario,
+      state,
+      report,
+      activeDailyChallenge?.id,
+      new Date(),
+      activeCareerEpisode && careerResult ? {
+        episodeId: activeCareerEpisode.id,
+        narrative: careerResult.narrative,
+        performanceFlags: careerResult.flags,
+      } : undefined,
+    );
+    setDebriefLogEntry(logEntry);
+    setDebriefCareerResult(careerResult);
+    setShareFeedback('');
     setNewAchievementIds(awards.map((award) => award.id).filter((id) => !careerRef.current.badges.includes(id)));
     setCareer((current) => {
+      const completedDailyDates = completedDaily
+        ? sanitizeDailyCompletionDates([...current.completedDailyDates, activeDailyChallenge!.dateKey])
+        : current.completedDailyDates;
+      const completedCareerEpisodeIds = activeCareerEpisode && careerResult?.complete
+        ? sanitizeCompletedCareerEpisodes([...current.completedCareerEpisodeIds, activeCareerEpisode.id])
+        : current.completedCareerEpisodeIds;
+      const careerBestOutcomes = activeCareerEpisode && careerResult
+        ? { ...current.careerBestOutcomes, [activeCareerEpisode.id]: bestCareerOutcome(current.careerBestOutcomes[activeCareerEpisode.id], careerResult.tier) }
+        : current.careerBestOutcomes;
       const next = {
         ...current,
         completedShifts: current.completedShifts + 1,
         completedObjectives: current.completedObjectives + (objectiveComplete ? 1 : 0),
         badges: [...new Set([...current.badges, ...awards.map((award) => award.id)])],
+        completedDailyDates,
+        completedCareerEpisodeIds,
+        careerBestOutcomes,
+        logbook: appendLogbook(current.logbook, logEntry),
       };
       window.localStorage.setItem(CAREER_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
-  }, [debriefOpen, goal, state]);
+  }, [academyLessonId, activeCareerEpisode, activeDailyChallenge, debriefOpen, goal, scenario, state]);
 
   useEffect(() => {
+    if (landingOpen) return;
     let previous = performance.now();
     const timer = window.setInterval(() => {
       const now = performance.now();
       const dt = (now - previous) / 1000;
       previous = now;
-      setState((current) => stepGame(current, activeWorld, dt));
+      setState((current) => {
+        if (!shouldAdvanceAcademySimulation(current, academyLessonId)) return current;
+        const stepped = stepGame(current, activeWorld, dt);
+        return activeCareerEpisode ? applyCareerEpisodeEvents(stepped, activeCareerEpisode) : stepped;
+      });
     }, 33);
     return () => window.clearInterval(timer);
-  }, [activeWorld]);
+  }, [academyLessonId, activeCareerEpisode, activeWorld, landingOpen]);
 
   useEffect(() => {
-    if (!debriefOpen && goalComplete(state, goal)) {
+    if (!academyLessonId && !debriefOpen && goalComplete(state, goal)) {
       setState((current) => ({ ...current, paused: true }));
       setDebriefOpen(true);
     }
-  }, [debriefOpen, goal, state]);
+  }, [academyLessonId, debriefOpen, goal, state]);
 
   const playCue = useCallback((cue: AudioCue) => {
     if (!audioEnabled) return;
@@ -182,6 +331,32 @@ export function App() {
     // interaction unlocks all later radio and warning cues automatically.
     void audioPlayer.current.unlock().then(() => audioPlayer.current?.play(cue));
   }, [audioEnabled]);
+
+  const academyEvaluation = useMemo(
+    () => academyLessonId ? evaluateAcademyLesson(state, activeWorld, academyLessonId) : null,
+    [academyLessonId, activeWorld, state],
+  );
+
+  useEffect(() => {
+    if (!academyLessonId || !academyEvaluation?.complete || academyCompletionHandled.current) return;
+    academyCompletionHandled.current = true;
+    setState((current) => ({ ...current, paused: true }));
+    setAcademyCompletedLessonIds((current) => {
+      if (current.includes(academyLessonId)) return current;
+      const next = [...current, academyLessonId];
+      try { window.localStorage.setItem(ACADEMY_STORAGE_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+      return next;
+    });
+    if (academyLessonId === ACADEMY_LESSONS.at(-1)?.id) {
+      setCareer((current) => {
+        if (current.badges.includes('beginner-complete')) return current;
+        const next = { ...current, badges: [...current.badges, 'beginner-complete'] };
+        try { window.localStorage.setItem(CAREER_STORAGE_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+        return next;
+      });
+    }
+    playCue('landing');
+  }, [academyEvaluation?.complete, academyLessonId, playCue]);
 
   useEffect(() => {
     if (!audioEnabled || !('speechSynthesis' in window)) return;
@@ -222,6 +397,11 @@ export function App() {
     setFeedback({ type: 'info', message: `${callsign} seçildi. Hedef komutu yazabilir veya hızlı komut kullanabilirsin.` });
     playCue('select');
   }, [playCue]);
+
+  const clearAircraftSelection = useCallback(() => {
+    setState((current) => ({ ...current, selectedCallsign: null }));
+    setFeedback({ type: 'info', message: 'Radar izleniyor. Komut vermek için bir uçağa dokun.' });
+  }, []);
 
   const issueCommand = useCallback((input: string) => {
     const snapshot = stateRef.current;
@@ -289,6 +469,12 @@ export function App() {
     if (issueCommand(`${guide.callsign} ${guide.command}`)) setCommand('');
   }, [issueCommand]);
   const coach = controllerCoach(state, activeWorld);
+  const effectiveCoach: CoachAdvice = academyLessonId ? {
+    tone: 'info',
+    label: 'ACADEMY',
+    title: 'DERS HEDEFİNİ TAMAMLA',
+    message: 'Academy kartındaki tek görevi uygula. Normal vardiya koçu ders boyunca devre dışıdır.',
+  } : coach;
   const submitCoachCommand = useCallback((advice: CoachAdvice) => {
     if (!advice.callsign || !advice.command) return;
     if (issueCommand(`${advice.callsign} ${advice.command}`)) setCommand('');
@@ -309,7 +495,17 @@ export function App() {
   const reset = () => {
     shiftRecorded.current = false;
     setNewAchievementIds([]);
-    setState(createInitialState(scenario, stateRef.current.mode));
+    setDebriefLogEntry(null);
+    setDebriefCareerResult(null);
+    setShareFeedback('');
+    const nextState = activeCareerEpisode
+      ? createInitialState(scenario, activeCareerEpisode.mode, activeCareerEpisode.flowId)
+      : activeDailyChallenge
+        ? createInitialState(scenario, activeDailyChallenge.mode, activeDailyChallenge.flowId)
+        : createInitialState(scenario, stateRef.current.mode);
+    if (activeCareerEpisode) nextState.seed = activeCareerEpisode.seed;
+    else if (activeDailyChallenge) nextState.seed = activeDailyChallenge.seed;
+    setState(nextState);
     setCommand('');
     setFeedback({ type: 'info', message: 'Senaryo yeniden başlatıldı.' });
     setDebriefOpen(false);
@@ -323,8 +519,15 @@ export function App() {
     }
     shiftRecorded.current = false;
     setNewAchievementIds([]);
+    setDebriefLogEntry(null);
+    setDebriefCareerResult(null);
+    setShareFeedback('');
+    setActiveDailyChallengeId(null);
+    setActiveCareerEpisodeId(null);
     setScenario(nextScenario);
-    setState(createInitialState(nextScenario, stateRef.current.mode));
+    setAcademyLessonId(null);
+    const nextMode = progression.unlockedModeIds.includes(stateRef.current.mode) ? stateRef.current.mode : 'beginner';
+    setState(createInitialState(nextScenario, nextMode));
     setCommand('');
     setFeedback({ type: 'info', message: `${nextScenario.label} sektörü yüklendi.` });
     setDebriefOpen(false);
@@ -344,7 +547,13 @@ export function App() {
     }
     shiftRecorded.current = false;
     setNewAchievementIds([]);
+    setDebriefLogEntry(null);
+    setDebriefCareerResult(null);
+    setShareFeedback('');
+    setActiveDailyChallengeId(null);
+    setActiveCareerEpisodeId(null);
     const config = difficultyConfig(mode);
+    setAcademyLessonId(null);
     setState(createInitialState(scenario, mode));
     setCommand('');
     setFeedback({ type: 'info', message: `${config.label} modu başladı · ${config.description}` });
@@ -362,17 +571,193 @@ export function App() {
   };
 
   const startFromLanding = (nextScenario: GameScenario) => {
-    if (nextScenario.id !== scenario.id) {
+    preAcademySnapshot.current = null;
+    setAcademyLessonId(null);
+    setActiveDailyChallengeId(null);
+    setActiveCareerEpisodeId(null);
+    if (nextScenario.id !== scenario.id || activeDailyChallengeRef.current || activeCareerEpisodeRef.current) {
       shiftRecorded.current = false;
       setScenario(nextScenario);
-      setState(createInitialState(nextScenario, stateRef.current.mode));
+      const nextMode = progression.unlockedModeIds.includes(stateRef.current.mode) ? stateRef.current.mode : 'beginner';
+      setState(createInitialState(nextScenario, nextMode));
       setCommand('');
+      setDebriefLogEntry(null);
+      setDebriefCareerResult(null);
+      setDebriefOpen(false);
       try { window.localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* storage unavailable */ }
     }
+    setGameStarted(true);
     setLandingOpen(false);
   };
 
-  const resumeFromLanding = () => setLandingOpen(false);
+  const startDailyChallenge = () => {
+    const nextScenario = scenarioCatalog.find((item) => item.id === todayDailyChallenge.scenarioId);
+    if (!nextScenario) return;
+    const nextState = createInitialState(nextScenario, todayDailyChallenge.mode, todayDailyChallenge.flowId);
+    nextState.seed = todayDailyChallenge.seed;
+    shiftRecorded.current = false;
+    preAcademySnapshot.current = null;
+    setNewAchievementIds([]);
+    setDebriefLogEntry(null);
+    setDebriefCareerResult(null);
+    setShareFeedback('');
+    setActiveDailyChallengeId(todayDailyChallenge.id);
+    setActiveCareerEpisodeId(null);
+    setAcademyLessonId(null);
+    setScenario(nextScenario);
+    setState(nextState);
+    setCommand('');
+    setFeedback({ type: 'info', message: `${todayDailyChallenge.goal.label} başladı · ${todayDailyChallenge.flowLabel} · sıfır ayırma kaybı.` });
+    setDebriefOpen(false);
+    setGameStarted(true);
+    setLandingOpen(false);
+    try { window.localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* storage unavailable */ }
+  };
+
+  const startCareerEpisode = (episode: CareerEpisode) => {
+    const unlockedIds = unlockedCareerEpisodeIds(careerRef.current.completedCareerEpisodeIds);
+    if (!unlockedIds.includes(episode.id)) return;
+    const nextScenario = scenarioCatalog.find((item) => item.id === episode.scenarioId);
+    if (!nextScenario) return;
+    const nextState = createInitialState(nextScenario, episode.mode, episode.flowId);
+    nextState.seed = episode.seed;
+    shiftRecorded.current = false;
+    preAcademySnapshot.current = null;
+    setNewAchievementIds([]);
+    setDebriefLogEntry(null);
+    setDebriefCareerResult(null);
+    setShareFeedback('');
+    setActiveDailyChallengeId(null);
+    setActiveCareerEpisodeId(episode.id);
+    setAcademyLessonId(null);
+    setScenario(nextScenario);
+    setState(nextState);
+    setCommand('');
+    setFeedback({ type: 'info', message: `${episode.goal.label} başladı · ${episode.titleTr} · ${episode.focusTr}.` });
+    setDebriefOpen(false);
+    setGameStarted(true);
+    setLandingOpen(false);
+    try { window.localStorage.removeItem(SESSION_STORAGE_KEY); } catch { /* storage unavailable */ }
+  };
+
+  const resumeFromLanding = () => {
+    setGameStarted(true);
+    setLandingOpen(false);
+  };
+
+  const returnToLanding = () => {
+    const pausedState = { ...stateRef.current, paused: true };
+    stateRef.current = pausedState;
+    setState(pausedState);
+    persistSession();
+    setLandingOpen(true);
+  };
+
+  const shareDebrief = async () => {
+    const report = buildDebrief(state, goal);
+    const careerResult = activeCareerEpisode ? evaluateCareerEpisode(state, activeCareerEpisode, report) : null;
+    const entry = debriefLogEntry ?? createShiftLogEntry(
+      scenario,
+      state,
+      report,
+      activeDailyChallenge?.id,
+      new Date(),
+      activeCareerEpisode && careerResult ? {
+        episodeId: activeCareerEpisode.id,
+        narrative: careerResult.narrative,
+        performanceFlags: careerResult.flags,
+      } : undefined,
+    );
+    const completedDates = activeDailyChallenge && dailyChallengeComplete(state, activeDailyChallenge)
+      ? sanitizeDailyCompletionDates([...career.completedDailyDates, activeDailyChallenge.dateKey])
+      : career.completedDailyDates;
+    const text = shareShiftText(entry, currentDailyStreak(completedDates));
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Airspace Control shift report', text });
+        setShareFeedback('SONUÇ PAYLAŞILDI');
+        return;
+      }
+      if (!navigator.clipboard) throw new Error('Clipboard is unavailable');
+      await navigator.clipboard.writeText(text);
+      setShareFeedback('SONUÇ KOPYALANDI');
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      try {
+        if (!navigator.clipboard) throw new Error('Clipboard is unavailable');
+        await navigator.clipboard.writeText(text);
+        setShareFeedback('SONUÇ KOPYALANDI');
+      } catch {
+        setShareFeedback('PAYLAŞIM KULLANILAMIYOR');
+      }
+    }
+  };
+
+  const startAcademyLesson = (lessonId: AcademyLessonId) => {
+    if (!academyLessonRef.current) preAcademySnapshot.current = {
+      scenario: scenarioRef.current,
+      state: stateRef.current,
+      dailyChallengeId: activeDailyChallengeRef.current,
+      careerEpisodeId: activeCareerEpisodeRef.current,
+    };
+    academyCompletionHandled.current = false;
+    shiftRecorded.current = false;
+    setNewAchievementIds([]);
+    setScenario(defaultScenario);
+    setState(createAcademyState(defaultScenario, lessonId));
+    setActiveDailyChallengeId(null);
+    setActiveCareerEpisodeId(null);
+    setAcademyLessonId(lessonId);
+    setCommand('');
+    setFeedback({ type: 'info', message: `Academy dersi başladı: ${ACADEMY_LESSONS.find((item) => item.id === lessonId)?.title ?? lessonId}.` });
+    setDebriefOpen(false);
+    setLandingOpen(false);
+  };
+
+  const applyAcademyAction = (action: AcademyAction) => {
+    if (action.kind === 'select') {
+      selectAircraft(action.callsign);
+      return;
+    }
+    if (action.command) issueCommand(`${action.callsign} ${action.command}`);
+  };
+
+  const restartAcademyLesson = () => {
+    if (academyLessonId) startAcademyLesson(academyLessonId);
+  };
+
+  const nextAcademyLesson = () => {
+    if (!academyLessonId) return;
+    const index = ACADEMY_LESSONS.findIndex((item) => item.id === academyLessonId);
+    const next = ACADEMY_LESSONS[index + 1];
+    if (next) {
+      startAcademyLesson(next.id);
+      return;
+    }
+    academyCompletionHandled.current = false;
+    preAcademySnapshot.current = null;
+    setAcademyLessonId(null);
+    setScenario(defaultScenario);
+    setState(createInitialState(defaultScenario, 'beginner'));
+    setActiveDailyChallengeId(null);
+    setActiveCareerEpisodeId(null);
+    setGameStarted(true);
+    setFeedback({ type: 'success', message: 'Academy tamamlandı. İstanbul başlangıç vardiyası hazır.' });
+  };
+
+  const exitAcademy = () => {
+    academyCompletionHandled.current = false;
+    const snapshot = preAcademySnapshot.current;
+    preAcademySnapshot.current = null;
+    setAcademyLessonId(null);
+    if (snapshot) {
+      setScenario(snapshot.scenario);
+      setState(snapshot.state);
+      setActiveDailyChallengeId(snapshot.dailyChallengeId);
+      setActiveCareerEpisodeId(snapshot.careerEpisodeId);
+    }
+    setLandingOpen(true);
+  };
 
   if (landingOpen) {
     return <LandingPage
@@ -380,14 +765,25 @@ export function App() {
       selectedScenario={scenario}
       unlockedScenarioIds={progression.unlockedScenarioIds}
       scenarioBestScores={career.scenarioBestScores}
-      savedSession={Boolean(savedSession)}
+      savedSession={Boolean(savedSession) || gameStarted}
+      completedAcademyLessonIds={academyCompletedLessonIds}
+      dailyChallenge={todayDailyChallenge}
+      dailyChallengeCompleted={career.completedDailyDates.includes(todayDailyChallenge.dateKey)}
+      currentDailyStreak={dailyStreak}
+      bestDailyStreak={dailyBestStreak}
+      logbook={career.logbook}
+      completedCareerEpisodeIds={career.completedCareerEpisodeIds}
+      careerBestOutcomes={career.careerBestOutcomes}
       onStart={startFromLanding}
       onResume={resumeFromLanding}
+      onAcademyStart={startAcademyLesson}
+      onDailyChallengeStart={startDailyChallenge}
+      onCareerEpisodeStart={startCareerEpisode}
     />;
   }
 
   return (
-    <main className="app-shell app-shell--mobile-v2">
+    <main className={`app-shell app-shell--mobile-v2${academyLessonId ? ' app-shell--academy' : ''}`}>
       <header className="top-bar">
         <div className="brand-lockup">
           <span className="brand-mark" aria-hidden="true">◉</span>
@@ -397,10 +793,11 @@ export function App() {
           </div>
         </div>
         <div className="top-status">
-          <span><i className="status-dot" /> SİSTEM AKTİF</span>
-          <span>AKTİF PİSTLER <b>{activeWorld.runways.filter((item) => item.active).map((item) => item.id).join(' · ')}</b></span>
+          <span className="hud-score">PUAN <b>{state.score.toLocaleString('tr-TR')}</b></span>
+          <span>İNİŞ <b>{state.landed}/{goal.targetLandings}</b></span>
+          <span>TRAFİK <b>{state.aircraft.length}</b></span>
+          {activeFlow ? <span>RÜZGÂR <b>{String(activeFlow.windDirection).padStart(3, '0')}°/{activeFlow.windSpeedKt}KT</b></span> : null}
           <span>SAAT <b>{formatClock(state.elapsedSeconds)}</b></span>
-          <span>SKILL <b>{state.skill.toFixed(1)}</b> / PEAK <b>{state.peakSkill.toFixed(1)}</b></span>
         </div>
         <div className="session-actions">
           <button type="button" onClick={togglePause}>{state.paused ? 'DEVAM' : 'DUR'}</button>
@@ -410,28 +807,42 @@ export function App() {
         <details className="session-menu">
           <summary aria-label="Oyun menüsü">MENÜ</summary>
           <div className="session-menu__panel">
-            <span>SENARYO</span>
-          {scenarioCatalog.map((item) => (
-            <button key={item.id} type="button" disabled={!progression.unlockedScenarioIds.includes(item.id)} className={item.id === scenario.id ? 'is-active' : ''} onClick={() => selectScenario(item)}>{progression.unlockedScenarioIds.includes(item.id) ? item.label : `🔒 ${item.label}`}</button>
-          ))}
-          <button type="button" onClick={endShift}>BİTİR</button>
-          <button type="button" onClick={reset}>YENİLE</button>
+          {academyLessonId ? (
+            <>
+              <span>FLIGHT ACADEMY</span>
+              <button type="button" onClick={restartAcademyLesson}>DERSİ YENİDEN BAŞLAT</button>
+              <button type="button" onClick={exitAcademy}>ACADEMY’DEN ÇIK</button>
+            </>
+          ) : (
+            <>
+              <span>SENARYO</span>
+              {scenarioCatalog.map((item) => (
+                <button key={item.id} type="button" disabled={!progression.unlockedScenarioIds.includes(item.id)} className={item.id === scenario.id ? 'is-active' : ''} onClick={() => selectScenario(item)}>{progression.unlockedScenarioIds.includes(item.id) ? item.label : `🔒 ${item.label}`}</button>
+              ))}
+              <button type="button" onClick={returnToLanding}>ANA SAYFA / LOGBOOK</button>
+              <button type="button" onClick={endShift}>BİTİR</button>
+              <button type="button" onClick={reset}>YENİLE</button>
+            </>
+          )}
           </div>
         </details>
       </header>
 
       <div className="operation-bar" aria-label="Operasyon ve hava koşulları">
-        <span className="eyebrow">OPERASYON</span>
+        <span className="eyebrow">{activeCareerEpisode ? `İLK NÖBET · ${String(activeCareerEpisode.number).padStart(2, '0')}/07` : activeDailyChallenge ? 'GÜNLÜK RADAR' : 'OPERASYON'}</span>
         <label>
           Pist akışı
-          <select value={state.flowId} onChange={(event) => selectFlow(event.target.value)}>
+          <select value={state.flowId} disabled={Boolean(activeDailyChallenge || activeCareerEpisode)} onChange={(event) => selectFlow(event.target.value)}>
             {activeWorld.flowConfigurations.map((flow) => <option key={flow.id} value={flow.id}>{flow.label}</option>)}
           </select>
         </label>
         <label>
           Mod
-          <select value={state.mode} onChange={(event) => selectMode(event.target.value as GameMode)}>
-            {DIFFICULTY_MODES.map((mode) => <option key={mode.id} value={mode.id} disabled={!progression.unlockedModeIds.includes(mode.id)}>{progression.unlockedModeIds.includes(mode.id) ? mode.label : `🔒 ${mode.label}`}</option>)}
+          <select value={state.mode} disabled={Boolean(activeDailyChallenge || activeCareerEpisode)} onChange={(event) => selectMode(event.target.value as GameMode)}>
+            {DIFFICULTY_MODES.map((mode) => {
+              const available = progression.unlockedModeIds.includes(mode.id) || activeDailyChallenge?.mode === mode.id || activeCareerEpisode?.mode === mode.id;
+              return <option key={mode.id} value={mode.id} disabled={!available}>{available ? mode.label : `🔒 ${mode.label}`}</option>;
+            })}
           </select>
         </label>
         {activeFlow ? <span>RÜZGÂR <b>{String(activeFlow.windDirection).padStart(3, '0')}°/{activeFlow.windSpeedKt}KT</b></span> : null}
@@ -447,8 +858,9 @@ export function App() {
           aircraft={state.aircraft}
           mode={state.mode}
           scenarioLabel={scenario.label}
-          scenarioBriefing={scenario.briefing}
-          scenarioFocus={scenario.focus}
+          scenarioBriefing={activeCareerEpisode?.briefingTr ?? scenario.briefing}
+          scenarioFocus={activeCareerEpisode?.focusTr ?? scenario.focus}
+          missionPrefix={activeCareerEpisode ? `${activeCareerEpisode.titleTr} · ` : undefined}
           goal={goal}
           score={state.score}
           landed={state.landed}
@@ -472,10 +884,13 @@ export function App() {
           priorityTraffic={state.aircraft.filter((item) => item.priority)}
           events={state.eventLog}
           activeFlowLabel={activeFlow?.label ?? 'STANDART'}
+          operationsStrategy={activeWorld.operations?.strategyLabel}
+          operationsReference={activeWorld.operations?.referenceCycle}
+          procedureReferences={activeWorld.operations?.procedureReferences}
           pendingInstructionCount={state.pendingInstructions.length}
           tutorial={tutorial}
           onTutorialCommand={submitTutorialCommand}
-          coach={coach}
+          coach={effectiveCoach}
           onCoachCommand={submitCoachCommand}
         />
       </div>
@@ -488,7 +903,7 @@ export function App() {
           trackHistory={state.trackHistory}
           pendingCallsigns={state.pendingInstructions.map((item) => item.command.callsign)}
           selectedCallsign={state.selectedCallsign}
-          coach={coach}
+          coach={effectiveCoach}
           onSelect={selectAircraft}
           onApplyCoach={submitCoachCommand}
         />
@@ -500,6 +915,17 @@ export function App() {
           elapsedSeconds={state.elapsedSeconds}
           onSelect={selectAircraft}
         />
+        {academyLessonId && academyEvaluation ? (
+          <AcademyPanel
+            lessonId={academyLessonId}
+            completedLessonIds={academyCompletedLessonIds}
+            evaluation={academyEvaluation}
+            onAction={applyAcademyAction}
+            onRestart={restartAcademyLesson}
+            onNext={nextAcademyLesson}
+            onExit={exitAcademy}
+          />
+        ) : null}
       </div>
 
       <CommandPanel
@@ -509,7 +935,7 @@ export function App() {
         procedures={activeWorld.procedures}
         selectedCallsign={state.selectedCallsign}
         mode={state.mode}
-        coach={coach}
+        coach={effectiveCoach}
         value={command}
         feedback={feedback}
         onChange={setCommand}
@@ -518,8 +944,29 @@ export function App() {
         onCoachCommand={submitCoachCommand}
         onSelect={selectAircraft}
         onNext={selectNextAircraft}
+        onClose={clearAircraftSelection}
       />
-      {debriefOpen ? <DebriefPanel report={buildDebrief(state, goal)} state={state} achievementCount={career.badges.length} achievementTotal={ACHIEVEMENT_TOTAL} newAchievementIds={newAchievementIds} onRestart={reset} onContinue={continueShift} /> : null}
+      {debriefOpen ? <DebriefPanel
+        report={buildDebrief(state, goal)}
+        state={state}
+        achievementCount={career.badges.length}
+        achievementTotal={ACHIEVEMENT_TOTAL}
+        newAchievementIds={newAchievementIds}
+        dailyChallengeLabel={activeDailyChallenge?.goal.label}
+        dailyChallengeCompleted={activeDailyChallenge ? dailyChallengeComplete(state, activeDailyChallenge) : undefined}
+        dailyStreak={activeDailyChallenge && dailyChallengeComplete(state, activeDailyChallenge)
+          ? currentDailyStreak([...career.completedDailyDates, activeDailyChallenge.dateKey])
+          : dailyStreak}
+        careerEpisodeLabel={activeCareerEpisode ? `BÖLÜM ${String(activeCareerEpisode.number).padStart(2, '0')} · ${activeCareerEpisode.titleTr}` : undefined}
+        careerResult={activeCareerEpisode
+          ? debriefCareerResult ?? evaluateCareerEpisode(state, activeCareerEpisode, buildDebrief(state, goal))
+          : null}
+        shareFeedback={shareFeedback}
+        onShare={() => void shareDebrief()}
+        onCareerMap={returnToLanding}
+        onRestart={reset}
+        onContinue={continueShift}
+      /> : null}
     </main>
   );
 }

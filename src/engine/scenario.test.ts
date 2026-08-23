@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { planTraffic } from './trafficDirector';
-import { scenarioCatalog, worldWithFlow } from './scenario';
+import { createInitialState, scenarioCatalog, worldWithFlow } from './scenario';
 import { AIRPORT_DEFINITIONS } from './airportCatalog';
 
 describe('airport scenario catalog', () => {
@@ -51,6 +51,18 @@ describe('airport scenario catalog', () => {
         expect(departure.phase).toBe('departure');
         expect(departure.navigation?.procedure).toBeTruthy();
       }
+    }
+  });
+
+  it('can start directly in a non-primary flow without assigning inactive runways', () => {
+    for (const scenario of scenarioCatalog.filter((item) => item.world.operations)) {
+      const flow = scenario.world.flowConfigurations.at(-1)!;
+      const state = createInitialState(scenario, 'normal', flow.id);
+      const activeWorld = worldWithFlow(scenario.world, flow.id, state.peakSkill);
+      const activeRunwayIds = new Set(activeWorld.runways.filter((runway) => runway.active).map((runway) => runway.id));
+      expect(state.flowId).toBe(flow.id);
+      const inactiveAssignments = state.aircraft.filter((aircraft) => aircraft.assignedRunway && !activeRunwayIds.has(aircraft.assignedRunway));
+      expect(inactiveAssignments, `${scenario.id}/${flow.id}: ${inactiveAssignments.map((aircraft) => `${aircraft.callsign}:${aircraft.assignedRunway}`).join(', ')}`).toHaveLength(0);
     }
   });
 });

@@ -6,6 +6,7 @@ export interface ShiftGoal {
   targetLandings: number;
   targetHandoffs: number;
   maximumLosses: number;
+  targetScore?: number;
 }
 
 export function shiftGoal(mode: GameMode): ShiftGoal {
@@ -18,7 +19,8 @@ export function shiftGoal(mode: GameMode): ShiftGoal {
 export function goalComplete(state: GameState, goal = shiftGoal(state.mode)) {
   return state.landed >= goal.targetLandings
     && state.handoffs >= goal.targetHandoffs
-    && state.metrics.separationLosses <= goal.maximumLosses;
+    && state.metrics.separationLosses <= goal.maximumLosses
+    && (goal.targetScore === undefined || state.score >= goal.targetScore);
 }
 
 export interface TrainingGuide {
@@ -257,7 +259,7 @@ export function buildDebrief(state: GameState, goal = shiftGoal(state.mode)): De
     summary: `${controllerRank(state.score)} · ${Math.floor(state.elapsedSeconds / 60)} dk · peak skill ${state.peakSkill.toFixed(1)}`,
     strengths,
     improvements,
-    objective: `${goal.label}: ${state.landed}/${goal.targetLandings} iniş · ${state.handoffs}/${goal.targetHandoffs} handoff · en çok ${goal.maximumLosses} ayırma kaybı`,
+    objective: `${goal.label}: ${state.landed}/${goal.targetLandings} iniş · ${state.handoffs}/${goal.targetHandoffs} handoff · en çok ${goal.maximumLosses} ayırma kaybı${goal.targetScore === undefined ? '' : ` · ${state.score}/${goal.targetScore} puan`}`,
     objectiveComplete: goalComplete(state, goal),
     awards: earnedAwards(state, goal),
   };

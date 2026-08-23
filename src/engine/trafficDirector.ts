@@ -63,7 +63,7 @@ function chooseArrivalRunway(aircraft: readonly Aircraft[], world: RadarWorld, i
   })[0];
 }
 
-function planArrival(index: number, activeAircraft: readonly Aircraft[], world: RadarWorld, callsign: string, seed: number): TrafficPlan {
+function planArrival(index: number, activeAircraft: readonly Aircraft[], world: RadarWorld, callsign: string, seed: number, scheduleIndex: number): TrafficPlan {
   const runway = chooseArrivalRunway(activeAircraft, world, index, seed);
   const entriesForRunway = world.trafficEntries.filter((entry) => entry.compatibleRunwayIds.includes(runway.id));
   const fallbackEntries = world.trafficEntries;
@@ -72,7 +72,10 @@ function planArrival(index: number, activeAircraft: readonly Aircraft[], world: 
   if (!entry) throw new Error('Traffic director requires at least one boundary entry');
 
   const variant = trafficVariant(index, seed, 2);
-  const fleet = arrivalFleet[variant % arrivalFleet.length];
+  const heavyCadence = world.operations?.heavyArrivalEvery ?? 0;
+  const forceHeavy = heavyCadence > 0 && (scheduleIndex + 1) % heavyCadence === 0;
+  const fleetPool = forceHeavy ? arrivalFleet.filter((item) => item.performance === heavy) : arrivalFleet;
+  const fleet = fleetPool[variant % fleetPool.length];
   const altitude = 7000 + ((variant * 1100) % 7000);
   const speed = fleet.performance === heavy
     ? 240 + ((variant * 11) % 38)
@@ -95,7 +98,7 @@ function planArrival(index: number, activeAircraft: readonly Aircraft[], world: 
   });
   return {
     aircraft,
-    message: `${callsign} ${fleet.type} · radar contact · ${entry.id} sınırı · ${Math.round(altitude / 100)} flight level · planlanan pist ${runway.id} · vektör bekliyor`,
+    message: `${callsign} ${fleet.type} · radar contact · ${world.fixes.find((fix) => fix.id === entry.id)?.label ?? entry.id} sınırı · ${Math.round(altitude / 100)} flight level · planlanan pist ${runway.id} · vektör bekliyor`,
   };
 }
 
@@ -138,10 +141,12 @@ export function planTraffic(index: number, activeAircraft: readonly Aircraft[], 
   const callsign = `${callsignPrefixes[index % callsignPrefixes.length]}${suffix}`;
   const activeArrivals = activeAircraft.filter((item) => item.phase === 'arrival').length;
   const targetArrivalBacklog = Math.max(2, activeArrivalRunways(world).length * 2);
-  const departure = index % 5 === 3 || activeArrivals >= targetArrivalBacklog + 2
+  const trafficPattern = world.operations?.trafficPattern;
+  const scheduledPhase = trafficPattern?.length ? trafficPattern[index % trafficPattern.length] : undefined;
+  const departure = scheduledPhase === 'departure' || (scheduledPhase === undefined && index % 5 === 3) || activeArrivals >= targetArrivalBacklog + 2
     ? planDeparture(variantIndex, activeAircraft, world, callsign, seed)
     : null;
-  return departure ?? planArrival(variantIndex, activeAircraft, world, callsign, seed);
+  return departure ?? planArrival(variantIndex, activeAircraft, world, callsign, seed, index);
 }
 
 export function flowCapacity(world: RadarWorld) {
