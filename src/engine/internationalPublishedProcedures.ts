@@ -122,4 +122,111 @@ const delhi: PublishedProcedurePack = {
   gameOnlyNotice: 'Published route identity, order and represented restrictions are retained; WGS-84 geometry is projected into a compact tactical sector and is not for navigation.',
 };
 
-export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [delhi];
+/*
+ * The Republic of Korea coding tables publish WGS-84 coordinates for every
+ * waypoint. Bearings below are calculated from the RKSI ARP (372745N
+ * 1262621E). A single global projection (8 NM + 45% of chart distance, capped
+ * at 40 NM) preserves the route shape while fitting the 60+ NM entry feeds on
+ * the tactical scope. Intermediate fixes are intentionally sampled in chart
+ * order so the radar remains readable at phone scale.
+ */
+const incheonGukdo2HFixes: ProcedureFixTemplate[] = [
+  { id: 'GUKDO', bearing: 114.5, distanceNm: 36.5, minimumAltitudeFt: 18000 },
+  { id: 'NODUN', bearing: 110.8, distanceNm: 28.8, maximumSpeedKt: 250 },
+  { id: 'SEL', bearing: 97, distanceNm: 18.6, minimumAltitudeFt: 13000 },
+  { id: 'GH034', bearing: 175.1, distanceNm: 13.4, minimumAltitudeFt: 12000 },
+  { id: 'SANLA', bearing: 197.9, distanceNm: 14.7 },
+  { id: 'DH034', bearing: 221.4, distanceNm: 16.2 },
+  { id: 'POMIM', bearing: 234.2, distanceNm: 15.9, minimumAltitudeFt: 3000, maximumSpeedKt: 210 },
+  { id: 'DH030', bearing: 247, distanceNm: 16.1, maximumSpeedKt: 210 },
+  { id: 'DH021', bearing: 280.2, distanceNm: 15.5, maximumSpeedKt: 210 },
+  { id: 'DH024', bearing: 253, distanceNm: 13.5, maximumSpeedKt: 210 },
+  { id: 'DH023', bearing: 233.4, distanceNm: 10.6, maximumSpeedKt: 210 },
+  { id: 'MUNAN', bearing: 299.2, distanceNm: 13.9, minimumAltitudeFt: 2000, maximumAltitudeFt: 4000 },
+];
+
+const incheonKarbu2HFixes: ProcedureFixTemplate[] = [
+  { id: 'KARBU', bearing: 85.5, distanceNm: 34.3, minimumAltitudeFt: 18000 },
+  { id: 'UPSOM', bearing: 88.5, distanceNm: 26.8, maximumSpeedKt: 250 },
+  { id: 'KC066', bearing: 109.2, distanceNm: 26.6, maximumSpeedKt: 250 },
+  ...incheonGukdo2HFixes.slice(2).map((fix) => ({ ...fix })),
+];
+
+const incheonGukdo2EFixes: ProcedureFixTemplate[] = [
+  { id: 'GUKDO', bearing: 114.5, distanceNm: 36.5, minimumAltitudeFt: 18000 },
+  { id: 'KAKSO', bearing: 112.3, distanceNm: 31.4, maximumSpeedKt: 250 },
+  { id: 'GE046', bearing: 110.4, distanceNm: 28.1 },
+  { id: 'ELMAP', bearing: 107.6, distanceNm: 24.9, minimumAltitudeFt: 13000, maximumSpeedKt: 250 },
+  { id: 'TESIK', bearing: 116.9, distanceNm: 19.3, minimumAltitudeFt: 10000, maximumSpeedKt: 210 },
+  { id: 'GE023', bearing: 111.6, distanceNm: 16.9, maximumSpeedKt: 210 },
+  { id: 'GE022', bearing: 106.2, distanceNm: 15.2, maximumSpeedKt: 210 },
+  { id: 'GE016', bearing: 120, distanceNm: 14.2, maximumSpeedKt: 210 },
+  { id: 'GE024', bearing: 131.5, distanceNm: 19.3, maximumSpeedKt: 210 },
+  { id: 'GE028', bearing: 133.3, distanceNm: 21.1, maximumSpeedKt: 210 },
+  { id: 'GE027', bearing: 143.2, distanceNm: 20.9, maximumSpeedKt: 210 },
+  { id: 'ENPIL', bearing: 142.8, distanceNm: 18.2, minimumAltitudeFt: 7000 },
+];
+
+const incheonKarbu2EFixes: ProcedureFixTemplate[] = [
+  { id: 'KARBU', bearing: 85.5, distanceNm: 34.3, minimumAltitudeFt: 18000 },
+  { id: 'EGOBA', bearing: 87.8, distanceNm: 28.2, maximumSpeedKt: 250 },
+  { id: 'KE044', bearing: 97.1, distanceNm: 26.9, minimumAltitudeFt: 13000 },
+  ...incheonGukdo2EFixes.slice(3).map((fix) => ({ ...fix })),
+];
+
+const incheon: PublishedProcedurePack = {
+  airportId: 'icn',
+  packVersion: '2026.08.5',
+  referenceCycle: 'Korea AIM eAIP 2026-08-20 · linked AIRAC AIP AMDT 9/25 STAR package',
+  effectiveFrom: '2025-10-01',
+  generatedFrom: 'Republic of Korea eAIP · RNAV 1 STAR charts and coding tables',
+  procedures: [
+    {
+      id: 'GUKDO2H',
+      kind: 'arrival',
+      compatibleRunwayIds: ['15L', '15R', '16L', '16R'],
+      entryTransition: 'GUKDO',
+      fixes: incheonGukdo2HFixes,
+    },
+    {
+      id: 'KARBU2H',
+      kind: 'arrival',
+      compatibleRunwayIds: ['15L', '15R', '16L', '16R'],
+      entryTransition: 'KARBU',
+      fixes: incheonKarbu2HFixes,
+    },
+    {
+      id: 'GUKDO2E',
+      kind: 'arrival',
+      compatibleRunwayIds: ['33L', '33R', '34L', '34R'],
+      entryTransition: 'GUKDO',
+      fixes: incheonGukdo2EFixes,
+    },
+    {
+      id: 'KARBU2E',
+      kind: 'arrival',
+      compatibleRunwayIds: ['33L', '33R', '34L', '34R'],
+      entryTransition: 'KARBU',
+      fixes: incheonKarbu2EFixes,
+    },
+  ],
+  sources: [
+    {
+      publisher: 'Office of Civil Aviation, Republic of Korea',
+      title: 'RKSI AD 2 aerodrome data and assignment of STAR',
+      url: 'https://aim.koca.go.kr/eaipPub/Package/2026-08-20/html/eAIP/KR-AD-2.RKSI-en-GB.html?amdt=show',
+      purpose: 'Current airport reference point, runway identifiers and H24 STAR assignments',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Office of Civil Aviation, Republic of Korea',
+      title: 'RKSI AD CHART 2-42 to 2-45 RNAV STAR package, AIRAC AIP AMDT 9/25',
+      url: 'https://aim.koca.go.kr/eaipPub/Package/2025-10-01-AIRAC/pdf/AD/RKSI/%282-42%29%20STAR_1755755557.pdf',
+      purpose: 'Published route order, WGS-84 coding tables and represented altitude/speed restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+  ],
+  gameOnlyNotice: 'Published STAR identifiers, sampled waypoint order and represented restrictions are retained; WGS-84 geometry is projected into a compact tactical sector and is not for navigation.',
+};
+
+export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [delhi, incheon];

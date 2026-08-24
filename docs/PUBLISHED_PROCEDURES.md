@@ -1,6 +1,6 @@
 # Published procedure runtime integration
 
-Updated: 2026-08-24 · runtime pack 2026.08.3
+Updated: 2026-08-24 · runtime pack 2026.08.5
 
 ## Product boundary
 
@@ -42,10 +42,11 @@ it is not navigation-grade data and must not be used for flight planning.
 | KPHX | DSERT TWO, EAGUL SIX, HYDRR ONE, PINNG ONE arrivals | FAA CIFP cycle 2608 |
 | KIAH | BAZBL ONE, GESNR TWO, HTOWN THREE, LINKK ONE arrivals | FAA CIFP cycle 2608 |
 | VIDP | SP/ELKUX 6E-6H and BAVOX/POSIG 6A-6D arrivals | AIM India AIP AMDT 07/2026 |
+| RKSI | GUKDO/KARBU 2H and GUKDO/KARBU 2E RNAV arrivals | Korea AIM current assignment / AIRAC AIP AMDT 9/25 charts |
 
 The authoritative URLs and access dates live beside each reviewed operations
-pack, in the generated FAA pack or in the reviewed international pack. Seventeen
-of the 50 playable airports now have published runtime routes; the other 33 continue to be labeled and executed as
+pack, in the generated FAA pack or in the reviewed international pack. Eighteen
+of the 50 playable airports now have published runtime routes; the other 32 continue to be labeled and executed as
 generated vector routes rather than being presented as real procedures.
 
 Cycle 2608 runway records also corrected the SFO 01/19 leading zero and magnetic

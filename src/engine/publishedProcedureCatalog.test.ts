@@ -12,9 +12,43 @@ describe('published procedure catalog', () => {
     expect(PUBLISHED_PROCEDURE_PACKS.map((pack) => pack.airportId)).toEqual([
       'ist', 'lhr', 'lax', 'jfk', 'atl', 'dfw', 'ord', 'den',
       'mco', 'mia', 'las', 'sfo', 'clt', 'sea', 'phx', 'iah',
-      'del',
+      'del', 'icn',
     ]);
     expect(publishedProcedurePackByAirportId.size).toBe(PUBLISHED_PROCEDURE_PACKS.length);
+  });
+
+  it('ships runway-compatible Incheon STARs from the current Korea AIM assignment', () => {
+    const pack = INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS.find((item) => item.airportId === 'icn');
+    expect(pack?.referenceCycle).toContain('Korea AIM eAIP 2026-08-20');
+    expect(pack?.effectiveFrom).toBe('2025-10-01');
+    expect(pack?.procedures.map((procedure) => procedure.id)).toEqual([
+      'GUKDO2H', 'KARBU2H', 'GUKDO2E', 'KARBU2E',
+    ]);
+    expect(pack?.sources.every((source) => source.publisher === 'Office of Civil Aviation, Republic of Korea')).toBe(true);
+
+    const gukdo2h = pack?.procedures.find((procedure) => procedure.id === 'GUKDO2H');
+    expect(gukdo2h?.compatibleRunwayIds).toEqual(['15L', '15R', '16L', '16R']);
+    expect(gukdo2h?.fixes.map((fix) => fix.id)).toEqual([
+      'GUKDO', 'NODUN', 'SEL', 'GH034', 'SANLA', 'DH034',
+      'POMIM', 'DH030', 'DH021', 'DH024', 'DH023', 'MUNAN',
+    ]);
+    expect(gukdo2h?.fixes.find((fix) => fix.id === 'SEL')).toMatchObject({ minimumAltitudeFt: 13000 });
+    expect(gukdo2h?.fixes.find((fix) => fix.id === 'POMIM')).toMatchObject({
+      minimumAltitudeFt: 3000,
+      maximumSpeedKt: 210,
+    });
+
+    const karbu2e = pack?.procedures.find((procedure) => procedure.id === 'KARBU2E');
+    expect(karbu2e?.compatibleRunwayIds).toEqual(['33L', '33R', '34L', '34R']);
+    expect(karbu2e?.fixes.map((fix) => fix.id)).toEqual([
+      'KARBU', 'EGOBA', 'KE044', 'ELMAP', 'TESIK', 'GE023',
+      'GE022', 'GE016', 'GE024', 'GE028', 'GE027', 'ENPIL',
+    ]);
+    expect(karbu2e?.fixes.find((fix) => fix.id === 'TESIK')).toMatchObject({
+      minimumAltitudeFt: 10000,
+      maximumSpeedKt: 210,
+    });
+    expect(karbu2e?.fixes.find((fix) => fix.id === 'ENPIL')).toMatchObject({ minimumAltitudeFt: 7000 });
   });
 
   it('ships runway-specific Delhi STARs from the effective AIM India issue', () => {
