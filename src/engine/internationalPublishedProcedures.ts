@@ -1427,7 +1427,277 @@ const hongKongInternational: PublishedProcedurePack = {
   gameOnlyNotice: 'All fourteen current RNAV STAR identities, chart waypoint orders and represented constraints are retained; WGS-84 geometry is uniformly projected into the compact tactical sector and is not for navigation.',
 };
 
+/*
+ * ENAIRE publishes the LEBL STAR route order, WGS-84 coordinates and tabular
+ * altitude/speed constraints. Bearings below are calculated from the current
+ * LEBL ARP (411749N 0020442E). Real distances are projected as 8 NM + 38%,
+ * capped at 40 NM, so the complete terminal structure fits the game scope.
+ */
+const barcelonaFixGeometry: Record<string, [number, number]> = {
+  ALBER: [25.7, 37.3], BCN: [65.3, 8.6], BERGA: [357.8, 28.0], BGR: [52.0, 32.3],
+  BISBA: [55.1, 39.9], BL459: [334.7, 15.1], BL461: [331.0, 14.6], BL462: [115.3, 21.0],
+  BL465: [33.9, 21.3], BL468: [95.5, 23.0], BL469: [41.1, 23.4], BL573: [10.2, 16.9],
+  BL645: [147.7, 11.4], BL670: [273.8, 20.9], BL678: [272.1, 24.7], BOLQE: [318.0, 21.4],
+  CASPE: [269.5, 40.0], CLE: [50.4, 20.3], CUTXE: [30.9, 30.3], ELLIH: [6.8, 27.2],
+  ENJUC: [11.2, 19.0], GRAUS: [298.8, 40.0], INCAH: [266.5, 33.6], ISWIQ: [143.4, 16.0],
+  KANWU: [234.5, 29.6], LESBA: [95.3, 18.1], LOBAR: [289.5, 39.8], LRD: [283.9, 33.2],
+  MAMUK: [359.5, 20.3], MARTA: [212.9, 33.5], MATEX: [242.2, 40.0], MECUH: [282.3, 25.6],
+  NEMUM: [53.6, 35.7], NEPAL: [190.9, 22.0], OSTUR: [129.7, 26.3], PAPOS: [215.3, 26.8],
+  PEKIS: [296.6, 26.2], PIJUH: [250.7, 29.4], PUMAL: [357.2, 32.4], RAVAX: [178.9, 16.6],
+  RES: [257.8, 24.1],
+  RUBOT: [221.1, 17.8], RULOS: [128.0, 12.4], SADEM: [95.6, 26.9], SLL: [6.0, 13.1],
+  TAQOH: [218.6, 20.4], TIRGO: [304.7, 27.7], TOTKI: [238.1, 15.0], UCREQ: [1.2, 17.0],
+  ULKAL: [246.6, 17.2], USSOF: [63.0, 26.2], UTHAN: [20.8, 22.4], VERSO: [96.0, 37.0],
+  VIBIM: [156.8, 13.6], VIBOK: [300.2, 19.4], VLA: [276.7, 17.1], XAMUR: [79.6, 21.8],
+};
+
+type BarcelonaFixSpec = [
+  id: string,
+  minimumAltitudeFt?: number,
+  maximumAltitudeFt?: number,
+  maximumSpeedKt?: number,
+];
+
+function barcelonaFix([id, minimumAltitudeFt, maximumAltitudeFt, maximumSpeedKt]: BarcelonaFixSpec): ProcedureFixTemplate {
+  const geometry = barcelonaFixGeometry[id];
+  if (!geometry) throw new Error(`Missing Barcelona geometry for ${id}`);
+  return {
+    id,
+    bearing: geometry[0],
+    distanceNm: geometry[1],
+    ...(minimumAltitudeFt === undefined ? {} : { minimumAltitudeFt }),
+    ...(maximumAltitudeFt === undefined ? {} : { maximumAltitudeFt }),
+    ...(maximumSpeedKt === undefined ? {} : { maximumSpeedKt }),
+  };
+}
+
+function barcelonaArrival(
+  id: string,
+  compatibleRunwayIds: string[],
+  fixes: BarcelonaFixSpec[],
+): PublishedProcedureTemplate {
+  return {
+    id,
+    kind: 'arrival',
+    compatibleRunwayIds,
+    entryTransition: fixes[0]![0],
+    fixes: fixes.map(barcelonaFix),
+  };
+}
+
+const barcelonaRunway02 = ['02'];
+const barcelonaRunway06 = ['06L', '06R'];
+const barcelonaRunway24 = ['24L', '24R'];
+
+const barcelonaRunway02Arrivals: PublishedProcedureTemplate[] = [
+  barcelonaArrival('ALBER3N', barcelonaRunway02, [
+    ['ALBER', 11000, 25000, 280], ['CUTXE'], ['UTHAN'], ['ENJUC', 8000],
+    ['SLL', 6000], ['BCN', undefined, 9000, 250], ['BL645'], ['VIBIM', 4000, undefined, 220],
+  ]),
+  barcelonaArrival('BISBA5N', barcelonaRunway02, [
+    ['BISBA', 12000, 27000, 280], ['NEMUM', 10000], ['BGR'], ['ENJUC', 8000],
+    ['SLL', 6000], ['BCN', undefined, 9000, 250], ['BL645'], ['VIBIM', 4000, undefined, 220],
+  ]),
+  barcelonaArrival('CASPE4N', barcelonaRunway02, [
+    ['CASPE', undefined, 25000, 280], ['BL678', 16000], ['BL670'], ['VLA'],
+    ['ULKAL', 6000, 9000, 250], ['TOTKI', 4000, undefined, 220],
+  ]),
+  barcelonaArrival('GRAUS3N', barcelonaRunway02, [
+    ['GRAUS', undefined, 25000, 280], ['LRD', 11000], ['VLA'],
+    ['ULKAL', 6000, 9000, 250], ['TOTKI', 4000, undefined, 220],
+  ]),
+  barcelonaArrival('LOBAR3N', barcelonaRunway02, [
+    ['LOBAR', undefined, 25000, 280], ['LRD', 16000], ['VLA'],
+    ['ULKAL', 6000, 9000, 250], ['TOTKI', 4000, undefined, 220],
+  ]),
+  barcelonaArrival('MAMUK1N', barcelonaRunway02, [
+    ['MAMUK', 8000], ['SLL', 6000], ['BCN', undefined, 9000, 250],
+    ['BL645'], ['VIBIM', 4000, undefined, 220],
+  ]),
+  barcelonaArrival('MARTA4N', barcelonaRunway02, [
+    ['MARTA', undefined, 20000, 280], ['PAPOS', 16000], ['TAQOH'],
+    ['ULKAL', 6000, 9000, 250], ['TOTKI', 4000, undefined, 220],
+  ]),
+  barcelonaArrival('MATEX4N', barcelonaRunway02, [
+    ['MATEX', undefined, 25000, 280], ['KANWU', 16000], ['TAQOH'],
+    ['ULKAL', 6000, 9000, 250], ['TOTKI', 4000, undefined, 220],
+  ]),
+  barcelonaArrival('NEPAL4N', barcelonaRunway02, [
+    ['NEPAL', 10000, 16000, 280], ['TAQOH'],
+    ['ULKAL', 6000, 9000, 250], ['TOTKI', 4000, undefined, 220],
+  ]),
+  barcelonaArrival('OSTUR2N', barcelonaRunway02, [
+    ['OSTUR', 10000, 20000, 280], ['ISWIQ', undefined, 9000, 250],
+    ['VIBIM', 4000, undefined, 220],
+  ]),
+  barcelonaArrival('PUMAL5N', barcelonaRunway02, [
+    ['PUMAL', 13000, 25000, 280], ['BERGA', 12000], ['BOLQE', 9000],
+    ['VIBOK'], ['VLA'], ['ULKAL', 6000, 9000, 250], ['TOTKI', 4000, undefined, 220],
+  ]),
+  barcelonaArrival('VERSO2N', barcelonaRunway02, [
+    ['VERSO', undefined, 25000, 280], ['OSTUR', 16000, 20000],
+    ['ISWIQ', undefined, 9000, 250], ['VIBIM', 4000, undefined, 220],
+  ]),
+  barcelonaArrival('VIBOK1N', barcelonaRunway02, [
+    ['VIBOK'], ['VLA'], ['ULKAL', 6000, 9000, 250], ['TOTKI', 4000, undefined, 220],
+  ]),
+];
+
+const barcelonaRunway06Arrivals: PublishedProcedureTemplate[] = [
+  barcelonaArrival('ALBER2E', barcelonaRunway06, [
+    ['ALBER', 11000, 25000, 280], ['CUTXE'], ['UTHAN'], ['ENJUC', 8000],
+    ['BL573', undefined, 10000, 250], ['SLL', 6000],
+  ]),
+  barcelonaArrival('BISBA2E', barcelonaRunway06, [
+    ['BISBA', 12000, 27000, 280], ['NEMUM', 10000], ['BGR'], ['ENJUC', 8000],
+    ['BL573', undefined, 10000, 250], ['SLL', 6000],
+  ]),
+  barcelonaArrival('CASPE3E', barcelonaRunway06, [
+    ['CASPE', undefined, 25000, 280], ['INCAH', 16000], ['PIJUH'],
+    ['TAQOH', 6000, 10000, 250], ['RUBOT', 4000],
+  ]),
+  barcelonaArrival('GRAUS1E', barcelonaRunway06, [
+    ['GRAUS', undefined, 25000, 280], ['LRD', 11000], ['RES'],
+    ['TAQOH', 6000, 10000, 250], ['RUBOT', 4000],
+  ]),
+  barcelonaArrival('LOBAR1E', barcelonaRunway06, [
+    ['LOBAR', undefined, 25000, 280], ['LRD', 16000], ['RES'],
+    ['TAQOH', 6000, 10000, 250], ['RUBOT', 4000],
+  ]),
+  barcelonaArrival('MAMUK1E', barcelonaRunway06, [
+    ['MAMUK', 8000, 11000, 240], ['UCREQ', undefined, 10000], ['SLL', 6000],
+  ]),
+  barcelonaArrival('MARTA3E', barcelonaRunway06, [
+    ['MARTA', undefined, 20000, 280], ['PAPOS', 16000],
+    ['TAQOH', 6000, 10000, 250], ['RUBOT', 4000],
+  ]),
+  barcelonaArrival('MATEX3E', barcelonaRunway06, [
+    ['MATEX', undefined, 25000, 280], ['KANWU', 16000],
+    ['TAQOH', 6000, 10000, 250], ['RUBOT', 4000],
+  ]),
+  barcelonaArrival('NEPAL3E', barcelonaRunway06, [
+    ['NEPAL', 10000, 16000, 280], ['TAQOH', 6000, 10000, 250], ['RUBOT', 4000],
+  ]),
+  barcelonaArrival('OSTUR2E', barcelonaRunway06, [
+    ['OSTUR', 10000, 20000, 280], ['ISWIQ', undefined, 10000, 250], ['VIBIM', 4000],
+  ]),
+  barcelonaArrival('PUMAL1E', barcelonaRunway06, [
+    ['PUMAL', 13000, 25000, 280], ['BERGA', 12000], ['BOLQE', 9000],
+    ['VIBOK', undefined, 10000, 250], ['VLA', 6000],
+  ]),
+  barcelonaArrival('VERSO3E', barcelonaRunway06, [
+    ['VERSO', undefined, 25000, 280], ['OSTUR', 16000, 20000],
+    ['ISWIQ', undefined, 10000, 250], ['VIBIM', 4000],
+  ]),
+  barcelonaArrival('VIBOK1E', barcelonaRunway06, [
+    ['VIBOK', undefined, 10000, 250], ['VLA', 6000],
+  ]),
+];
+
+const barcelonaRunway24Arrivals: PublishedProcedureTemplate[] = [
+  barcelonaArrival('ALBER2W', barcelonaRunway24, [
+    ['ALBER', 11000, 25000, 280], ['CUTXE'],
+    ['BL469', undefined, 10000, 250], ['CLE', 8000],
+  ]),
+  barcelonaArrival('BISBA2W', barcelonaRunway24, [
+    ['BISBA', undefined, 25000, 280], ['USSOF', 16000],
+    ['XAMUR', undefined, 10000, 250], ['LESBA', 4000],
+  ]),
+  barcelonaArrival('CASPE2W', barcelonaRunway24, [
+    ['CASPE', undefined, 28000, 280], ['MECUH', 16000, 20000], ['VIBOK', undefined, 15000],
+    ['BL461', undefined, 10000, 250], ['SLL', 6000],
+  ]),
+  barcelonaArrival('GRAUS2W', barcelonaRunway24, [
+    ['GRAUS', undefined, 28000, 280], ['TIRGO', 11000, 20000],
+    ['BL459', undefined, 10000, 250], ['SLL', 6000],
+  ]),
+  barcelonaArrival('LOBAR2W', barcelonaRunway24, [
+    ['LOBAR', undefined, 28000, 280], ['PEKIS', 16000, 20000],
+    ['BL461', undefined, 10000, 250], ['SLL', 6000],
+  ]),
+  barcelonaArrival('MAMUK1W', barcelonaRunway24, [
+    ['MAMUK', 8000, 11000, 240], ['UCREQ', undefined, 10000], ['SLL', 6000],
+  ]),
+  barcelonaArrival('MARTA2W', barcelonaRunway24, [
+    ['MARTA', undefined, 24000, 280], ['NEPAL', 16000, 17000],
+    ['RAVAX', undefined, 10000, 250], ['RULOS', 4000],
+  ]),
+  barcelonaArrival('MATEX2W', barcelonaRunway24, [
+    ['MATEX', undefined, 28000, 280], ['KANWU', 16000], ['TAQOH', 6000],
+    ['RAVAX', undefined, 10000, 250], ['RULOS', 4000],
+  ]),
+  barcelonaArrival('NEPAL2W', barcelonaRunway24, [
+    ['NEPAL', 10000, 17000, 280], ['RAVAX', undefined, 10000, 250], ['RULOS', 4000],
+  ]),
+  barcelonaArrival('OSTUR2W', barcelonaRunway24, [
+    ['OSTUR', 10000, 16000, 280], ['BL462', undefined, 10000, 250], ['LESBA', 4000],
+  ]),
+  barcelonaArrival('PUMAL2W', barcelonaRunway24, [
+    ['PUMAL', 13000, 25000, 280], ['ELLIH', 12000],
+    ['BL465', undefined, 10000, 250], ['CLE', 8000],
+  ]),
+  barcelonaArrival('VERSO2W', barcelonaRunway24, [
+    ['VERSO', undefined, 20000, 280], ['SADEM', 10000],
+    ['BL468', undefined, 10000, 250], ['LESBA', 4000],
+  ]),
+  barcelonaArrival('VIBOK1W', barcelonaRunway24, [
+    ['VIBOK', undefined, 15000], ['BL461', undefined, 10000, 250], ['SLL', 6000],
+  ]),
+];
+
+const barcelonaElPrat: PublishedProcedurePack = {
+  airportId: 'bcn',
+  packVersion: '2026.08.14',
+  referenceCycle: 'ENAIRE AIP España 06 AUG 2026 · AIRAC AMDT 07/26 · current LEBL STAR pages',
+  effectiveFrom: '2026-08-06',
+  effectiveTo: '2026-09-02',
+  generatedFrom: 'ENAIRE AIP España · LEBL AD 2 preferential configurations and RNAV1 STAR tabular descriptions',
+  procedures: [
+    ...barcelonaRunway02Arrivals,
+    ...barcelonaRunway06Arrivals,
+    ...barcelonaRunway24Arrivals,
+  ],
+  sources: [
+    {
+      publisher: 'ENAIRE',
+      title: 'AIP Spain — issue in force 06 AUG 2026',
+      url: 'https://aip.enaire.es/aip/aip-en.html',
+      purpose: 'Current AIRAC issue and effective-date reference',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'ENAIRE',
+      title: 'LEBL AD 2 — Barcelona/Josep Tarradellas Barcelona-El Prat',
+      url: 'https://aip.enaire.es/aip/contenido_AIP/AD/AD2/LEBL/LE_AD_2_LEBL_en.html',
+      purpose: 'ARP, elevation, runway geometry and published daytime/night-time runway configurations',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'ENAIRE',
+      title: 'LEBL RNAV1 STAR — runway 02',
+      url: 'https://aip.enaire.es/aip/contenido_AIP/AD/AD2/LEBL/LE_AD_2_LEBL_STAR_1_en.pdf',
+      purpose: 'Runway 02 planable STAR identities, waypoint order, WGS-84 coordinates and constraints',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'ENAIRE',
+      title: 'LEBL RNAV1 STAR — runways 06L/06R',
+      url: 'https://aip.enaire.es/aip/contenido_AIP/AD/AD2/LEBL/LE_AD_2_LEBL_STAR_2_en.pdf',
+      purpose: 'Runway 06 planable STAR identities, waypoint order, WGS-84 coordinates and constraints',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'ENAIRE',
+      title: 'LEBL RNAV1 STAR — runways 24L/24R',
+      url: 'https://aip.enaire.es/AIP/contenido_AIP/AD/AD2/LEBL/LE_AD_2_LEBL_STAR_3_en.pdf',
+      purpose: 'Runway 24 planable STAR identities, waypoint order, WGS-84 coordinates and constraints',
+      accessedOn: ACCESSED_ON,
+    },
+  ],
+  gameOnlyNotice: 'All 39 current planable RNAV1 STAR identities, chart waypoint orders and represented constraints are retained. ENAIRE procedures explicitly marked tactical-use-only and unplannable are excluded; WGS-84 geometry is uniformly projected into the compact tactical sector and is not for navigation.',
+};
+
 export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [
   delhi, incheon, dubai, parisCharlesDeGaulle, singaporeChangi, amsterdamSchiphol, madridBarajas,
-  kualaLumpurInternational, bangkokSuvarnabhumi, hongKongInternational,
+  kualaLumpurInternational, bangkokSuvarnabhumi, hongKongInternational, barcelonaElPrat,
 ];

@@ -1,6 +1,6 @@
 # Published procedure runtime integration
 
-Updated: 2026-08-24 · runtime pack 2026.08.13
+Updated: 2026-08-24 · runtime pack 2026.08.14
 
 ## Product boundary
 
@@ -51,10 +51,11 @@ it is not navigation-grade data and must not be used for flight planning.
 | WMKK | KAKAK 1G / SAROX 1G via PMS East for RWY 14L/14R/32L/32R and NIREN 1H / GUPTA 1H via PMS West for RWY 15/33 | CAAM eAIP Malaysia 11 AUG 2026 / permanent SUP 50/25 |
 | VTBS | EASTE / LEBIM / NORTA / TUMGA / WILLA 1D for RWY 01/02L/02R and 1C for RWY 19/20L/20R | CAAT eAIP Thailand 06 AUG 2026 / AIRAC AIP AMDT 08/26 |
 | VHHH | ABBEY 4A/3B, BETTY 3A/3B, CANTO 3A/3B, SIERA 7A/7B/7C/7D and ABBEY/BETTY/CANTO/SIERA 2G arrivals | Hong Kong CAD eAIP 06 AUG 2026 / Amendment 7/26 charts |
+| LEBL | 39 planable RNAV1 STARs for RWY 02, 06L/06R and 24L/24R; tactical-only X/Y/Z variants excluded | ENAIRE AIP España 06 AUG 2026 / AIRAC AMDT 07/26 / current LEBL STAR pages |
 
 The authoritative URLs and access dates live beside each reviewed operations
-pack, in the generated FAA pack or in the reviewed international pack. Twenty-six
-of the 50 playable airports now have published runtime routes; the other 24 continue to be labeled and executed as
+pack, in the generated FAA pack or in the reviewed international pack. Twenty-seven
+of the 50 playable airports now have published runtime routes; the other 23 continue to be labeled and executed as
 generated vector routes rather than being presented as real procedures.
 
 Cycle 2608 runway records also corrected the SFO 01/19 leading zero and magnetic
@@ -65,6 +66,10 @@ mixed RWY 01/19, arrival RWY 02L/20R and departure RWY 02R/20L.
 The VHHH pack corrects all three 3800 m runway pairs to 070.90° true and models
 the published daytime three-runway split (north arrival, centre departure,
 south mixed) plus the centre-arrival/south-departure dual-runway period.
+The LEBL pack corrects the aerodrome elevation to 14 ft and the three runway-pair
+bearings to 018.98°/065.57° true. It models west/east daytime parallel operations,
+the preferred night RWY 02-arrival/RWY 06R-departure configuration and the
+non-preferred night RWY 24L single-runway configuration.
 
 ## Repeatable FAA CIFP import
 

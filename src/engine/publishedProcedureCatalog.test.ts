@@ -12,7 +12,7 @@ describe('published procedure catalog', () => {
     expect(PUBLISHED_PROCEDURE_PACKS.map((pack) => pack.airportId)).toEqual([
       'ist', 'lhr', 'lax', 'jfk', 'atl', 'dfw', 'ord', 'den',
       'mco', 'mia', 'las', 'sfo', 'clt', 'sea', 'phx', 'iah',
-      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams', 'mad', 'kul', 'bkk', 'hkg',
+      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams', 'mad', 'kul', 'bkk', 'hkg', 'bcn',
     ]);
     expect(publishedProcedurePackByAirportId.size).toBe(PUBLISHED_PROCEDURE_PACKS.length);
   });
@@ -451,6 +451,58 @@ describe('published procedure catalog', () => {
     expect(betty2g?.fixes.find((fix) => fix.id === 'LUDLA')).toMatchObject({
       minimumAltitudeFt: 4500,
       maximumAltitudeFt: 4500,
+    });
+  });
+
+  it('ships all 39 planable Barcelona STARs and excludes tactical-only variants', () => {
+    const pack = INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS.find((item) => item.airportId === 'bcn');
+    expect(pack?.referenceCycle).toContain('ENAIRE AIP España 06 AUG 2026');
+    expect(pack?.effectiveFrom).toBe('2026-08-06');
+    expect(pack?.effectiveTo).toBe('2026-09-02');
+    expect(pack?.procedures.map((procedure) => procedure.id)).toEqual([
+      'ALBER3N', 'BISBA5N', 'CASPE4N', 'GRAUS3N', 'LOBAR3N', 'MAMUK1N', 'MARTA4N',
+      'MATEX4N', 'NEPAL4N', 'OSTUR2N', 'PUMAL5N', 'VERSO2N', 'VIBOK1N',
+      'ALBER2E', 'BISBA2E', 'CASPE3E', 'GRAUS1E', 'LOBAR1E', 'MAMUK1E', 'MARTA3E',
+      'MATEX3E', 'NEPAL3E', 'OSTUR2E', 'PUMAL1E', 'VERSO3E', 'VIBOK1E',
+      'ALBER2W', 'BISBA2W', 'CASPE2W', 'GRAUS2W', 'LOBAR2W', 'MAMUK1W', 'MARTA2W',
+      'MATEX2W', 'NEPAL2W', 'OSTUR2W', 'PUMAL2W', 'VERSO2W', 'VIBOK1W',
+    ]);
+    expect(pack?.sources.every((source) => source.publisher === 'ENAIRE')).toBe(true);
+    expect(pack?.procedures.some((procedure) => /[XYZ]$/.test(procedure.id))).toBe(false);
+
+    const caspe4n = pack?.procedures.find((procedure) => procedure.id === 'CASPE4N');
+    expect(caspe4n?.compatibleRunwayIds).toEqual(['02']);
+    expect(caspe4n?.fixes.map((fix) => fix.id)).toEqual([
+      'CASPE', 'BL678', 'BL670', 'VLA', 'ULKAL', 'TOTKI',
+    ]);
+    expect(caspe4n?.fixes.find((fix) => fix.id === 'ULKAL')).toMatchObject({
+      minimumAltitudeFt: 6000,
+      maximumAltitudeFt: 9000,
+      maximumSpeedKt: 250,
+    });
+
+    const lobar1e = pack?.procedures.find((procedure) => procedure.id === 'LOBAR1E');
+    expect(lobar1e?.compatibleRunwayIds).toEqual(['06L', '06R']);
+    expect(lobar1e?.fixes.map((fix) => fix.id)).toEqual([
+      'LOBAR', 'LRD', 'RES', 'TAQOH', 'RUBOT',
+    ]);
+    expect(lobar1e?.fixes.find((fix) => fix.id === 'TAQOH')).toMatchObject({
+      minimumAltitudeFt: 6000,
+      maximumAltitudeFt: 10000,
+      maximumSpeedKt: 250,
+    });
+
+    const puma2w = pack?.procedures.find((procedure) => procedure.id === 'PUMAL2W');
+    expect(puma2w?.compatibleRunwayIds).toEqual(['24L', '24R']);
+    expect(puma2w?.fixes.map((fix) => fix.id)).toEqual(['PUMAL', 'ELLIH', 'BL465', 'CLE']);
+    expect(puma2w?.fixes.find((fix) => fix.id === 'PUMAL')).toMatchObject({
+      minimumAltitudeFt: 13000,
+      maximumAltitudeFt: 25000,
+      maximumSpeedKt: 280,
+    });
+    expect(puma2w?.fixes.find((fix) => fix.id === 'BL465')).toMatchObject({
+      maximumAltitudeFt: 10000,
+      maximumSpeedKt: 250,
     });
   });
 

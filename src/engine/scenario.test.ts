@@ -128,6 +128,20 @@ describe('airport scenario catalog', () => {
     ]);
   });
 
+  it('uses Barcelona published daytime parallel and night runway configurations', () => {
+    const barcelona = scenarioCatalog.find((scenario) => scenario.id === 'bcn');
+    const barcelonaDefinition = AIRPORT_DEFINITIONS.find((airport) => airport.id === 'bcn');
+    expect(barcelona?.world.environment?.elevationFt).toBe(14);
+    expect(barcelonaDefinition?.runways.map((runway) => runway.heading)).toEqual([18.98, 65.57, 65.57]);
+    expect(barcelona?.world.runways.map((runway) => Number(runway.heading.toFixed(2)))).toEqual([245.57, 245.57, 18.98]);
+    expect(barcelona?.world.flowConfigurations).toEqual([
+      expect.objectContaining({ id: 'bcn-primary', arrivalRunwayIds: ['24R'], departureRunwayIds: ['24L'] }),
+      expect.objectContaining({ id: 'bcn-reverse', arrivalRunwayIds: ['06L'], departureRunwayIds: ['06R'] }),
+      expect.objectContaining({ id: 'bcn-night-02', arrivalRunwayIds: ['02'], departureRunwayIds: ['06R'] }),
+      expect.objectContaining({ id: 'bcn-night-24', arrivalRunwayIds: ['24L'], departureRunwayIds: ['24L'] }),
+    ]);
+  });
+
   it('can start directly in a non-primary flow without assigning inactive runways', () => {
     for (const scenario of scenarioCatalog.filter((item) => item.world.operations)) {
       const flow = scenario.world.flowConfigurations.at(-1)!;

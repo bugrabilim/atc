@@ -188,6 +188,28 @@ const reviewedFlowConfigurationsByAirportId = new Map<ScenarioId, FlowConfigurat
       windDirection: 254, windSpeedKt: 9, visibilityNm: 8, qnh: 1008,
     },
   ]],
+  ['bcn', [
+    {
+      id: 'bcn-primary', label: 'BATI GÜNDÜZ · 24R GELİŞ / 24L KALKIŞ',
+      arrivalRunwayIds: ['24R'], departureRunwayIds: ['24L'],
+      windDirection: 246, windSpeedKt: 8, visibilityNm: 12, qnh: 1016,
+    },
+    {
+      id: 'bcn-reverse', label: 'DOĞU GÜNDÜZ · 06L GELİŞ / 06R KALKIŞ',
+      arrivalRunwayIds: ['06L'], departureRunwayIds: ['06R'],
+      windDirection: 66, windSpeedKt: 10, visibilityNm: 10, qnh: 1010,
+    },
+    {
+      id: 'bcn-night-02', label: 'KUZEY GECE · 02 GELİŞ / 06R KALKIŞ',
+      arrivalRunwayIds: ['02'], departureRunwayIds: ['06R'],
+      windDirection: 35, windSpeedKt: 6, visibilityNm: 9, qnh: 1013,
+    },
+    {
+      id: 'bcn-night-24', label: 'BATI GECE · 24L TEK PİST',
+      arrivalRunwayIds: ['24L'], departureRunwayIds: ['24L'],
+      windDirection: 246, windSpeedKt: 7, visibilityNm: 8, qnh: 1009,
+    },
+  ]],
 ]);
 
 function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
