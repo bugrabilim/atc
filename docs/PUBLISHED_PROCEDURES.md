@@ -1,6 +1,6 @@
 # Published procedure runtime integration
 
-Updated: 2026-08-24 · runtime pack 2026.08.8
+Updated: 2026-08-24 · runtime pack 2026.08.9
 
 ## Product boundary
 
@@ -46,10 +46,11 @@ it is not navigation-grade data and must not be used for flight planning.
 | OMDB | IMPED 3E / PUVAL 2E for RWY 12 and IMPED 3C / PUVAL 5C for RWY 30 | UAE GCAA AIRAC AIP AMDT 09/2026, effective 2026-09-03 |
 | LFPG | MATIX 9E / LUKIP 9E for east configuration and TINIL 9W / ROMGO 9P for west configuration | France SIA eAIP 06 AUG 2026 / LFPG STAR AMDT 06/26 |
 | WSSS | ARAMA 1A / KARTO 2A for RWY 02 and REPOV 2B / TEBUN 1B for RWY 20 | CAAS AIP Singapore AMDT 04/2026, valid 09 JUL 2026 |
+| EHAM | BLUFA 1A / NORKU 2A to ARTIP, REDFA 1A to SUGOL and DENUT 3A to RIVER | LVNL eAIP AIRAC AMDT 08/2026, effective 06 AUG 2026 |
 
 The authoritative URLs and access dates live beside each reviewed operations
-pack, in the generated FAA pack or in the reviewed international pack. Twenty-one
-of the 50 playable airports now have published runtime routes; the other 29 continue to be labeled and executed as
+pack, in the generated FAA pack or in the reviewed international pack. Twenty-two
+of the 50 playable airports now have published runtime routes; the other 28 continue to be labeled and executed as
 generated vector routes rather than being presented as real procedures.
 
 Cycle 2608 runway records also corrected the SFO 01/19 leading zero and magnetic

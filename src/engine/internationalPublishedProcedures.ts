@@ -611,6 +611,125 @@ const singaporeChangi: PublishedProcedurePack = {
   gameOnlyNotice: 'Published RNAV-1 STAR identifiers, complete represented waypoint order and coded restrictions are retained; WGS-84 geometry is projected into a compact tactical sector and is not for navigation.',
 };
 
+/*
+ * LVNL publishes Schiphol's daytime RNAV-1 STARs as runway-independent feeds
+ * to the ARTIP, SUGOL and RIVER IAFs. Bearings below are calculated from the
+ * EHAM ARP (521829N 0044551E) using the official ENR 4.4 WGS-84 catalogue.
+ * The common 8 NM + 25% projection preserves all four represented entry
+ * sectors while fitting the roughly 85 NM REDFA feed on the tactical scope.
+ */
+const schipholRunwayIds = [
+  '04', '22', '06', '24', '09', '27',
+  '18C', '36C', '18L', '36R', '18R', '36L',
+];
+
+const schipholArtipRestriction: ProcedureFixTemplate = {
+  id: 'ARTIP', bearing: 67.2, distanceNm: 16, minimumAltitudeFt: 7000, maximumAltitudeFt: 10000, maximumSpeedKt: 250,
+};
+
+const schipholSugolRestriction: ProcedureFixTemplate = {
+  id: 'SUGOL', bearing: 294.4, distanceNm: 16, minimumAltitudeFt: 7000, maximumAltitudeFt: 10000, maximumSpeedKt: 250,
+};
+
+const schipholRiverRestriction: ProcedureFixTemplate = {
+  id: 'RIVER', bearing: 224.7, distanceNm: 16.3, minimumAltitudeFt: 7000, maximumAltitudeFt: 10000, maximumSpeedKt: 250,
+};
+
+const schipholBlufa1AFixes: ProcedureFixTemplate[] = [
+  { id: 'BLUFA', bearing: 60.4, distanceNm: 24.4 },
+  { ...schipholArtipRestriction },
+];
+
+const schipholNorku2AFixes: ProcedureFixTemplate[] = [
+  { id: 'NORKU', bearing: 93, distanceNm: 28.4, minimumAltitudeFt: 20000, maximumAltitudeFt: 28000 },
+  { id: 'SONSA', bearing: 88.1, distanceNm: 26.2 },
+  { id: 'ROBIS', bearing: 80.5, distanceNm: 23.8 },
+  { id: 'OSKUR', bearing: 76.2, distanceNm: 19.9 },
+  { ...schipholArtipRestriction },
+];
+
+const schipholRedfa1AFixes: ProcedureFixTemplate[] = [
+  { id: 'REDFA', bearing: 263, distanceNm: 29.1, maximumAltitudeFt: 23000 },
+  { id: 'SULUT', bearing: 280.2, distanceNm: 20.5 },
+  { ...schipholSugolRestriction },
+];
+
+const schipholDenut3AFixes: ProcedureFixTemplate[] = [
+  { id: 'DENUT', bearing: 213, distanceNm: 27.1, maximumAltitudeFt: 24000 },
+  { id: 'YENZO', bearing: 230, distanceNm: 21.6 },
+  { ...schipholRiverRestriction },
+];
+
+const amsterdamSchiphol: PublishedProcedurePack = {
+  airportId: 'ams',
+  packVersion: '2026.08.9',
+  referenceCycle: 'Netherlands eAIP AIRAC AMDT 08/2026 · effective 2026-08-06',
+  effectiveFrom: '2026-08-06',
+  effectiveTo: '2026-09-02',
+  generatedFrom: 'LVNL eAIP · EHAM standard STAR chart and ENR 4.4 WGS-84 waypoint data',
+  procedures: [
+    {
+      id: 'BLUFA1A',
+      kind: 'arrival',
+      compatibleRunwayIds: [...schipholRunwayIds],
+      entryTransition: 'BLUFA',
+      fixes: schipholBlufa1AFixes,
+    },
+    {
+      id: 'NORKU2A',
+      kind: 'arrival',
+      compatibleRunwayIds: [...schipholRunwayIds],
+      entryTransition: 'NORKU',
+      fixes: schipholNorku2AFixes,
+    },
+    {
+      id: 'REDFA1A',
+      kind: 'arrival',
+      compatibleRunwayIds: [...schipholRunwayIds],
+      entryTransition: 'REDFA',
+      fixes: schipholRedfa1AFixes,
+    },
+    {
+      id: 'DENUT3A',
+      kind: 'arrival',
+      compatibleRunwayIds: [...schipholRunwayIds],
+      entryTransition: 'DENUT',
+      fixes: schipholDenut3AFixes,
+    },
+  ],
+  sources: [
+    {
+      publisher: 'Luchtverkeersleiding Nederland',
+      title: 'eAIP Netherlands AIRAC AMDT 08/2026 — current issue',
+      url: 'https://eaip.lvnl.nl/web/eaip/AIRAC%20AMDT%2008-2026_2026_08_06/index.html',
+      purpose: 'Current issue identity, effective date and validity window',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Luchtverkeersleiding Nederland',
+      title: 'EHAM AD 2 — Amsterdam/Schiphol',
+      url: 'https://eaip.lvnl.nl/web/eaip/AIRAC%20AMDT%2008-2026_2026_08_06/eAIP/EH-AD%202%20EHAM%201-en-GB.html',
+      purpose: 'Official airport reference point, runway inventory and arrival operating procedures',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Luchtverkeersleiding Nederland',
+      title: 'EHAM standard arrival chart — instrument',
+      url: 'https://eaip.lvnl.nl/web/eaip/AIRAC%20AMDT%2008-2026_2026_08_06/documents/Root_WePub/Charts/AD/EHAM/EHAM-STAR.pdf',
+      purpose: 'BLUFA 1A, NORKU 2A, REDFA 1A and DENUT 3A route order, IAF assignment and chart restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Luchtverkeersleiding Nederland',
+      title: 'ENR 4.4 — name-code designators for significant points',
+      url: 'https://eaip.lvnl.nl/web/eaip/AIRAC%20AMDT%2007-2026_2026_07_09/eAIP/EH-ENR%204.4-en-GB.html',
+      purpose: 'Official WGS-84 coordinates for every represented EHAM STAR fix',
+      accessedOn: ACCESSED_ON,
+    },
+  ],
+  gameOnlyNotice: 'Published RNAV-1 STAR identifiers, complete represented waypoint order and chart restrictions are retained; WGS-84 geometry is projected into a compact tactical sector and is not for navigation.',
+};
+
 export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [
-  delhi, incheon, dubai, parisCharlesDeGaulle, singaporeChangi,
+  delhi, incheon, dubai, parisCharlesDeGaulle, singaporeChangi, amsterdamSchiphol,
 ];

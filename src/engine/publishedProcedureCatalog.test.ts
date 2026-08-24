@@ -12,7 +12,7 @@ describe('published procedure catalog', () => {
     expect(PUBLISHED_PROCEDURE_PACKS.map((pack) => pack.airportId)).toEqual([
       'ist', 'lhr', 'lax', 'jfk', 'atl', 'dfw', 'ord', 'den',
       'mco', 'mia', 'las', 'sfo', 'clt', 'sea', 'phx', 'iah',
-      'del', 'icn', 'dxb', 'cdg', 'sin',
+      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams',
     ]);
     expect(publishedProcedurePackByAirportId.size).toBe(PUBLISHED_PROCEDURE_PACKS.length);
   });
@@ -185,6 +185,53 @@ describe('published procedure catalog', () => {
     expect(tebun1b?.fixes.find((fix) => fix.id === 'BIPOP')).toMatchObject({
       minimumAltitudeFt: 3000,
       maximumSpeedKt: 190,
+    });
+  });
+
+  it('ships four-sector Schiphol STARs from the current LVNL issue', () => {
+    const pack = INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS.find((item) => item.airportId === 'ams');
+    expect(pack?.referenceCycle).toContain('Netherlands eAIP AIRAC AMDT 08/2026');
+    expect(pack?.effectiveFrom).toBe('2026-08-06');
+    expect(pack?.effectiveTo).toBe('2026-09-02');
+    expect(pack?.procedures.map((procedure) => procedure.id)).toEqual([
+      'BLUFA1A', 'NORKU2A', 'REDFA1A', 'DENUT3A',
+    ]);
+    expect(pack?.sources.every((source) => source.publisher === 'Luchtverkeersleiding Nederland')).toBe(true);
+
+    const blufa1a = pack?.procedures.find((procedure) => procedure.id === 'BLUFA1A');
+    expect(blufa1a?.compatibleRunwayIds).toEqual([
+      '04', '22', '06', '24', '09', '27', '18C', '36C', '18L', '36R', '18R', '36L',
+    ]);
+    expect(blufa1a?.fixes.map((fix) => fix.id)).toEqual(['BLUFA', 'ARTIP']);
+    expect(blufa1a?.fixes.find((fix) => fix.id === 'ARTIP')).toMatchObject({
+      minimumAltitudeFt: 7000,
+      maximumAltitudeFt: 10000,
+      maximumSpeedKt: 250,
+    });
+
+    const norku2a = pack?.procedures.find((procedure) => procedure.id === 'NORKU2A');
+    expect(norku2a?.fixes.map((fix) => fix.id)).toEqual([
+      'NORKU', 'SONSA', 'ROBIS', 'OSKUR', 'ARTIP',
+    ]);
+    expect(norku2a?.fixes.find((fix) => fix.id === 'NORKU')).toMatchObject({
+      minimumAltitudeFt: 20000,
+      maximumAltitudeFt: 28000,
+    });
+
+    const redfa1a = pack?.procedures.find((procedure) => procedure.id === 'REDFA1A');
+    expect(redfa1a?.fixes.map((fix) => fix.id)).toEqual(['REDFA', 'SULUT', 'SUGOL']);
+    expect(redfa1a?.fixes.find((fix) => fix.id === 'SUGOL')).toMatchObject({
+      minimumAltitudeFt: 7000,
+      maximumAltitudeFt: 10000,
+      maximumSpeedKt: 250,
+    });
+
+    const denut3a = pack?.procedures.find((procedure) => procedure.id === 'DENUT3A');
+    expect(denut3a?.fixes.map((fix) => fix.id)).toEqual(['DENUT', 'YENZO', 'RIVER']);
+    expect(denut3a?.fixes.find((fix) => fix.id === 'RIVER')).toMatchObject({
+      minimumAltitudeFt: 7000,
+      maximumAltitudeFt: 10000,
+      maximumSpeedKt: 250,
     });
   });
 
