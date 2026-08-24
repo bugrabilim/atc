@@ -12,7 +12,7 @@ describe('published procedure catalog', () => {
     expect(PUBLISHED_PROCEDURE_PACKS.map((pack) => pack.airportId)).toEqual([
       'ist', 'lhr', 'lax', 'jfk', 'atl', 'dfw', 'ord', 'den',
       'mco', 'mia', 'las', 'sfo', 'clt', 'sea', 'phx', 'iah',
-      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams', 'mad', 'kul', 'bkk',
+      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams', 'mad', 'kul', 'bkk', 'hkg',
     ]);
     expect(publishedProcedurePackByAirportId.size).toBe(PUBLISHED_PROCEDURE_PACKS.length);
   });
@@ -398,6 +398,60 @@ describe('published procedure catalog', () => {
       maximumAltitudeFt: 15000,
     });
     expect(willa1c?.fixes.find((fix) => fix.id === 'ATKIN')).toMatchObject({ minimumAltitudeFt: 6000 });
+  });
+
+  it('ships all fourteen current Hong Kong STAR variants and coded constraints', () => {
+    const pack = INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS.find((item) => item.airportId === 'hkg');
+    expect(pack?.referenceCycle).toContain('Hong Kong CAD eAIP 06 AUG 2026');
+    expect(pack?.effectiveFrom).toBe('2026-08-06');
+    expect(pack?.effectiveTo).toBe('2026-09-02');
+    expect(pack?.procedures.map((procedure) => procedure.id)).toEqual([
+      'ABBEY4A', 'ABBEY3B', 'BETTY3A', 'BETTY3B', 'CANTO3A', 'CANTO3B',
+      'SIERA7A', 'SIERA7B', 'SIERA7C', 'SIERA7D',
+      'ABBEY2G', 'BETTY2G', 'CANTO2G', 'SIERA2G',
+    ]);
+    expect(pack?.sources.every((source) => source.publisher === 'Civil Aviation Department Hong Kong')).toBe(true);
+
+    const abbey4a = pack?.procedures.find((procedure) => procedure.id === 'ABBEY4A');
+    expect(abbey4a?.compatibleRunwayIds).toEqual(['07L', '07C', '07R']);
+    expect(abbey4a?.fixes.map((fix) => fix.id)).toEqual([
+      'ABBEY', 'MUSEL', 'HH512', 'HH511', 'LIMES',
+    ]);
+    expect(abbey4a?.fixes.find((fix) => fix.id === 'MUSEL')).toMatchObject({
+      minimumAltitudeFt: 11000,
+      maximumAltitudeFt: 11000,
+      maximumSpeedKt: 280,
+    });
+    expect(abbey4a?.fixes.find((fix) => fix.id === 'LIMES')).toMatchObject({
+      minimumAltitudeFt: 3000,
+      maximumAltitudeFt: 6000,
+    });
+
+    const siera7d = pack?.procedures.find((procedure) => procedure.id === 'SIERA7D');
+    expect(siera7d?.compatibleRunwayIds).toEqual(['25L', '25C', '25R']);
+    expect(siera7d?.fixes.map((fix) => fix.id)).toEqual([
+      'SIERA', 'BORDA', 'ROCCA', 'CANTO', 'MURRY',
+      'SILVA', 'HH623', 'HH622', 'TEDUR', 'RIVMI',
+    ]);
+    expect(siera7d?.fixes.find((fix) => fix.id === 'BORDA')).toMatchObject({ maximumSpeedKt: 250 });
+    expect(siera7d?.fixes.find((fix) => fix.id === 'MURRY')).toMatchObject({
+      minimumAltitudeFt: 11000,
+      maximumAltitudeFt: 13000,
+    });
+
+    const betty2g = pack?.procedures.find((procedure) => procedure.id === 'BETTY2G');
+    expect(betty2g?.fixes.map((fix) => fix.id)).toEqual([
+      'BETTY', 'MANGO', 'HH633', 'HH632', 'HH631', 'LUDLA',
+    ]);
+    expect(betty2g?.fixes.find((fix) => fix.id === 'HH631')).toMatchObject({
+      minimumAltitudeFt: 5000,
+      maximumAltitudeFt: 6000,
+      maximumSpeedKt: 210,
+    });
+    expect(betty2g?.fixes.find((fix) => fix.id === 'LUDLA')).toMatchObject({
+      minimumAltitudeFt: 4500,
+      maximumAltitudeFt: 4500,
+    });
   });
 
   it('ships runway-specific Delhi STARs from the effective AIM India issue', () => {

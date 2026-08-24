@@ -116,6 +116,18 @@ describe('airport scenario catalog', () => {
     ]);
   });
 
+  it('uses Hong Kong published three-runway and night dual-runway assignments', () => {
+    const hongKong = scenarioCatalog.find((scenario) => scenario.id === 'hkg');
+    expect(hongKong?.world.environment?.elevationFt).toBe(28);
+    expect(hongKong?.world.runways.map((runway) => runway.heading)).toEqual([70.9, 70.9, 70.9]);
+    expect(hongKong?.world.flowConfigurations).toEqual([
+      expect.objectContaining({ id: 'hkg-primary', arrivalRunwayIds: ['07L', '07R'], departureRunwayIds: ['07C', '07R'] }),
+      expect.objectContaining({ id: 'hkg-reverse', arrivalRunwayIds: ['25R', '25L'], departureRunwayIds: ['25C', '25L'] }),
+      expect.objectContaining({ id: 'hkg-night-07', arrivalRunwayIds: ['07C'], departureRunwayIds: ['07R'] }),
+      expect.objectContaining({ id: 'hkg-night-25', arrivalRunwayIds: ['25C'], departureRunwayIds: ['25L'] }),
+    ]);
+  });
+
   it('can start directly in a non-primary flow without assigning inactive runways', () => {
     for (const scenario of scenarioCatalog.filter((item) => item.world.operations)) {
       const flow = scenario.world.flowConfigurations.at(-1)!;

@@ -1213,7 +1213,221 @@ const bangkokSuvarnabhumi: PublishedProcedurePack = {
   gameOnlyNotice: 'All ten current RNAV 1 STAR identities, common waypoint orders and represented coded restrictions are retained; feeder transitions and navigation-grade geometry are outside the compact game scope.',
 };
 
+/*
+ * Hong Kong CAD publishes both the FMC coding tables and WGS-84 waypoint
+ * lists on each current STAR chart. Bearings below are calculated from the
+ * VHHH ARP (221832N 1135453E). A single global projection (8 NM + 45% of
+ * real ARP distance, capped at 40 NM) retains the relative geometry of every
+ * route while keeping the 61 NM BETTY feed readable on the tactical scope.
+ */
+const hongKongFixGeometry = {
+  ABBEY: { bearing: 92.2, distanceNm: 33.3 },
+  MUSEL: { bearing: 93, distanceNm: 29.7 },
+  HH512: { bearing: 116.5, distanceNm: 25.3 },
+  HH511: { bearing: 148.3, distanceNm: 21.2 },
+  HH622: { bearing: 125.7, distanceNm: 24.4 },
+  HH623: { bearing: 148.7, distanceNm: 22.2 },
+  LIMES: { bearing: 212.6, distanceNm: 14.5 },
+  TEDUR: { bearing: 105, distanceNm: 20.5 },
+  RIVMI: { bearing: 76.1, distanceNm: 18.4 },
+  BETTY: { bearing: 143.9, distanceNm: 35.5 },
+  MANGO: { bearing: 141.2, distanceNm: 32.1 },
+  CANTO: { bearing: 196.4, distanceNm: 26.5 },
+  MURRY: { bearing: 189.9, distanceNm: 23.1 },
+  SILVA: { bearing: 181.4, distanceNm: 20.4 },
+  SIERA: { bearing: 226.2, distanceNm: 20.6 },
+  BORDA: { bearing: 217.4, distanceNm: 28.9 },
+  ROCCA: { bearing: 201.8, distanceNm: 30.6 },
+  LUDLA: { bearing: 118.6, distanceNm: 12.6 },
+  HH631: { bearing: 132.3, distanceNm: 15.2 },
+  HH632: { bearing: 138, distanceNm: 17.7 },
+  HH633: { bearing: 143.2, distanceNm: 22.3 },
+  HH634: { bearing: 141.1, distanceNm: 20 },
+  HH635: { bearing: 154.6, distanceNm: 21.5 },
+} satisfies Record<string, Omit<ProcedureFixTemplate, 'id'>>;
+
+type HongKongFixId = keyof typeof hongKongFixGeometry;
+type HongKongFixRestrictions = Pick<
+  ProcedureFixTemplate,
+  'minimumAltitudeFt' | 'maximumAltitudeFt' | 'maximumSpeedKt'
+>;
+
+function hongKongFix(
+  id: HongKongFixId,
+  restrictions: HongKongFixRestrictions = {},
+): ProcedureFixTemplate {
+  return { id, ...hongKongFixGeometry[id], ...restrictions };
+}
+
+const hongKong07Runways = ['07L', '07C', '07R'];
+const hongKong25Runways = ['25L', '25C', '25R'];
+
+const hongKongAbbey4AFixes: ProcedureFixTemplate[] = [
+  hongKongFix('ABBEY'),
+  hongKongFix('MUSEL', { minimumAltitudeFt: 11000, maximumAltitudeFt: 11000, maximumSpeedKt: 280 }),
+  hongKongFix('HH512', { maximumAltitudeFt: 9000 }),
+  hongKongFix('HH511'),
+  hongKongFix('LIMES', { minimumAltitudeFt: 3000, maximumAltitudeFt: 6000 }),
+];
+
+const hongKongAbbey3BFixes: ProcedureFixTemplate[] = [
+  hongKongFix('ABBEY'),
+  hongKongFix('MUSEL', { minimumAltitudeFt: 11000, maximumAltitudeFt: 11000, maximumSpeedKt: 280 }),
+  hongKongFix('TEDUR', { maximumAltitudeFt: 6000 }),
+  hongKongFix('RIVMI', { minimumAltitudeFt: 4500, maximumAltitudeFt: 6000 }),
+];
+
+const hongKongBetty3AFixes: ProcedureFixTemplate[] = [
+  hongKongFix('BETTY'),
+  hongKongFix('MANGO', { minimumAltitudeFt: 13000, maximumAltitudeFt: 13000, maximumSpeedKt: 280 }),
+  hongKongFix('HH511'),
+  hongKongFix('LIMES', { minimumAltitudeFt: 3000, maximumAltitudeFt: 6000 }),
+];
+
+const hongKongBetty3BFixes: ProcedureFixTemplate[] = [
+  hongKongFix('BETTY'),
+  hongKongFix('MANGO', { minimumAltitudeFt: 13000, maximumAltitudeFt: 13000, maximumSpeedKt: 280 }),
+  hongKongFix('TEDUR', { maximumAltitudeFt: 9000 }),
+  hongKongFix('RIVMI', { minimumAltitudeFt: 4500, maximumAltitudeFt: 6000 }),
+];
+
+const hongKongCanto07Fixes: ProcedureFixTemplate[] = [
+  hongKongFix('CANTO', { minimumAltitudeFt: 13000, maximumSpeedKt: 280 }),
+  hongKongFix('MURRY', { minimumAltitudeFt: 11000, maximumAltitudeFt: 13000 }),
+  hongKongFix('SILVA'),
+  hongKongFix('LIMES', { minimumAltitudeFt: 3000, maximumAltitudeFt: 6000 }),
+];
+
+const hongKongCanto25Fixes: ProcedureFixTemplate[] = [
+  hongKongFix('CANTO', { minimumAltitudeFt: 13000, maximumSpeedKt: 280 }),
+  hongKongFix('MURRY', { minimumAltitudeFt: 11000, maximumAltitudeFt: 13000 }),
+  hongKongFix('SILVA'),
+  hongKongFix('HH623'),
+  hongKongFix('HH622'),
+  hongKongFix('TEDUR', { maximumAltitudeFt: 6000 }),
+  hongKongFix('RIVMI', { minimumAltitudeFt: 4500, maximumAltitudeFt: 6000 }),
+];
+
+function hongKongSieraFixes(
+  viaBorda: boolean,
+  runway25: boolean,
+): ProcedureFixTemplate[] {
+  return [
+    hongKongFix('SIERA', { maximumSpeedKt: 280 }),
+    ...(viaBorda ? [
+      hongKongFix('BORDA', { maximumSpeedKt: 250 }),
+      hongKongFix('ROCCA'),
+    ] : []),
+    hongKongFix('CANTO', { minimumAltitudeFt: 13000 }),
+    hongKongFix('MURRY', { minimumAltitudeFt: 11000, maximumAltitudeFt: 13000 }),
+    hongKongFix('SILVA'),
+    ...(runway25 ? [
+      hongKongFix('HH623'),
+      hongKongFix('HH622'),
+      hongKongFix('TEDUR', { maximumAltitudeFt: 6000 }),
+      hongKongFix('RIVMI', { minimumAltitudeFt: 4500, maximumAltitudeFt: 6000 }),
+    ] : [
+      hongKongFix('LIMES', { minimumAltitudeFt: 3000, maximumAltitudeFt: 6000 }),
+    ]),
+  ];
+}
+
+const hongKongAbbey2GFixes: ProcedureFixTemplate[] = [
+  hongKongFix('ABBEY'),
+  hongKongFix('MUSEL', { minimumAltitudeFt: 11000, maximumAltitudeFt: 11000, maximumSpeedKt: 280 }),
+  hongKongFix('TEDUR', { maximumAltitudeFt: 6000 }),
+  hongKongFix('HH631', { minimumAltitudeFt: 5000, maximumAltitudeFt: 6000, maximumSpeedKt: 210 }),
+  hongKongFix('LUDLA', { minimumAltitudeFt: 4500, maximumAltitudeFt: 4500 }),
+];
+
+const hongKongBetty2GFixes: ProcedureFixTemplate[] = [
+  hongKongFix('BETTY'),
+  hongKongFix('MANGO', { minimumAltitudeFt: 13000, maximumAltitudeFt: 13000, maximumSpeedKt: 280 }),
+  hongKongFix('HH633', { maximumAltitudeFt: 9000 }),
+  hongKongFix('HH632', { maximumAltitudeFt: 8000 }),
+  hongKongFix('HH631', { minimumAltitudeFt: 5000, maximumAltitudeFt: 6000, maximumSpeedKt: 210 }),
+  hongKongFix('LUDLA', { minimumAltitudeFt: 4500, maximumAltitudeFt: 4500 }),
+];
+
+function hongKongCanto2GFixes(fromSiera: boolean): ProcedureFixTemplate[] {
+  return [
+    ...(fromSiera ? [hongKongFix('SIERA')] : []),
+    hongKongFix('CANTO', { minimumAltitudeFt: 13000, maximumSpeedKt: 280 }),
+    hongKongFix('MURRY', { minimumAltitudeFt: 11000, maximumAltitudeFt: 13000 }),
+    hongKongFix('SILVA'),
+    hongKongFix('HH635', { maximumAltitudeFt: 9000 }),
+    hongKongFix('HH634'),
+    hongKongFix('HH632', { maximumAltitudeFt: 8000 }),
+    hongKongFix('HH631', { minimumAltitudeFt: 5000, maximumAltitudeFt: 6000, maximumSpeedKt: 210 }),
+    hongKongFix('LUDLA', { minimumAltitudeFt: 4500, maximumAltitudeFt: 4500 }),
+  ];
+}
+
+const hongKongInternational: PublishedProcedurePack = {
+  airportId: 'hkg',
+  packVersion: '2026.08.13',
+  referenceCycle: 'Hong Kong CAD eAIP 06 AUG 2026 · Amendment 7/26 STAR charts',
+  effectiveFrom: '2026-08-06',
+  effectiveTo: '2026-09-02',
+  generatedFrom: 'Hong Kong CAD eAIP · VHHH AD 1.1/AD 2 and FMC STAR coding tables',
+  procedures: [
+    { id: 'ABBEY4A', kind: 'arrival', compatibleRunwayIds: hongKong07Runways, entryTransition: 'ABBEY', fixes: hongKongAbbey4AFixes },
+    { id: 'ABBEY3B', kind: 'arrival', compatibleRunwayIds: hongKong25Runways, entryTransition: 'ABBEY', fixes: hongKongAbbey3BFixes },
+    { id: 'BETTY3A', kind: 'arrival', compatibleRunwayIds: hongKong07Runways, entryTransition: 'BETTY', fixes: hongKongBetty3AFixes },
+    { id: 'BETTY3B', kind: 'arrival', compatibleRunwayIds: hongKong25Runways, entryTransition: 'BETTY', fixes: hongKongBetty3BFixes },
+    { id: 'CANTO3A', kind: 'arrival', compatibleRunwayIds: hongKong07Runways, entryTransition: 'CANTO', fixes: hongKongCanto07Fixes },
+    { id: 'CANTO3B', kind: 'arrival', compatibleRunwayIds: hongKong25Runways, entryTransition: 'CANTO', fixes: hongKongCanto25Fixes },
+    { id: 'SIERA7A', kind: 'arrival', compatibleRunwayIds: hongKong07Runways, entryTransition: 'SIERA', fixes: hongKongSieraFixes(false, false) },
+    { id: 'SIERA7B', kind: 'arrival', compatibleRunwayIds: hongKong25Runways, entryTransition: 'SIERA', fixes: hongKongSieraFixes(false, true) },
+    { id: 'SIERA7C', kind: 'arrival', compatibleRunwayIds: hongKong07Runways, entryTransition: 'SIERA', fixes: hongKongSieraFixes(true, false) },
+    { id: 'SIERA7D', kind: 'arrival', compatibleRunwayIds: hongKong25Runways, entryTransition: 'SIERA', fixes: hongKongSieraFixes(true, true) },
+    { id: 'ABBEY2G', kind: 'arrival', compatibleRunwayIds: hongKong25Runways, entryTransition: 'ABBEY', fixes: hongKongAbbey2GFixes },
+    { id: 'BETTY2G', kind: 'arrival', compatibleRunwayIds: hongKong25Runways, entryTransition: 'BETTY', fixes: hongKongBetty2GFixes },
+    { id: 'CANTO2G', kind: 'arrival', compatibleRunwayIds: hongKong25Runways, entryTransition: 'CANTO', fixes: hongKongCanto2GFixes(false) },
+    { id: 'SIERA2G', kind: 'arrival', compatibleRunwayIds: hongKong25Runways, entryTransition: 'SIERA', fixes: hongKongCanto2GFixes(true) },
+  ],
+  sources: [
+    {
+      publisher: 'Civil Aviation Department Hong Kong',
+      title: 'Hong Kong eAIP — effective issue 06 AUG 2026',
+      url: 'https://www.ais.gov.hk/eaip_20260806/2026-08-06-000000/html/index-en-US.html',
+      purpose: 'Current issue and effective-date reference',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Department Hong Kong',
+      title: 'AD 1.1 — Parallel runway operations',
+      url: 'https://www.ais.gov.hk/eaip_20260806/2026-08-06-000000/html/eAIP/VH-AD-1.1-en-US.html',
+      purpose: 'Published three-runway and dual-runway arrival/departure assignments',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Department Hong Kong',
+      title: 'VHHH AD 2 — Hong Kong International',
+      url: 'https://www.ais.gov.hk/eaip_20260806/2026-08-06-000000/html/eAIP/VH-AD-2-VHHH-en-US.html',
+      purpose: 'ARP, elevation, runway geometry, STAR rules, waypoint catalogue and chart index',
+      accessedOn: ACCESSED_ON,
+    },
+    ...[
+      ['RNAV ABBEY 4A / 3B STAR', 'VH-AD-2-VHHH-STAR-ABBEY.pdf', 'ABBEY route order, restrictions and WGS-84 waypoint coordinates'],
+      ['RNAV BETTY 3A / 3B STAR', 'VH-AD-2-VHHH-STAR-BETTY.pdf', 'BETTY route order, restrictions and WGS-84 waypoint coordinates'],
+      ['RNAV CANTO 3A STAR', 'VH-AD-2-VHHH-STAR-CANTO-A.pdf', 'CANTO runway 07 route order, restrictions and coordinates'],
+      ['RNAV CANTO 3B STAR', 'VH-AD-2-VHHH-STAR-CANTO-B.pdf', 'CANTO runway 25 route order, restrictions and coordinates'],
+      ['RNAV SIERA 7A / 7C STAR', 'VH-AD-2-VHHH-STAR-SIERA-AC.pdf', 'SIERA runway 07 route variants, restrictions and coordinates'],
+      ['RNAV SIERA 7B / 7D STAR', 'VH-AD-2-VHHH-STAR-SIERA-BD.pdf', 'SIERA runway 25 route variants, restrictions and coordinates'],
+      ['RNAV(GNSS) ABBEY / BETTY / CANTO / SIERA 2G STAR', 'VH-AD-2-VHHH-STAR-G.pdf', 'RNP AR runway 25 route orders, restrictions and coordinates'],
+    ].map(([title, filename, purpose]) => ({
+      publisher: 'Civil Aviation Department Hong Kong',
+      title,
+      url: `https://www.ais.gov.hk/eaip_20260806/2026-08-06-000000/pdf/${filename}`,
+      purpose,
+      accessedOn: ACCESSED_ON,
+    })),
+  ],
+  gameOnlyNotice: 'All fourteen current RNAV STAR identities, chart waypoint orders and represented constraints are retained; WGS-84 geometry is uniformly projected into the compact tactical sector and is not for navigation.',
+};
+
 export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [
   delhi, incheon, dubai, parisCharlesDeGaulle, singaporeChangi, amsterdamSchiphol, madridBarajas,
-  kualaLumpurInternational, bangkokSuvarnabhumi,
+  kualaLumpurInternational, bangkokSuvarnabhumi, hongKongInternational,
 ];

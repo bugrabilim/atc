@@ -166,6 +166,28 @@ const reviewedFlowConfigurationsByAirportId = new Map<ScenarioId, FlowConfigurat
       windDirection: 195, windSpeedKt: 15, visibilityNm: 4, qnh: 1004,
     },
   ]],
+  ['hkg', [
+    {
+      id: 'hkg-primary', label: '07 · 07L GELİŞ / 07C KALKIŞ / 07R KARIŞIK',
+      arrivalRunwayIds: ['07L', '07R'], departureRunwayIds: ['07C', '07R'],
+      windDirection: 74, windSpeedKt: 8, visibilityNm: 12, qnh: 1013,
+    },
+    {
+      id: 'hkg-reverse', label: '25 · 25R GELİŞ / 25C KALKIŞ / 25L KARIŞIK',
+      arrivalRunwayIds: ['25R', '25L'], departureRunwayIds: ['25C', '25L'],
+      windDirection: 254, windSpeedKt: 10, visibilityNm: 10, qnh: 1009,
+    },
+    {
+      id: 'hkg-night-07', label: 'GECE 07 · 07C GELİŞ / 07R KALKIŞ',
+      arrivalRunwayIds: ['07C'], departureRunwayIds: ['07R'],
+      windDirection: 74, windSpeedKt: 7, visibilityNm: 8, qnh: 1011,
+    },
+    {
+      id: 'hkg-night-25', label: 'GECE 25 · 25C GELİŞ / 25L KALKIŞ',
+      arrivalRunwayIds: ['25C'], departureRunwayIds: ['25L'],
+      windDirection: 254, windSpeedKt: 9, visibilityNm: 8, qnh: 1008,
+    },
+  ]],
 ]);
 
 function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
