@@ -1,6 +1,6 @@
 # Published procedure runtime integration
 
-Updated: 2026-08-24
+Updated: 2026-08-24 · runtime pack 2026.08.3
 
 ## Product boundary
 
@@ -30,7 +30,29 @@ it is not navigation-grade data and must not be used for flight planning.
 | KLAX | IRNMN TWO, RYDRR TWO, WAYVE ONE arrivals | FAA d-TPP cycle 2608 |
 | KJFK | CAMRN FIVE, PARCH FOUR plus PAWLN/PUCKY entry feeds | FAA d-TPP cycle 2608 |
 | KATL | SITTH THREE runway transitions, GNDLF THREE feed | FAA d-TPP cycle 2608 |
+| KDFW | BEREE THREE, BRDJE FIVE, JOVEM SIX, SHMPP THREE arrivals | FAA CIFP cycle 2608 |
+| KORD | BENKY SIX, ERNNY EIGHT, ESSPO FIVE, FYTTE SEVEN arrivals | FAA CIFP cycle 2608 |
+| KDEN | AALLE FOUR, CLASH FIVE, FLATI FIVE, SSKII FOUR arrivals | FAA CIFP cycle 2608 |
 
-The authoritative URLs and access dates live beside each operations pack in
-`src/engine/airportOperations.ts` so a future AIRAC update can be reviewed as a
-data change rather than hidden inside simulation code.
+The authoritative URLs and access dates live beside each reviewed operations
+pack or in the generated FAA pack. Eight of the 50 playable airports now have
+published runtime routes; the other 42 continue to be labeled and executed as
+generated vector routes rather than being presented as real procedures.
+
+## Repeatable FAA CIFP import
+
+The FAA publishes a 132-column ARINC 424-18 CIFP file on each 28-day cycle. The
+repository intentionally does not commit that roughly 53 MB source file.
+Download and extract the official ZIP, then regenerate the selected U.S. pack:
+
+```bash
+npm run import:cifp -- /path/to/FAACIFP18
+```
+
+`scripts/import-faa-cifp.mjs` validates the record width, resolves airport and
+waypoint coordinates, joins a selected STAR feeder transition to its common
+route, decodes represented altitude/speed restrictions, derives runway
+compatibility and projects the route into the 40 NM tactical display. Its
+deterministic output is committed at
+`src/engine/generated/faaCifpProcedures.ts`, so a cycle update is reviewable as
+a normal source diff.

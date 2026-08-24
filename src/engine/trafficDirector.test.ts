@@ -95,6 +95,27 @@ describe('traffic director', () => {
     expect(plan.aircraft.speed).toBeLessThanOrEqual(entryFix?.maximumSpeedKt ?? Number.POSITIVE_INFINITY);
   });
 
+  it('starts generated CIFP arrivals inside the first upcoming crossing restriction', () => {
+    const dfwScenario = scenarioCatalog.find((scenario) => scenario.id === 'dfw');
+    if (!dfwScenario) throw new Error('Missing DFW scenario');
+    const activeWorld = worldWithFlow(dfwScenario.world, dfwScenario.world.flowConfigurations[0]!.id, 10);
+    const plan = planTraffic(0, [], activeWorld, 73);
+    const procedure = activeWorld.procedures.find((item) => item.id === plan.aircraft.navigation?.procedure);
+    if (!procedure) throw new Error('Expected a generated DFW STAR');
+    const firstAltitudeConstraint = procedure.fixIds
+      .map((fixId) => activeWorld.fixes.find((fix) => fix.id === fixId))
+      .find((fix) => fix?.minimumAltitudeFt !== undefined || fix?.maximumAltitudeFt !== undefined);
+    const firstSpeedConstraint = procedure.fixIds
+      .map((fixId) => activeWorld.fixes.find((fix) => fix.id === fixId))
+      .find((fix) => fix?.maximumSpeedKt !== undefined);
+
+    expect(['BEREE3', 'BRDJE5', 'JOVEM6', 'SHMPP3']).toContain(procedure.id);
+    expect(plan.aircraft.altitude).toBeGreaterThanOrEqual(firstAltitudeConstraint?.minimumAltitudeFt ?? 0);
+    expect(plan.aircraft.altitude).toBeLessThanOrEqual(firstAltitudeConstraint?.maximumAltitudeFt ?? Number.POSITIVE_INFINITY);
+    expect(plan.aircraft.speed).toBeLessThanOrEqual(firstSpeedConstraint?.maximumSpeedKt ?? Number.POSITIVE_INFINITY);
+    expect(plan.message).toContain(`${procedure.id} gelişinde`);
+  });
+
   it('guarantees a heavy arrival at an airport-specific cadence and displays the named feed', () => {
     const heavyArrival = planTraffic(7, [], world, 73);
     expect(['B789', 'A330', 'B77W', 'A388']).toContain(heavyArrival.aircraft.type);

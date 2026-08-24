@@ -24,7 +24,21 @@ export interface PublishedProcedureTemplate {
   id: string;
   kind: 'arrival' | 'departure';
   compatibleRunwayIds: string[];
+  /** Published feeder/runway transition selected for this tactical route. */
+  entryTransition?: string;
   fixes: ProcedureFixTemplate[];
+}
+
+export interface PublishedProcedurePack {
+  airportId: ScenarioId;
+  packVersion: string;
+  referenceCycle: string;
+  procedures: PublishedProcedureTemplate[];
+  sources: AirportOperationsSource[];
+  gameOnlyNotice: string;
+  effectiveFrom?: string;
+  effectiveTo?: string;
+  generatedFrom?: string;
 }
 
 export interface AirportOperationsPack extends AirportOperationsProfile {

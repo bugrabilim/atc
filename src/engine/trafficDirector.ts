@@ -51,6 +51,14 @@ function departureLoad(aircraft: readonly Aircraft[], runwayId: string) {
   return aircraft.filter((item) => item.phase === 'departure' && item.assignedRunway === runwayId).length;
 }
 
+function firstRouteConstraint(world: RadarWorld, fixIds: readonly string[], kind: 'altitude' | 'speed') {
+  return fixIds
+    .map((fixId) => world.fixes.find((fix) => fix.id === fixId))
+    .find((fix) => kind === 'altitude'
+      ? fix?.minimumAltitudeFt !== undefined || fix?.maximumAltitudeFt !== undefined
+      : fix?.maximumSpeedKt !== undefined);
+}
+
 function chooseArrivalRunway(aircraft: readonly Aircraft[], world: RadarWorld, index: number, seed: number) {
   const runways = activeArrivalRunways(world);
   if (runways.length === 0) throw new Error('Traffic director requires an active arrival runway');
@@ -79,15 +87,18 @@ function planArrival(index: number, activeAircraft: readonly Aircraft[], world: 
   const fleetPool = forceHeavy ? arrivalFleet.filter((item) => item.performance === heavy) : arrivalFleet;
   const fleet = fleetPool[variant % fleetPool.length];
   const entryFix = world.fixes.find((fix) => fix.id === entry.id);
+  const routeFixIds = procedure?.source === 'published' ? procedure.fixIds : [entry.id];
+  const altitudeConstraint = firstRouteConstraint(world, routeFixIds, 'altitude') ?? entryFix;
+  const speedConstraint = firstRouteConstraint(world, routeFixIds, 'speed') ?? entryFix;
   const generatedAltitude = 7000 + ((variant * 1100) % 7000);
   const altitude = Math.max(
-    entryFix?.minimumAltitudeFt ?? 0,
-    Math.min(entryFix?.maximumAltitudeFt ?? Number.POSITIVE_INFINITY, generatedAltitude),
+    altitudeConstraint?.minimumAltitudeFt ?? 0,
+    Math.min(altitudeConstraint?.maximumAltitudeFt ?? Number.POSITIVE_INFINITY, generatedAltitude),
   );
   const generatedSpeed = fleet.performance === heavy
     ? 240 + ((variant * 11) % 38)
     : 225 + ((variant * 17) % 68);
-  const speed = Math.min(entryFix?.maximumSpeedKt ?? Number.POSITIVE_INFINITY, generatedSpeed);
+  const speed = Math.min(speedConstraint?.maximumSpeedKt ?? Number.POSITIVE_INFINITY, generatedSpeed);
   const heading = (headingTo(entry.position, { x: 0, y: 0 }) + ((variant % 3) - 1) * 12 + 360) % 360;
   const aircraft = createAircraft({
     callsign,

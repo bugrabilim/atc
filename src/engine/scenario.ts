@@ -14,6 +14,7 @@ import { profileForSkill } from './skill';
 import { difficultyConfig, modeTrafficProfile } from './difficulty';
 import { AIRPORT_DEFINITIONS, airportDefinitionById, type AirportDefinition, type AirportRunwayData } from './airportCatalog';
 import { airportOperationsById, type BoundaryId } from './airportOperations';
+import { publishedProcedurePackByAirportId } from './publishedProcedureCatalog';
 
 export interface GameScenario {
   id: ScenarioId;
@@ -99,6 +100,7 @@ function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
   const runways = usableRunways(definition).sort((first, second) => second.lengthNm - first.lengthNm);
   if (runways.length === 0) throw new Error(`${definition.icao} has no usable runway data`);
   const operationsPack = airportOperationsById.get(definition.id);
+  const procedurePack = publishedProcedurePackByAirportId.get(definition.id);
 
   const physicalRunways: Runway[] = runways.map((runway) => ({
     id: runway.lowId,
@@ -136,7 +138,7 @@ function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
     { id: `${definition.iata}-NE-DEPARTURE`, kind: 'departure' as const, fixIds: ['EXIT-NE'] },
     { id: `${definition.iata}-SW-DEPARTURE`, kind: 'departure' as const, fixIds: ['EXIT-SW'] },
   ];
-  const publishedFixes = operationsPack?.procedures.flatMap((procedure) => procedure.fixes.map((fix) => ({
+  const publishedFixes = procedurePack?.procedures.flatMap((procedure) => procedure.fixes.map((fix) => ({
     id: fix.id,
     label: fix.id,
     position: pointAtBearing(fix.bearing, fix.distanceNm),
@@ -145,7 +147,7 @@ function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
     maximumSpeedKt: fix.maximumSpeedKt,
   }))) ?? [];
   const uniquePublishedFixes = [...new Map(publishedFixes.map((fix) => [fix.id, fix])).values()];
-  const publishedProcedures = operationsPack?.procedures.map((procedure) => ({
+  const publishedProcedures = procedurePack?.procedures.map((procedure) => ({
     id: procedure.id,
     kind: procedure.kind,
     fixIds: procedure.fixes.map((fix) => fix.id),

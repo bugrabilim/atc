@@ -41,13 +41,16 @@ describe('airport scenario catalog', () => {
     }
   });
 
-  it('loads verified flagship procedures as executable routes', () => {
+  it('loads reviewed and generated published procedures as executable routes', () => {
     const expected = {
       ist: ['RIXEN1W', 'VICEN1S'],
       lhr: ['BNN-STACK', 'LAM-STACK', 'BIG-STACK', 'OCK-STACK'],
       lax: ['IRNMN2', 'RYDRR2', 'WAYVE1'],
       jfk: ['CAMRN5', 'PARCH4', 'PAWLN1', 'PUCKY1'],
       atl: ['SITTH3-09', 'SITTH3-08', 'GNDLF3'],
+      dfw: ['BEREE3', 'BRDJE5', 'JOVEM6', 'SHMPP3'],
+      ord: ['BENKY6', 'ERNNY8', 'ESSPO5', 'FYTTE7'],
+      den: ['AALLE4', 'CLASH5', 'FLATI5', 'SSKII4'],
     } as const;
 
     for (const [airportId, procedureIds] of Object.entries(expected)) {

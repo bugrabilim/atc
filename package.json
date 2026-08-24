@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
+    "import:cifp": "node scripts/import-faa-cifp.mjs",
     "test": "vitest run",
     "typecheck": "tsc -b --pretty false"
   },
