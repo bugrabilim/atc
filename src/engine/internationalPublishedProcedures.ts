@@ -3,6 +3,7 @@ import type {
   PublishedProcedurePack,
   PublishedProcedureTemplate,
 } from './airportOperations';
+import { DOHA_PUBLISHED_PROCEDURE_PACK } from './dohaPublishedProcedures';
 import { MUMBAI_PUBLISHED_PROCEDURE_PACK } from './mumbaiPublishedProcedures';
 
 const ACCESSED_ON = '2026-08-24';
@@ -1701,5 +1702,5 @@ const barcelonaElPrat: PublishedProcedurePack = {
 export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [
   delhi, incheon, dubai, parisCharlesDeGaulle, singaporeChangi, amsterdamSchiphol, madridBarajas,
   kualaLumpurInternational, bangkokSuvarnabhumi, hongKongInternational, barcelonaElPrat,
-  MUMBAI_PUBLISHED_PROCEDURE_PACK,
+  MUMBAI_PUBLISHED_PROCEDURE_PACK, DOHA_PUBLISHED_PROCEDURE_PACK,
 ];

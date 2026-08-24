@@ -12,7 +12,7 @@ describe('published procedure catalog', () => {
     expect(PUBLISHED_PROCEDURE_PACKS.map((pack) => pack.airportId)).toEqual([
       'ist', 'lhr', 'lax', 'jfk', 'atl', 'dfw', 'ord', 'den',
       'mco', 'mia', 'las', 'sfo', 'clt', 'sea', 'phx', 'iah',
-      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams', 'mad', 'kul', 'bkk', 'hkg', 'bcn', 'bom',
+      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams', 'mad', 'kul', 'bkk', 'hkg', 'bcn', 'bom', 'doh',
     ]);
     expect(publishedProcedurePackByAirportId.size).toBe(PUBLISHED_PROCEDURE_PACKS.length);
   });
@@ -555,6 +555,49 @@ describe('published procedure catalog', () => {
       minimumAltitudeFt: 12000,
       maximumAltitudeFt: 12000,
       maximumSpeedKt: 210,
+    });
+  });
+
+  it('ships all 41 current Doha RNP STARs and their trombone constraints', () => {
+    const pack = INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS.find((item) => item.airportId === 'doh');
+    expect(pack?.referenceCycle).toContain('AIRAC AMDT 04/2026');
+    expect(pack?.effectiveFrom).toBe('2026-04-16');
+    expect(pack?.procedures).toHaveLength(41);
+    expect(pack?.sources.every((source) => source.publisher === 'Qatar Civil Aviation Authority')).toBe(true);
+
+    const southFlow = pack?.procedures.filter((procedure) => procedure.compatibleRunwayIds.includes('16L'));
+    const northFlow = pack?.procedures.filter((procedure) => procedure.compatibleRunwayIds.includes('34R'));
+    expect(southFlow).toHaveLength(20);
+    expect(northFlow).toHaveLength(21);
+    expect(southFlow?.every((procedure) => procedure.compatibleRunwayIds.join('/') === '16L/16R')).toBe(true);
+    expect(northFlow?.every((procedure) => procedure.compatibleRunwayIds.join('/') === '34L/34R')).toBe(true);
+
+    const alkan1f = pack?.procedures.find((procedure) => procedure.id === 'ALKAN1F');
+    expect(alkan1f?.fixes.map((fix) => fix.id)).toEqual([
+      'ALKAN', 'GETOV', 'RESAR', 'SILBI', 'NORMU', 'DATAL', 'LABEX', 'KUBAR', 'OXAGO',
+      'LUBAK', 'BAYAN', 'LOVET', 'EGNUG', 'KIPIK', 'NOKTO', 'LOSEN', 'KATED',
+    ]);
+    expect(alkan1f?.fixes.find((fix) => fix.id === 'KATED')).toMatchObject({
+      minimumAltitudeFt: 2500,
+      maximumAltitudeFt: 3500,
+      maximumSpeedKt: 220,
+    });
+
+    const hayya1k = pack?.procedures.find((procedure) => procedure.id === 'HAYYA1K');
+    expect(hayya1k?.fixes.find((fix) => fix.id === 'MURGO')).toMatchObject({
+      minimumAltitudeFt: 16000,
+      maximumAltitudeFt: 16000,
+    });
+
+    const tovox2r = pack?.procedures.find((procedure) => procedure.id === 'TOVOX2R');
+    expect(tovox2r?.fixes.find((fix) => fix.id === 'KIVAM')).toMatchObject({
+      maximumAltitudeFt: 12000,
+      maximumSpeedKt: 250,
+    });
+    expect(tovox2r?.fixes.find((fix) => fix.id === 'MUXED')).toMatchObject({
+      minimumAltitudeFt: 2500,
+      maximumAltitudeFt: 3500,
+      maximumSpeedKt: 220,
     });
   });
 

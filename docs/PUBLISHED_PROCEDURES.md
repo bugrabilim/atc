@@ -1,6 +1,6 @@
 # Published procedure runtime integration
 
-Updated: 2026-08-24 · runtime pack 2026.08.15
+Updated: 2026-08-24 · runtime pack 2026.08.16
 
 ## Product boundary
 
@@ -53,15 +53,17 @@ it is not navigation-grade data and must not be used for flight planning.
 | VHHH | ABBEY 4A/3B, BETTY 3A/3B, CANTO 3A/3B, SIERA 7A/7B/7C/7D and ABBEY/BETTY/CANTO/SIERA 2G arrivals | Hong Kong CAD eAIP 06 AUG 2026 / Amendment 7/26 charts |
 | LEBL | 39 planable RNAV1 STARs for RWY 02, 06L/06R and 24L/24R; tactical-only X/Y/Z variants excluded | ENAIRE AIP España 06 AUG 2026 / AIRAC AMDT 07/26 / current LEBL STAR pages |
 | VABB | AGELA/BEDOL/EPKOS/AKTIV/EXOLU/IPNIB/OPAKA/BISET/DARMI/ERVIS/GUNDI/KABSO/SUGID 3L/3K/3M/3N arrivals for RWY 09/27/14/32 | AIM India AIRAC AIP Supplement 121/2026, effective 06 AUG 2026 |
+| OTHH | 41 ALKAN/HAYYA/VEDED/LAEEB/ORLEK/TOSNA/TOVOX RNP STAR variants for parallel RWY 16L/16R and 34L/34R flows | Qatar QCAA eAIP AIRAC AMDT 04/2026; STAR coding tables issue 02/2026 |
 
 The authoritative URLs and access dates live beside each reviewed operations
-pack, in the generated FAA pack or in the reviewed international pack. Twenty-eight
-of the 50 playable airports now have published runtime routes; the other 22 continue to be labeled and executed as
+pack, in the generated FAA pack or in the reviewed international pack. Twenty-nine
+of the 50 playable airports now have published runtime routes; the other 21 continue to be labeled and executed as
 generated vector routes rather than being presented as real procedures.
 
-ZUTF is next in traffic rank, but the official CAAC eAIP procedure content requires
-an authenticated account. It remains on generated vectors until an authoritative,
-current source can be accessed; no third-party chart was substituted.
+ZUTF and WIII occur earlier in traffic rank, but their official CAAC and Indonesia
+PIA/AIM procedure content requires authenticated access. Both remain on generated
+vectors until an authoritative current source can be accessed; no third-party or
+stale chart was substituted.
 
 Cycle 2608 runway records also corrected the SFO 01/19 leading zero and magnetic
 bearings, plus the current CLT 01/19 and 18/36 runway designators used by the
@@ -78,6 +80,10 @@ non-preferred night RWY 24L single-runway configuration.
 The VABB pack corrects the aerodrome elevation to 40 ft, runway bearings to
 089.52°/134.52° true and the primary runway-pair length to the current 3448 m
 physical extent. Its four intersecting-runway flows expose all 52 current STARs.
+The OTHH pack corrects both parallel runway bearings to 158.17°/158.16° true and
+their centres from the published threshold coordinates. Its north/south parallel
+and single-runway flows expose all 41 current RNP STARs, including the full
+trombone waypoint sequences used for peak sequencing and tactical shortening.
 
 ## Repeatable FAA CIFP import
 

@@ -232,6 +232,28 @@ const reviewedFlowConfigurationsByAirportId = new Map<ScenarioId, FlowConfigurat
       windDirection: 315, windSpeedKt: 10, visibilityNm: 7, qnh: 1007,
     },
   ]],
+  ['doh', [
+    {
+      id: 'doh-primary', label: 'GÜNEY · 16L/16R PARALEL',
+      arrivalRunwayIds: ['16L', '16R'], departureRunwayIds: ['16L', '16R'],
+      windDirection: 160, windSpeedKt: 9, visibilityNm: 12, qnh: 1012,
+    },
+    {
+      id: 'doh-reverse', label: 'KUZEY · 34L/34R PARALEL',
+      arrivalRunwayIds: ['34L', '34R'], departureRunwayIds: ['34L', '34R'],
+      windDirection: 340, windSpeedKt: 11, visibilityNm: 10, qnh: 1009,
+    },
+    {
+      id: 'doh-lowvis', label: 'GÜNEY · 16L TEK PİST',
+      arrivalRunwayIds: ['16L'], departureRunwayIds: ['16L'],
+      windDirection: 160, windSpeedKt: 16, visibilityNm: 4, qnh: 1005,
+    },
+    {
+      id: 'doh-north-lowvis', label: 'KUZEY · 34R TEK PİST',
+      arrivalRunwayIds: ['34R'], departureRunwayIds: ['34R'],
+      windDirection: 340, windSpeedKt: 17, visibilityNm: 4, qnh: 1004,
+    },
+  ]],
 ]);
 
 function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {

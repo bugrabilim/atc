@@ -156,6 +156,19 @@ describe('airport scenario catalog', () => {
     ]);
   });
 
+  it('uses Doha current parallel-runway geometry and independent approach flows', () => {
+    const doha = scenarioCatalog.find((scenario) => scenario.id === 'doh');
+    const dohaDefinition = AIRPORT_DEFINITIONS.find((airport) => airport.id === 'doh');
+    expect(doha?.world.environment?.elevationFt).toBe(13);
+    expect(dohaDefinition?.runways.map((runway) => runway.heading)).toEqual([158.17, 158.16]);
+    expect(doha?.world.flowConfigurations).toEqual([
+      expect.objectContaining({ id: 'doh-primary', arrivalRunwayIds: ['16L', '16R'], departureRunwayIds: ['16L', '16R'] }),
+      expect.objectContaining({ id: 'doh-reverse', arrivalRunwayIds: ['34L', '34R'], departureRunwayIds: ['34L', '34R'] }),
+      expect.objectContaining({ id: 'doh-lowvis', arrivalRunwayIds: ['16L'], departureRunwayIds: ['16L'] }),
+      expect.objectContaining({ id: 'doh-north-lowvis', arrivalRunwayIds: ['34R'], departureRunwayIds: ['34R'] }),
+    ]);
+  });
+
   it('can start directly in a non-primary flow without assigning inactive runways', () => {
     for (const scenario of scenarioCatalog.filter((item) => item.world.operations)) {
       const flow = scenario.world.flowConfigurations.at(-1)!;
