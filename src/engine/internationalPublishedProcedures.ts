@@ -229,4 +229,135 @@ const incheon: PublishedProcedurePack = {
   gameOnlyNotice: 'Published STAR identifiers, sampled waypoint order and represented restrictions are retained; WGS-84 geometry is projected into a compact tactical sector and is not for navigation.',
 };
 
-export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [delhi, incheon];
+/*
+ * UAE GCAA publishes the OMDB RNAV 1 FMS coding tables and the WGS-84
+ * significant-point catalogue separately. Bearings below are calculated from
+ * the OMDB ARP (251510N 0552152E). A single global projection (8 NM + 60% of
+ * chart distance, capped at 40 NM) preserves the downwind geometry inside the
+ * tactical scope. Intermediate fixes are sampled in published order so all
+ * four primary, time-independent feeds remain readable on a phone display.
+ */
+const dubaiImped3EFixes: ProcedureFixTemplate[] = [
+  { id: 'IMPED', bearing: 113.5, distanceNm: 33.1, maximumAltitudeFt: 12000, maximumSpeedKt: 230 },
+  { id: 'DB520', bearing: 109.4, distanceNm: 28.7, maximumAltitudeFt: 11000, maximumSpeedKt: 230 },
+  { id: 'DB517', bearing: 99.2, distanceNm: 21.8, maximumAltitudeFt: 10000 },
+  { id: 'DB423', bearing: 97.3, distanceNm: 14.1, minimumAltitudeFt: 8000 },
+  { id: 'DB407', bearing: 245.6, distanceNm: 9.4, maximumAltitudeFt: 6000, maximumSpeedKt: 210 },
+  { id: 'DB403', bearing: 287.3, distanceNm: 17.6 },
+  { id: 'SOLIL', bearing: 290.9, distanceNm: 20.5, maximumSpeedKt: 185 },
+  { id: 'DB414', bearing: 302, distanceNm: 22.7 },
+  { id: 'REREK', bearing: 302.2, distanceNm: 17.9 },
+];
+
+const dubaiPuval2EFixes: ProcedureFixTemplate[] = [
+  { id: 'PUVAL', bearing: 42.4, distanceNm: 24.9, maximumAltitudeFt: 11000, maximumSpeedKt: 230 },
+  { id: 'MIVUR', bearing: 51.1, distanceNm: 22 },
+  { id: 'OVADI', bearing: 62, distanceNm: 16.8 },
+  { id: 'SERSA', bearing: 61.7, distanceNm: 13.8 },
+  { id: 'DB406', bearing: 61.6, distanceNm: 10.9, maximumAltitudeFt: 7000 },
+  { id: 'DB407', bearing: 245.6, distanceNm: 9.4, maximumAltitudeFt: 6000, maximumSpeedKt: 210 },
+  { id: 'DB403', bearing: 287.3, distanceNm: 17.6 },
+  { id: 'SOLIL', bearing: 290.9, distanceNm: 20.5, maximumSpeedKt: 185 },
+  { id: 'DB414', bearing: 302, distanceNm: 22.7 },
+  { id: 'REREK', bearing: 302.2, distanceNm: 17.9 },
+];
+
+const dubaiImped3CFixes: ProcedureFixTemplate[] = [
+  { id: 'IMPED', bearing: 113.5, distanceNm: 33.1, maximumAltitudeFt: 12000, maximumSpeedKt: 230 },
+  { id: 'DB520', bearing: 109.4, distanceNm: 28.7, maximumAltitudeFt: 11000, maximumSpeedKt: 230 },
+  { id: 'DB518', bearing: 102.4, distanceNm: 24, maximumAltitudeFt: 10000 },
+  { id: 'VUTON', bearing: 94.7, distanceNm: 19.6, maximumAltitudeFt: 8000 },
+  { id: 'DB515', bearing: 88.1, distanceNm: 17.5, maximumSpeedKt: 210 },
+  { id: 'DB514', bearing: 74.9, distanceNm: 15.2, maximumAltitudeFt: 6000 },
+  { id: 'DB513', bearing: 94.5, distanceNm: 13.6 },
+  { id: 'GIRGO', bearing: 103.9, distanceNm: 16.4 },
+  { id: 'RIDEV', bearing: 110.3, distanceNm: 21 },
+  { id: 'DB508', bearing: 112, distanceNm: 23.4, maximumSpeedKt: 185 },
+  { id: 'DB506', bearing: 121.5, distanceNm: 25.6 },
+  { id: 'ULDOT', bearing: 121.5, distanceNm: 18.4 },
+];
+
+const dubaiPuval5CFixes: ProcedureFixTemplate[] = [
+  { id: 'PUVAL', bearing: 42.4, distanceNm: 24.9, maximumAltitudeFt: 11000, maximumSpeedKt: 230 },
+  { id: 'KEBOG', bearing: 16.5, distanceNm: 19.3 },
+  { id: 'KUPOR', bearing: 10.9, distanceNm: 16.5, minimumAltitudeFt: 8000, maximumSpeedKt: 210 },
+  { id: 'DB526', bearing: 32.7, distanceNm: 13.1 },
+  { id: 'DB530', bearing: 80.2, distanceNm: 11.8, maximumAltitudeFt: 7000 },
+  { id: 'DB513', bearing: 94.5, distanceNm: 13.6 },
+  { id: 'GIRGO', bearing: 103.9, distanceNm: 16.4 },
+  { id: 'RIDEV', bearing: 110.3, distanceNm: 21 },
+  { id: 'DB508', bearing: 112, distanceNm: 23.4, maximumSpeedKt: 185 },
+  { id: 'DB506', bearing: 121.5, distanceNm: 25.6 },
+  { id: 'ULDOT', bearing: 121.5, distanceNm: 18.4 },
+];
+
+const dubai: PublishedProcedurePack = {
+  airportId: 'dxb',
+  packVersion: '2026.08.6',
+  referenceCycle: 'UAE GCAA AIRAC AIP AMDT 09/2026 · published 2026-07-23 · effective 2026-09-03',
+  effectiveFrom: '2026-09-03',
+  generatedFrom: 'UAE GCAA eAIP · RNAV 1 STAR FMS coding tables and ENR 4.4 WGS-84 waypoint data',
+  procedures: [
+    {
+      id: 'IMPED3E',
+      kind: 'arrival',
+      compatibleRunwayIds: ['12L', '12R'],
+      entryTransition: 'IMPED',
+      fixes: dubaiImped3EFixes,
+    },
+    {
+      id: 'PUVAL2E',
+      kind: 'arrival',
+      compatibleRunwayIds: ['12L', '12R'],
+      entryTransition: 'PUVAL',
+      fixes: dubaiPuval2EFixes,
+    },
+    {
+      id: 'IMPED3C',
+      kind: 'arrival',
+      compatibleRunwayIds: ['30L', '30R'],
+      entryTransition: 'IMPED',
+      fixes: dubaiImped3CFixes,
+    },
+    {
+      id: 'PUVAL5C',
+      kind: 'arrival',
+      compatibleRunwayIds: ['30L', '30R'],
+      entryTransition: 'PUVAL',
+      fixes: dubaiPuval5CFixes,
+    },
+  ],
+  sources: [
+    {
+      publisher: 'UAE General Civil Aviation Authority',
+      title: 'UAE AIRAC AIP AMDT 09/2026 package cover',
+      url: 'https://www.gcaa.gov.ae/en/ais/AIPHtmlFiles/AIP/Current/AIRACs/2026-P08/html/cover-en-GB.html',
+      purpose: 'Official publication identity and publication date',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'UAE General Civil Aviation Authority',
+      title: 'GEN 0.2 record of AIP amendments',
+      url: 'https://www.gcaa.gov.ae/en/ais/AIPHtmlFiles/AIP/Current/AIRACs/2026-P08/html/eAIP/GEN-0.2-en-GB.html',
+      purpose: 'Official amendment effective date',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'UAE General Civil Aviation Authority',
+      title: 'OMDB AD 2 aerodrome data and STAR FMS coding tables',
+      url: 'https://www.gcaa.gov.ae/en/ais/AIPHtmlFiles/AIP/Current/AIRACs/2026-P08/html/eAIP/AD-2.OMDB-en-GB.html',
+      purpose: 'Airport reference point, runway compatibility, route order and altitude/speed restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'UAE General Civil Aviation Authority',
+      title: 'ENR 4.4 name-code designators for significant points',
+      url: 'https://www.gcaa.gov.ae/en/ais/AIPHtmlFiles/AIP/Current/AIRACs/2026-P08/html/eAIP/ENR-4.4-en-GB.html',
+      purpose: 'Official WGS-84 coordinates for represented STAR fixes',
+      accessedOn: ACCESSED_ON,
+    },
+  ],
+  gameOnlyNotice: 'Published STAR identifiers, sampled waypoint order and represented restrictions are retained; the pre-published 03 September 2026 geometry is projected into a compact tactical sector and is not for navigation.',
+};
+
+export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [delhi, incheon, dubai];

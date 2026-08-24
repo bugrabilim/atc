@@ -12,7 +12,7 @@ describe('published procedure catalog', () => {
     expect(PUBLISHED_PROCEDURE_PACKS.map((pack) => pack.airportId)).toEqual([
       'ist', 'lhr', 'lax', 'jfk', 'atl', 'dfw', 'ord', 'den',
       'mco', 'mia', 'las', 'sfo', 'clt', 'sea', 'phx', 'iah',
-      'del', 'icn',
+      'del', 'icn', 'dxb',
     ]);
     expect(publishedProcedurePackByAirportId.size).toBe(PUBLISHED_PROCEDURE_PACKS.length);
   });
@@ -49,6 +49,41 @@ describe('published procedure catalog', () => {
       maximumSpeedKt: 210,
     });
     expect(karbu2e?.fixes.find((fix) => fix.id === 'ENPIL')).toMatchObject({ minimumAltitudeFt: 7000 });
+  });
+
+  it('ships runway-compatible Dubai primary STARs from the published UAE GCAA issue', () => {
+    const pack = INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS.find((item) => item.airportId === 'dxb');
+    expect(pack?.referenceCycle).toContain('UAE GCAA AIRAC AIP AMDT 09/2026');
+    expect(pack?.effectiveFrom).toBe('2026-09-03');
+    expect(pack?.procedures.map((procedure) => procedure.id)).toEqual([
+      'IMPED3E', 'PUVAL2E', 'IMPED3C', 'PUVAL5C',
+    ]);
+    expect(pack?.sources.every((source) => source.publisher === 'UAE General Civil Aviation Authority')).toBe(true);
+
+    const imped3e = pack?.procedures.find((procedure) => procedure.id === 'IMPED3E');
+    expect(imped3e?.compatibleRunwayIds).toEqual(['12L', '12R']);
+    expect(imped3e?.fixes.map((fix) => fix.id)).toEqual([
+      'IMPED', 'DB520', 'DB517', 'DB423', 'DB407',
+      'DB403', 'SOLIL', 'DB414', 'REREK',
+    ]);
+    expect(imped3e?.fixes.find((fix) => fix.id === 'IMPED')).toMatchObject({
+      maximumAltitudeFt: 12000,
+      maximumSpeedKt: 230,
+    });
+    expect(imped3e?.fixes.find((fix) => fix.id === 'DB423')).toMatchObject({ minimumAltitudeFt: 8000 });
+    expect(imped3e?.fixes.find((fix) => fix.id === 'SOLIL')).toMatchObject({ maximumSpeedKt: 185 });
+
+    const puval5c = pack?.procedures.find((procedure) => procedure.id === 'PUVAL5C');
+    expect(puval5c?.compatibleRunwayIds).toEqual(['30L', '30R']);
+    expect(puval5c?.fixes.map((fix) => fix.id)).toEqual([
+      'PUVAL', 'KEBOG', 'KUPOR', 'DB526', 'DB530',
+      'DB513', 'GIRGO', 'RIDEV', 'DB508', 'DB506', 'ULDOT',
+    ]);
+    expect(puval5c?.fixes.find((fix) => fix.id === 'KUPOR')).toMatchObject({
+      minimumAltitudeFt: 8000,
+      maximumSpeedKt: 210,
+    });
+    expect(puval5c?.fixes.find((fix) => fix.id === 'DB530')).toMatchObject({ maximumAltitudeFt: 7000 });
   });
 
   it('ships runway-specific Delhi STARs from the effective AIM India issue', () => {

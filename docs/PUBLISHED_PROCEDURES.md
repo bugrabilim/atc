@@ -1,6 +1,6 @@
 # Published procedure runtime integration
 
-Updated: 2026-08-24 · runtime pack 2026.08.5
+Updated: 2026-08-24 · runtime pack 2026.08.6
 
 ## Product boundary
 
@@ -43,10 +43,11 @@ it is not navigation-grade data and must not be used for flight planning.
 | KIAH | BAZBL ONE, GESNR TWO, HTOWN THREE, LINKK ONE arrivals | FAA CIFP cycle 2608 |
 | VIDP | SP/ELKUX 6E-6H and BAVOX/POSIG 6A-6D arrivals | AIM India AIP AMDT 07/2026 |
 | RKSI | GUKDO/KARBU 2H and GUKDO/KARBU 2E RNAV arrivals | Korea AIM current assignment / AIRAC AIP AMDT 9/25 charts |
+| OMDB | IMPED 3E / PUVAL 2E for RWY 12 and IMPED 3C / PUVAL 5C for RWY 30 | UAE GCAA AIRAC AIP AMDT 09/2026, effective 2026-09-03 |
 
 The authoritative URLs and access dates live beside each reviewed operations
-pack, in the generated FAA pack or in the reviewed international pack. Eighteen
-of the 50 playable airports now have published runtime routes; the other 32 continue to be labeled and executed as
+pack, in the generated FAA pack or in the reviewed international pack. Nineteen
+of the 50 playable airports now have published runtime routes; the other 31 continue to be labeled and executed as
 generated vector routes rather than being presented as real procedures.
 
 Cycle 2608 runway records also corrected the SFO 01/19 leading zero and magnetic
