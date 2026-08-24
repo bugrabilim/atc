@@ -12,7 +12,7 @@ describe('published procedure catalog', () => {
     expect(PUBLISHED_PROCEDURE_PACKS.map((pack) => pack.airportId)).toEqual([
       'ist', 'lhr', 'lax', 'jfk', 'atl', 'dfw', 'ord', 'den',
       'mco', 'mia', 'las', 'sfo', 'clt', 'sea', 'phx', 'iah',
-      'del', 'icn', 'dxb',
+      'del', 'icn', 'dxb', 'cdg',
     ]);
     expect(publishedProcedurePackByAirportId.size).toBe(PUBLISHED_PROCEDURE_PACKS.length);
   });
@@ -84,6 +84,55 @@ describe('published procedure catalog', () => {
       maximumSpeedKt: 210,
     });
     expect(puval5c?.fixes.find((fix) => fix.id === 'DB530')).toMatchObject({ maximumAltitudeFt: 7000 });
+  });
+
+  it('ships four-sector Paris CDG STARs from the current France SIA issue', () => {
+    const pack = INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS.find((item) => item.airportId === 'cdg');
+    expect(pack?.referenceCycle).toContain('France SIA eAIP 06 AUG 2026');
+    expect(pack?.effectiveFrom).toBe('2026-08-06');
+    expect(pack?.effectiveTo).toBe('2026-09-02');
+    expect(pack?.procedures.map((procedure) => procedure.id)).toEqual([
+      'MATIX9E', 'LUKIP9E', 'TINIL9W', 'ROMGO9P',
+    ]);
+    expect(pack?.sources.every((source) => source.publisher === 'Service de l’information aéronautique, France')).toBe(true);
+
+    const matix9e = pack?.procedures.find((procedure) => procedure.id === 'MATIX9E');
+    expect(matix9e?.compatibleRunwayIds).toEqual(['08L', '08R', '09L', '09R']);
+    expect(matix9e?.fixes.map((fix) => fix.id)).toEqual([
+      'MATIX', 'VAKOS', 'ENORI', 'DEVIM', 'LORNI',
+    ]);
+    expect(matix9e?.fixes.find((fix) => fix.id === 'DEVIM')).toMatchObject({ maximumAltitudeFt: 16000 });
+    expect(matix9e?.fixes.find((fix) => fix.id === 'LORNI')).toMatchObject({
+      minimumAltitudeFt: 11000,
+      maximumAltitudeFt: 15000,
+      maximumSpeedKt: 300,
+    });
+
+    const tinil9w = pack?.procedures.find((procedure) => procedure.id === 'TINIL9W');
+    expect(tinil9w?.compatibleRunwayIds).toEqual(['26L', '26R', '27L', '27R']);
+    expect(tinil9w?.fixes.map((fix) => fix.id)).toEqual([
+      'TINIL', 'FF302', 'NANOP', 'FF301', 'URELO', 'OKIPA',
+    ]);
+    expect(tinil9w?.fixes.find((fix) => fix.id === 'FF301')).toMatchObject({
+      maximumAltitudeFt: 16000,
+      maximumSpeedKt: 250,
+    });
+    expect(tinil9w?.fixes.find((fix) => fix.id === 'OKIPA')).toMatchObject({
+      minimumAltitudeFt: 7000,
+      maximumAltitudeFt: 11000,
+    });
+
+    const romgo9p = pack?.procedures.find((procedure) => procedure.id === 'ROMGO9P');
+    expect(romgo9p?.fixes.map((fix) => fix.id)).toEqual(['ROMGO', 'FF501', 'NERKI', 'BANOX']);
+    expect(romgo9p?.fixes.find((fix) => fix.id === 'FF501')).toMatchObject({
+      minimumAltitudeFt: 19000,
+      maximumAltitudeFt: 19000,
+    });
+    expect(romgo9p?.fixes.find((fix) => fix.id === 'BANOX')).toMatchObject({
+      minimumAltitudeFt: 14000,
+      maximumAltitudeFt: 14000,
+      maximumSpeedKt: 300,
+    });
   });
 
   it('ships runway-specific Delhi STARs from the effective AIM India issue', () => {

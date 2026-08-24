@@ -360,4 +360,127 @@ const dubai: PublishedProcedurePack = {
   gameOnlyNotice: 'Published STAR identifiers, sampled waypoint order and represented restrictions are retained; the pre-published 03 September 2026 geometry is projected into a compact tactical sector and is not for navigation.',
 };
 
-export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [delhi, incheon, dubai];
+/*
+ * France SIA publishes the LFPG STAR coding tables, chart families and WGS-84
+ * significant-point catalogue independently. Bearings below are calculated
+ * from the LFPG ARP (490035N 0023252E). A single global projection (8 NM +
+ * 25% of chart distance, capped at 40 NM) retains the four sector feeds while
+ * fitting TINIL's 130+ NM transition on the tactical scope. The selected
+ * procedures are standard, time-independent feeds with disjoint waypoint sets,
+ * so their east/west crossing constraints remain route-specific at runtime.
+ */
+const parisMatix9EFixes: ProcedureFixTemplate[] = [
+  { id: 'MATIX', bearing: 38.6, distanceNm: 29.1, maximumSpeedKt: 300 },
+  { id: 'VAKOS', bearing: 58.9, distanceNm: 24.6 },
+  { id: 'ENORI', bearing: 59.5, distanceNm: 21.9 },
+  { id: 'DEVIM', bearing: 57.7, distanceNm: 20.5, maximumAltitudeFt: 16000 },
+  { id: 'LORNI', bearing: 54.9, distanceNm: 18.8, minimumAltitudeFt: 11000, maximumAltitudeFt: 15000, maximumSpeedKt: 300 },
+];
+
+const parisLukip9EFixes: ProcedureFixTemplate[] = [
+  { id: 'LUKIP', bearing: 283.6, distanceNm: 28.6, maximumAltitudeFt: 24000, maximumSpeedKt: 280 },
+  { id: 'KOLIV', bearing: 294.8, distanceNm: 18.5, minimumAltitudeFt: 10000, maximumAltitudeFt: 11000, maximumSpeedKt: 250 },
+  { id: 'MOPAR', bearing: 298.9, distanceNm: 16.9, minimumAltitudeFt: 8000, maximumAltitudeFt: 10000, maximumSpeedKt: 250 },
+];
+
+const parisTinil9WFixes: ProcedureFixTemplate[] = [
+  { id: 'TINIL', bearing: 129, distanceNm: 40 },
+  { id: 'FF302', bearing: 128.1, distanceNm: 38.4, maximumAltitudeFt: 28000, maximumSpeedKt: 280 },
+  { id: 'NANOP', bearing: 123.1, distanceNm: 28.2 },
+  { id: 'FF301', bearing: 122.6, distanceNm: 26.2, maximumAltitudeFt: 16000, maximumSpeedKt: 250 },
+  { id: 'URELO', bearing: 120.7, distanceNm: 21.7, maximumAltitudeFt: 12000 },
+  { id: 'OKIPA', bearing: 120.4, distanceNm: 19.7, minimumAltitudeFt: 7000, maximumAltitudeFt: 11000 },
+];
+
+const parisRomgo9PFixes: ProcedureFixTemplate[] = [
+  { id: 'ROMGO', bearing: 240.1, distanceNm: 27.6, maximumSpeedKt: 300 },
+  { id: 'FF501', bearing: 239.7, distanceNm: 25.5, minimumAltitudeFt: 19000, maximumAltitudeFt: 19000 },
+  { id: 'NERKI', bearing: 238.8, distanceNm: 22.2, minimumAltitudeFt: 14000, maximumAltitudeFt: 14000 },
+  { id: 'BANOX', bearing: 238, distanceNm: 20.2, minimumAltitudeFt: 14000, maximumAltitudeFt: 14000, maximumSpeedKt: 300 },
+];
+
+const parisCharlesDeGaulle: PublishedProcedurePack = {
+  airportId: 'cdg',
+  packVersion: '2026.08.7',
+  referenceCycle: 'France SIA eAIP 06 AUG 2026 · LFPG STAR AMDT 06/26',
+  effectiveFrom: '2026-08-06',
+  effectiveTo: '2026-09-02',
+  generatedFrom: 'France SIA eAIP · RNAV STAR coding tables, charts and ENR 4.4 WGS-84 waypoint data',
+  procedures: [
+    {
+      id: 'MATIX9E',
+      kind: 'arrival',
+      compatibleRunwayIds: ['08L', '08R', '09L', '09R'],
+      entryTransition: 'MATIX',
+      fixes: parisMatix9EFixes,
+    },
+    {
+      id: 'LUKIP9E',
+      kind: 'arrival',
+      compatibleRunwayIds: ['08L', '08R', '09L', '09R'],
+      entryTransition: 'LUKIP',
+      fixes: parisLukip9EFixes,
+    },
+    {
+      id: 'TINIL9W',
+      kind: 'arrival',
+      compatibleRunwayIds: ['26L', '26R', '27L', '27R'],
+      entryTransition: 'TINIL',
+      fixes: parisTinil9WFixes,
+    },
+    {
+      id: 'ROMGO9P',
+      kind: 'arrival',
+      compatibleRunwayIds: ['26L', '26R', '27L', '27R'],
+      entryTransition: 'ROMGO',
+      fixes: parisRomgo9PFixes,
+    },
+  ],
+  sources: [
+    {
+      publisher: 'Service de l’information aéronautique, France',
+      title: 'LFPG AD 2 — Paris Charles de Gaulle, eAIP issue 06 AUG 2026',
+      url: 'https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_06_AUG_2026/FRANCE/AIRAC-2026-08-06/html/eAIP/FR-AD-2.LFPG-fr-FR.html',
+      purpose: 'Current issue, airport reference point, runway identifiers, operating concept and official chart index',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Service de l’information aéronautique, France',
+      title: 'LFPG RWY EAST RNAV STAR — MATIX/MOPIL/ENORI/VEDUS 9E/9H',
+      url: 'https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_06_AUG_2026/FRANCE/AIRAC-2026-08-06/html/eAIP/Cartes/LFPG/AD_2_LFPG_STAR_RWY_EAST_RNAV_MATIX_MOPIL_ENORI_VEDUS_9E_9H.pdf',
+      purpose: 'MATIX 9E route family, east-runway configuration and chart restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Service de l’information aéronautique, France',
+      title: 'LFPG RWY EAST RNAV STAR — BIBAX/LUKIP 9E/9D',
+      url: 'https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_06_AUG_2026/FRANCE/AIRAC-2026-08-06/html/eAIP/Cartes/LFPG/AD_2_LFPG_STAR_RWY_EAST_RNAV_BIBAX_LUKIP_9E_9D.pdf',
+      purpose: 'LUKIP 9E route family, east-runway configuration and chart restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Service de l’information aéronautique, France',
+      title: 'LFPG RWY WEST RNAV STAR — EPL/RLP/TINIL/DJL/PIBAT/MOU/TRO 9W/9P',
+      url: 'https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_06_AUG_2026/FRANCE/AIRAC-2026-08-06/html/eAIP/Cartes/LFPG/AD_2_LFPG_STAR_RWY_WEST_RNAV_EPL_RLP_TINIL_DJL_PIBAT_MOU_TRO_9W_9P.pdf',
+      purpose: 'TINIL 9W route family, west-runway configuration and chart restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Service de l’information aéronautique, France',
+      title: 'LFPG RWY WEST RNAV STAR — KEPER/KOVAK/SABLE/ROMGO 9W/9P',
+      url: 'https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_06_AUG_2026/FRANCE/AIRAC-2026-08-06/html/eAIP/Cartes/LFPG/AD_2_LFPG_STAR_RWY_WEST_RNAV_KEPER_KOVAK_SABLE_ROMGO_9W_9P.pdf',
+      purpose: 'ROMGO 9P route family, west-runway configuration and chart restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Service de l’information aéronautique, France',
+      title: 'ENR 4.4 name-code designators for significant points',
+      url: 'https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_06_AUG_2026/FRANCE/AIRAC-2026-08-06/pdf/FR-ENR-4.4-fr-FR.pdf',
+      purpose: 'Official WGS-84 coordinates for represented LFPG STAR fixes',
+      accessedOn: ACCESSED_ON,
+    },
+  ],
+  gameOnlyNotice: 'Published STAR identifiers, complete represented waypoint order and crossing restrictions are retained; WGS-84 geometry is projected into a compact tactical sector and is not for navigation.',
+};
+
+export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [delhi, incheon, dubai, parisCharlesDeGaulle];
