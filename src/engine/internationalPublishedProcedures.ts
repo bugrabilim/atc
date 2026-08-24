@@ -483,4 +483,134 @@ const parisCharlesDeGaulle: PublishedProcedurePack = {
   gameOnlyNotice: 'Published STAR identifiers, complete represented waypoint order and crossing restrictions are retained; WGS-84 geometry is projected into a compact tactical sector and is not for navigation.',
 };
 
-export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [delhi, incheon, dubai, parisCharlesDeGaulle];
+/*
+ * CAAS publishes complete formal/tabular RNAV-1 STAR descriptions beside the
+ * current WSSS AD 2 record. Bearings are calculated from the official Changi
+ * ARP (012133.16N 1035921.57E). The same 8 NM + 25% projection used for the
+ * other long international feeds preserves the east/west/south entry sectors
+ * without pretending that the compact game scope is navigation-grade.
+ */
+const singaporeArama1AFixes: ProcedureFixTemplate[] = [
+  { id: 'ARAMA', bearing: 286.4, distanceNm: 21.6, maximumSpeedKt: 250 },
+  { id: 'BOBAG', bearing: 237.1, distanceNm: 16.8, minimumAltitudeFt: 10000, maximumSpeedKt: 220 },
+  { id: 'BOKIP', bearing: 222, distanceNm: 13.8, minimumAltitudeFt: 6000 },
+  { id: 'SAMKO', bearing: 201.9, distanceNm: 12.3, minimumAltitudeFt: 4000, maximumSpeedKt: 190 },
+];
+
+const singaporeKarto2AFixes: ProcedureFixTemplate[] = [
+  { id: 'TOMAN', bearing: 89.9, distanceNm: 35 },
+  { id: 'KARTO', bearing: 96.1, distanceNm: 31.7 },
+  { id: 'GUNUD', bearing: 99.2, distanceNm: 25, maximumSpeedKt: 250 },
+  { id: 'KEXAS', bearing: 102.9, distanceNm: 20.6, maximumAltitudeFt: 16000, maximumSpeedKt: 220 },
+  { id: 'VIMAL', bearing: 115.8, distanceNm: 14.8, minimumAltitudeFt: 10000 },
+  { id: 'IGNON', bearing: 133.2, distanceNm: 12.7, minimumAltitudeFt: 7000 },
+  { id: 'SANAT', bearing: 179.4, distanceNm: 11.4, minimumAltitudeFt: 4000, maximumSpeedKt: 190 },
+];
+
+const singaporeRepov2BFixes: ProcedureFixTemplate[] = [
+  { id: 'REPOV', bearing: 176.8, distanceNm: 24.3, maximumAltitudeFt: 21000, maximumSpeedKt: 250 },
+  { id: 'REMES', bearing: 182.7, distanceNm: 17.5, maximumSpeedKt: 220 },
+  { id: 'BITAM', bearing: 147.2, distanceNm: 12, minimumAltitudeFt: 7000 },
+  { id: 'DOVAN', bearing: 98.1, distanceNm: 11.4, minimumAltitudeFt: 4000 },
+  { id: 'BIPOP', bearing: 48.1, distanceNm: 11.7, minimumAltitudeFt: 3000, maximumSpeedKt: 190 },
+];
+
+const singaporeTebun1BFixes: ProcedureFixTemplate[] = [
+  { id: 'TEBUN', bearing: 261.3, distanceNm: 19, maximumSpeedKt: 250 },
+  { id: 'VAMPO', bearing: 235.9, distanceNm: 18.3, minimumAltitudeFt: 10000, maximumSpeedKt: 220 },
+  { id: 'IBASU', bearing: 226.7, distanceNm: 16.7 },
+  { id: 'VEXEL', bearing: 216.2, distanceNm: 15 },
+  { id: 'ABVIP', bearing: 202.4, distanceNm: 13.8 },
+  { id: 'AGROT', bearing: 183.4, distanceNm: 13.1 },
+  { id: 'BITAM', bearing: 147.2, distanceNm: 12, minimumAltitudeFt: 7000 },
+  { id: 'DOVAN', bearing: 98.1, distanceNm: 11.4, minimumAltitudeFt: 4000 },
+  { id: 'BIPOP', bearing: 48.1, distanceNm: 11.7, minimumAltitudeFt: 3000, maximumSpeedKt: 190 },
+];
+
+const singaporeChangi: PublishedProcedurePack = {
+  airportId: 'sin',
+  packVersion: '2026.08.8',
+  referenceCycle: 'Singapore AIP AMDT 04/2026 · valid 09 JUL 2026',
+  effectiveFrom: '2026-07-09',
+  effectiveTo: '2026-09-02',
+  generatedFrom: 'CAAS AIM-SG · WSSS AD 2 and formal/tabular RNAV-1 STAR descriptions',
+  procedures: [
+    {
+      id: 'ARAMA1A',
+      kind: 'arrival',
+      compatibleRunwayIds: ['02L', '02C'],
+      entryTransition: 'ARAMA',
+      fixes: singaporeArama1AFixes,
+    },
+    {
+      id: 'KARTO2A',
+      kind: 'arrival',
+      compatibleRunwayIds: ['02L', '02C'],
+      entryTransition: 'TOMAN',
+      fixes: singaporeKarto2AFixes,
+    },
+    {
+      id: 'REPOV2B',
+      kind: 'arrival',
+      compatibleRunwayIds: ['20R', '20C'],
+      entryTransition: 'REPOV',
+      fixes: singaporeRepov2BFixes,
+    },
+    {
+      id: 'TEBUN1B',
+      kind: 'arrival',
+      compatibleRunwayIds: ['20R', '20C'],
+      entryTransition: 'TEBUN',
+      fixes: singaporeTebun1BFixes,
+    },
+  ],
+  sources: [
+    {
+      publisher: 'Civil Aviation Authority of Singapore',
+      title: 'WSSS AD 2 — Singapore Changi Intl, valid 09 JUL 2026',
+      url: 'https://aim-sg.caas.gov.sg/aim-content/uploads/aip/28-JUL-2026/AIP/2026-07-09-000000/html/eAIP/SG-AD-2-WSSS-en-GB.html',
+      purpose: 'Current AIP identity, official ARP, runway inventory, RNAV-1 requirements and chart index',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Authority of Singapore',
+      title: 'WSSS ARAMA 1A RNAV (GNSS) STAR — RWY 02L/C/R',
+      url: 'https://aim-sg.caas.gov.sg/aim-content/uploads/aip/28-JUL-2026/AIP/2026-07-09-000000/pdf/SG-AD-2-WSSS-AD-2-WSSS-STAR-1-to-1.1.pdf',
+      purpose: 'ARAMA 1A waypoint order and represented crossing restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Authority of Singapore',
+      title: 'WSSS KARTO 2A RNAV (GNSS) STAR — RWY 02L/C/R',
+      url: 'https://aim-sg.caas.gov.sg/aim-content/uploads/aip/28-JUL-2026/AIP/2026-07-09-000000/pdf/SG-AD-2-WSSS-AD-2-WSSS-STAR-7-to-7.1.pdf',
+      purpose: 'KARTO 2A waypoint order and represented crossing restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Authority of Singapore',
+      title: 'WSSS REPOV 2B RNAV (GNSS) STAR — RWY 20R/C/L',
+      url: 'https://aim-sg.caas.gov.sg/aim-content/uploads/aip/28-JUL-2026/AIP/2026-07-09-000000/pdf/SG-AD-2-WSSS-AD-2-WSSS-STAR-15-to-15.1.pdf',
+      purpose: 'REPOV 2B waypoint order and represented crossing restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Authority of Singapore',
+      title: 'WSSS TEBUN 1B RNAV (GNSS) STAR — RWY 20R/C/L',
+      url: 'https://aim-sg.caas.gov.sg/aim-content/uploads/aip/28-JUL-2026/AIP/2026-07-09-000000/pdf/SG-AD-2-WSSS-AD-2-WSSS-STAR-17-to-17.1.pdf',
+      purpose: 'TEBUN 1B waypoint order and represented crossing restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Authority of Singapore',
+      title: 'AIC 02/2025 — Singapore AIRAC schedule for 2025/2026',
+      url: 'https://aim-sg.caas.gov.sg/aim-content/uploads/aip/30-JUN-2026/AIP/2026-05-14-000000/html/eAIC/SG-eAIC-2025-02-en-GB.html',
+      purpose: 'Official validity window and next AIP amendment date',
+      accessedOn: ACCESSED_ON,
+    },
+  ],
+  gameOnlyNotice: 'Published RNAV-1 STAR identifiers, complete represented waypoint order and coded restrictions are retained; WGS-84 geometry is projected into a compact tactical sector and is not for navigation.',
+};
+
+export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [
+  delhi, incheon, dubai, parisCharlesDeGaulle, singaporeChangi,
+];

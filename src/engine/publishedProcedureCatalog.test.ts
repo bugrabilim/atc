@@ -12,7 +12,7 @@ describe('published procedure catalog', () => {
     expect(PUBLISHED_PROCEDURE_PACKS.map((pack) => pack.airportId)).toEqual([
       'ist', 'lhr', 'lax', 'jfk', 'atl', 'dfw', 'ord', 'den',
       'mco', 'mia', 'las', 'sfo', 'clt', 'sea', 'phx', 'iah',
-      'del', 'icn', 'dxb', 'cdg',
+      'del', 'icn', 'dxb', 'cdg', 'sin',
     ]);
     expect(publishedProcedurePackByAirportId.size).toBe(PUBLISHED_PROCEDURE_PACKS.length);
   });
@@ -132,6 +132,59 @@ describe('published procedure catalog', () => {
       minimumAltitudeFt: 14000,
       maximumAltitudeFt: 14000,
       maximumSpeedKt: 300,
+    });
+  });
+
+  it('ships runway-direction Changi STARs from the effective CAAS AIP issue', () => {
+    const pack = INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS.find((item) => item.airportId === 'sin');
+    expect(pack?.referenceCycle).toContain('Singapore AIP AMDT 04/2026');
+    expect(pack?.effectiveFrom).toBe('2026-07-09');
+    expect(pack?.effectiveTo).toBe('2026-09-02');
+    expect(pack?.procedures.map((procedure) => procedure.id)).toEqual([
+      'ARAMA1A', 'KARTO2A', 'REPOV2B', 'TEBUN1B',
+    ]);
+    expect(pack?.sources.every((source) => source.publisher === 'Civil Aviation Authority of Singapore')).toBe(true);
+
+    const arama1a = pack?.procedures.find((procedure) => procedure.id === 'ARAMA1A');
+    expect(arama1a?.compatibleRunwayIds).toEqual(['02L', '02C']);
+    expect(arama1a?.fixes.map((fix) => fix.id)).toEqual(['ARAMA', 'BOBAG', 'BOKIP', 'SAMKO']);
+    expect(arama1a?.fixes.find((fix) => fix.id === 'BOBAG')).toMatchObject({
+      minimumAltitudeFt: 10000,
+      maximumSpeedKt: 220,
+    });
+    expect(arama1a?.fixes.find((fix) => fix.id === 'SAMKO')).toMatchObject({
+      minimumAltitudeFt: 4000,
+      maximumSpeedKt: 190,
+    });
+
+    const karto2a = pack?.procedures.find((procedure) => procedure.id === 'KARTO2A');
+    expect(karto2a?.fixes.map((fix) => fix.id)).toEqual([
+      'TOMAN', 'KARTO', 'GUNUD', 'KEXAS', 'VIMAL', 'IGNON', 'SANAT',
+    ]);
+    expect(karto2a?.fixes.find((fix) => fix.id === 'KEXAS')).toMatchObject({
+      maximumAltitudeFt: 16000,
+      maximumSpeedKt: 220,
+    });
+
+    const repov2b = pack?.procedures.find((procedure) => procedure.id === 'REPOV2B');
+    expect(repov2b?.compatibleRunwayIds).toEqual(['20R', '20C']);
+    expect(repov2b?.fixes.map((fix) => fix.id)).toEqual(['REPOV', 'REMES', 'BITAM', 'DOVAN', 'BIPOP']);
+    expect(repov2b?.fixes.find((fix) => fix.id === 'REPOV')).toMatchObject({
+      maximumAltitudeFt: 21000,
+      maximumSpeedKt: 250,
+    });
+
+    const tebun1b = pack?.procedures.find((procedure) => procedure.id === 'TEBUN1B');
+    expect(tebun1b?.fixes.map((fix) => fix.id)).toEqual([
+      'TEBUN', 'VAMPO', 'IBASU', 'VEXEL', 'ABVIP', 'AGROT', 'BITAM', 'DOVAN', 'BIPOP',
+    ]);
+    expect(tebun1b?.fixes.find((fix) => fix.id === 'VAMPO')).toMatchObject({
+      minimumAltitudeFt: 10000,
+      maximumSpeedKt: 220,
+    });
+    expect(tebun1b?.fixes.find((fix) => fix.id === 'BIPOP')).toMatchObject({
+      minimumAltitudeFt: 3000,
+      maximumSpeedKt: 190,
     });
   });
 
