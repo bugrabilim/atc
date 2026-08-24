@@ -85,6 +85,16 @@ describe('airport scenario catalog', () => {
     }
   });
 
+  it('uses the published Madrid north/south runway split in every saved flow id', () => {
+    const madrid = scenarioCatalog.find((scenario) => scenario.id === 'mad');
+    expect(madrid?.world.flowConfigurations).toEqual([
+      expect.objectContaining({ id: 'mad-primary', arrivalRunwayIds: ['18L', '18R'], departureRunwayIds: ['14L', '14R'] }),
+      expect.objectContaining({ id: 'mad-reverse', arrivalRunwayIds: ['32L', '32R'], departureRunwayIds: ['36L', '36R'] }),
+      expect.objectContaining({ id: 'mad-lowvis', arrivalRunwayIds: ['18R'], departureRunwayIds: ['14L'] }),
+      expect.objectContaining({ id: 'mad-north-lowvis', arrivalRunwayIds: ['32L'], departureRunwayIds: ['36L'] }),
+    ]);
+  });
+
   it('can start directly in a non-primary flow without assigning inactive runways', () => {
     for (const scenario of scenarioCatalog.filter((item) => item.world.operations)) {
       const flow = scenario.world.flowConfigurations.at(-1)!;

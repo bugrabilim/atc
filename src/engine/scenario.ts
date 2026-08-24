@@ -96,6 +96,36 @@ function flowForDirection(
   };
 }
 
+/* ENAIRE publishes LEMD as two operational runway configurations: arrivals
+ * use 18L/R with departures on 14L/R in the south configuration, while the
+ * north configuration uses 32L/R for arrivals and 36L/R for departures. Keep
+ * the existing first three flow ids so already-saved Madrid shifts remain
+ * restorable while replacing the generic mixed-heading runway allocation. */
+const reviewedFlowConfigurationsByAirportId = new Map<ScenarioId, FlowConfiguration[]>([
+  ['mad', [
+    {
+      id: 'mad-primary', label: 'GÜNEY · 18 GELİŞ / 14 KALKIŞ',
+      arrivalRunwayIds: ['18L', '18R'], departureRunwayIds: ['14L', '14R'],
+      windDirection: 180, windSpeedKt: 9, visibilityNm: 12, qnh: 1016,
+    },
+    {
+      id: 'mad-reverse', label: 'KUZEY · 32 GELİŞ / 36 KALKIŞ',
+      arrivalRunwayIds: ['32L', '32R'], departureRunwayIds: ['36L', '36R'],
+      windDirection: 340, windSpeedKt: 11, visibilityNm: 10, qnh: 1010,
+    },
+    {
+      id: 'mad-lowvis', label: 'GÜNEY · TEK GELİŞ',
+      arrivalRunwayIds: ['18R'], departureRunwayIds: ['14L'],
+      windDirection: 185, windSpeedKt: 16, visibilityNm: 4, qnh: 1005,
+    },
+    {
+      id: 'mad-north-lowvis', label: 'KUZEY · TEK GELİŞ',
+      arrivalRunwayIds: ['32L'], departureRunwayIds: ['36L'],
+      windDirection: 335, windSpeedKt: 17, visibilityNm: 4, qnh: 1003,
+    },
+  ]],
+]);
+
 function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
   const runways = usableRunways(definition).sort((first, second) => second.lengthNm - first.lengthNm);
   if (runways.length === 0) throw new Error(`${definition.icao} has no usable runway data`);
@@ -169,7 +199,7 @@ function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
     compatibleRunwayIds: [...(procedure.compatibleRunwayIds ?? allRunwayIds)],
   }));
 
-  const flowConfigurations = operationsPack?.flows ?? [
+  const flowConfigurations = operationsPack?.flows ?? reviewedFlowConfigurationsByAirportId.get(definition.id) ?? [
       flowForDirection(definition, runways, false, 'primary', 12, 9),
       flowForDirection(definition, runways, true, 'reverse', 9, 15),
       flowForDirection(definition, runways, false, 'lowvis', 4, 20, true),

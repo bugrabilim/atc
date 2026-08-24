@@ -730,6 +730,134 @@ const amsterdamSchiphol: PublishedProcedurePack = {
   gameOnlyNotice: 'Published RNAV-1 STAR identifiers, complete represented waypoint order and chart restrictions are retained; WGS-84 geometry is projected into a compact tactical sector and is not for navigation.',
 };
 
+/*
+ * ENAIRE publishes Madrid's RNAV-1 STARs in separate west/east chart families
+ * for the south (RWY 18L/R) and north (RWY 32L/R) configurations. Bearings
+ * below are calculated from the current LEMD ARP (402820N 0033339W). The
+ * common 8 NM + 25% projection preserves the chart geometry while fitting the
+ * roughly 103 NM RIDAV feed into the tactical scope. One west and one east
+ * route are retained for each landing configuration so random traffic has
+ * distinct, runway-compatible entry sectors.
+ */
+const madridRidav3AFixes: ProcedureFixTemplate[] = [
+  { id: 'RIDAV', bearing: 272.8, distanceNm: 33.7, minimumAltitudeFt: 24500 },
+  { id: 'MD400', bearing: 292.9, distanceNm: 29.2, minimumAltitudeFt: 24000 },
+  { id: 'USATI', bearing: 301.9, distanceNm: 22, minimumAltitudeFt: 20000, maximumSpeedKt: 250 },
+  { id: 'SECQO', bearing: 296.6, distanceNm: 16.9, minimumAltitudeFt: 12000, maximumSpeedKt: 220 },
+  { id: 'RILKO', bearing: 340.6, distanceNm: 16.1, minimumAltitudeFt: 11000, maximumSpeedKt: 220 },
+];
+
+const madridAduxo7BFixes: ProcedureFixTemplate[] = [
+  { id: 'ADUXO', bearing: 87.5, distanceNm: 25.1, minimumAltitudeFt: 15000 },
+  { id: 'MD505', bearing: 91.5, distanceNm: 22.3, minimumAltitudeFt: 15000, maximumSpeedKt: 250 },
+  { id: 'NOSKO', bearing: 71.7, distanceNm: 16.9, minimumAltitudeFt: 10000, maximumSpeedKt: 220 },
+  { id: 'RBO', bearing: 31.9, distanceNm: 14.8, maximumAltitudeFt: 9000, maximumSpeedKt: 220 },
+  { id: 'LULER', bearing: 17.3, distanceNm: 14.9, minimumAltitudeFt: 8000, maximumSpeedKt: 220 },
+];
+
+const madridRidav5CFixes: ProcedureFixTemplate[] = [
+  { id: 'RIDAV', bearing: 272.8, distanceNm: 33.7 },
+  { id: 'MD455', bearing: 254.7, distanceNm: 23.8, minimumAltitudeFt: 24000 },
+  { id: 'TLD', bearing: 229.9, distanceNm: 19.7, minimumAltitudeFt: 15000, maximumAltitudeFt: 21000 },
+  { id: 'MD445', bearing: 214.1, distanceNm: 19.5 },
+  { id: 'BUREX', bearing: 203.8, distanceNm: 18.8, minimumAltitudeFt: 12000, maximumAltitudeFt: 14000, maximumSpeedKt: 290 },
+  { id: 'MD440', bearing: 197.9, distanceNm: 16.7, minimumAltitudeFt: 8000 },
+  { id: 'YUNYE', bearing: 186.9, distanceNm: 14.5, minimumAltitudeFt: 7000 },
+  { id: 'MD420', bearing: 177.3, distanceNm: 13.4, minimumAltitudeFt: 6000 },
+  { id: 'FAFEQ', bearing: 165.8, distanceNm: 12.7, minimumAltitudeFt: 5000, maximumAltitudeFt: 6000, maximumSpeedKt: 220 },
+];
+
+const madridAduxo3DFixes: ProcedureFixTemplate[] = [
+  { id: 'ADUXO', bearing: 87.5, distanceNm: 25.1, maximumAltitudeFt: 21000 },
+  { id: 'MD001', bearing: 94.5, distanceNm: 22.2, minimumAltitudeFt: 15000 },
+  { id: 'SIRGU', bearing: 105.8, distanceNm: 19.4, minimumAltitudeFt: 10000, maximumAltitudeFt: 14000 },
+  { id: 'RUDBI', bearing: 123.3, distanceNm: 13.8, minimumAltitudeFt: 8000, maximumSpeedKt: 220 },
+];
+
+const madridBarajas: PublishedProcedurePack = {
+  airportId: 'mad',
+  packVersion: '2026.08.10',
+  referenceCycle: 'ENAIRE AIP España 06 AUG 2026 · AIRAC AMDT 07/26',
+  effectiveFrom: '2026-08-06',
+  effectiveTo: '2026-09-02',
+  generatedFrom: 'ENAIRE AIP España · LEMD AD 2 and RNAV-1 STAR chart coding tables',
+  procedures: [
+    {
+      id: 'RIDAV3A',
+      kind: 'arrival',
+      compatibleRunwayIds: ['18L', '18R'],
+      entryTransition: 'RIDAV',
+      fixes: madridRidav3AFixes,
+    },
+    {
+      id: 'ADUXO7B',
+      kind: 'arrival',
+      compatibleRunwayIds: ['18L', '18R'],
+      entryTransition: 'ADUXO',
+      fixes: madridAduxo7BFixes,
+    },
+    {
+      id: 'RIDAV5C',
+      kind: 'arrival',
+      compatibleRunwayIds: ['32L', '32R'],
+      entryTransition: 'RIDAV',
+      fixes: madridRidav5CFixes,
+    },
+    {
+      id: 'ADUXO3D',
+      kind: 'arrival',
+      compatibleRunwayIds: ['32L', '32R'],
+      entryTransition: 'ADUXO',
+      fixes: madridAduxo3DFixes,
+    },
+  ],
+  sources: [
+    {
+      publisher: 'ENAIRE AIS España',
+      title: 'AIP Spain — current issue 06 AUG 2026',
+      url: 'https://aip.enaire.es/aip/aip-en.html',
+      purpose: 'Current issue identity, amendment status and official LEMD chart index',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'ENAIRE AIS España',
+      title: 'LEMD AD 2 — Madrid/Adolfo Suárez Madrid-Barajas',
+      url: 'https://aip.enaire.es/aip/contenido_AIP/AD/AD2/LEMD/LE_AD_2_LEMD_en.html',
+      purpose: 'Current airport reference point, elevation, runway inventory and operating information',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'ENAIRE AIS España',
+      title: 'LEMD STAR 1 — RNAV-1 RWY 18L/18R west arrivals',
+      url: 'https://aip.enaire.es/aip/contenido_AIP/AD/AD2/LEMD/LE_AD_2_LEMD_STAR_1_en.pdf',
+      purpose: 'RIDAV 3A route order, WGS-84 waypoint coordinates and coded restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'ENAIRE AIS España',
+      title: 'LEMD STAR 2 — RNAV-1 RWY 18L/18R east arrivals',
+      url: 'https://aip.enaire.es/aip/contenido_AIP/AD/AD2/LEMD/LE_AD_2_LEMD_STAR_2_en.pdf',
+      purpose: 'ADUXO 7B route order, WGS-84 waypoint coordinates and coded restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'ENAIRE AIS España',
+      title: 'LEMD STAR 3 — RNAV-1 RWY 32L/32R west arrivals',
+      url: 'https://aip.enaire.es/aip/contenido_AIP/AD/AD2/LEMD/LE_AD_2_LEMD_STAR_3_en.pdf',
+      purpose: 'RIDAV 5C route order, WGS-84 waypoint coordinates and coded restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'ENAIRE AIS España',
+      title: 'LEMD STAR 4 — RNAV-1 RWY 32L/32R east arrivals',
+      url: 'https://aip.enaire.es/aip/contenido_AIP/AD/AD2/LEMD/LE_AD_2_LEMD_STAR_4_en.pdf',
+      purpose: 'ADUXO 3D route order, WGS-84 waypoint coordinates and coded restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+  ],
+  gameOnlyNotice: 'Published RNAV-1 STAR identifiers, complete represented waypoint order and coded restrictions are retained; WGS-84 geometry is projected into a compact tactical sector and is not for navigation.',
+};
+
 export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [
-  delhi, incheon, dubai, parisCharlesDeGaulle, singaporeChangi, amsterdamSchiphol,
+  delhi, incheon, dubai, parisCharlesDeGaulle, singaporeChangi, amsterdamSchiphol, madridBarajas,
 ];

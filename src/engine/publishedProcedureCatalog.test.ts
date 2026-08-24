@@ -12,7 +12,7 @@ describe('published procedure catalog', () => {
     expect(PUBLISHED_PROCEDURE_PACKS.map((pack) => pack.airportId)).toEqual([
       'ist', 'lhr', 'lax', 'jfk', 'atl', 'dfw', 'ord', 'den',
       'mco', 'mia', 'las', 'sfo', 'clt', 'sea', 'phx', 'iah',
-      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams',
+      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams', 'mad',
     ]);
     expect(publishedProcedurePackByAirportId.size).toBe(PUBLISHED_PROCEDURE_PACKS.length);
   });
@@ -232,6 +232,65 @@ describe('published procedure catalog', () => {
       minimumAltitudeFt: 7000,
       maximumAltitudeFt: 10000,
       maximumSpeedKt: 250,
+    });
+  });
+
+  it('ships east/west Madrid STARs for both published landing configurations', () => {
+    const pack = INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS.find((item) => item.airportId === 'mad');
+    expect(pack?.referenceCycle).toContain('ENAIRE AIP España 06 AUG 2026');
+    expect(pack?.effectiveFrom).toBe('2026-08-06');
+    expect(pack?.effectiveTo).toBe('2026-09-02');
+    expect(pack?.procedures.map((procedure) => procedure.id)).toEqual([
+      'RIDAV3A', 'ADUXO7B', 'RIDAV5C', 'ADUXO3D',
+    ]);
+    expect(pack?.sources.every((source) => source.publisher === 'ENAIRE AIS España')).toBe(true);
+
+    const ridav3a = pack?.procedures.find((procedure) => procedure.id === 'RIDAV3A');
+    expect(ridav3a?.compatibleRunwayIds).toEqual(['18L', '18R']);
+    expect(ridav3a?.fixes.map((fix) => fix.id)).toEqual([
+      'RIDAV', 'MD400', 'USATI', 'SECQO', 'RILKO',
+    ]);
+    expect(ridav3a?.fixes.find((fix) => fix.id === 'RIDAV')).toMatchObject({ minimumAltitudeFt: 24500 });
+    expect(ridav3a?.fixes.find((fix) => fix.id === 'SECQO')).toMatchObject({
+      minimumAltitudeFt: 12000,
+      maximumSpeedKt: 220,
+    });
+
+    const aduxo7b = pack?.procedures.find((procedure) => procedure.id === 'ADUXO7B');
+    expect(aduxo7b?.compatibleRunwayIds).toEqual(['18L', '18R']);
+    expect(aduxo7b?.fixes.map((fix) => fix.id)).toEqual([
+      'ADUXO', 'MD505', 'NOSKO', 'RBO', 'LULER',
+    ]);
+    expect(aduxo7b?.fixes.find((fix) => fix.id === 'RBO')).toMatchObject({
+      maximumAltitudeFt: 9000,
+      maximumSpeedKt: 220,
+    });
+
+    const ridav5c = pack?.procedures.find((procedure) => procedure.id === 'RIDAV5C');
+    expect(ridav5c?.compatibleRunwayIds).toEqual(['32L', '32R']);
+    expect(ridav5c?.fixes.map((fix) => fix.id)).toEqual([
+      'RIDAV', 'MD455', 'TLD', 'MD445', 'BUREX', 'MD440', 'YUNYE', 'MD420', 'FAFEQ',
+    ]);
+    expect(ridav5c?.fixes.find((fix) => fix.id === 'TLD')).toMatchObject({
+      minimumAltitudeFt: 15000,
+      maximumAltitudeFt: 21000,
+    });
+    expect(ridav5c?.fixes.find((fix) => fix.id === 'FAFEQ')).toMatchObject({
+      minimumAltitudeFt: 5000,
+      maximumAltitudeFt: 6000,
+      maximumSpeedKt: 220,
+    });
+
+    const aduxo3d = pack?.procedures.find((procedure) => procedure.id === 'ADUXO3D');
+    expect(aduxo3d?.compatibleRunwayIds).toEqual(['32L', '32R']);
+    expect(aduxo3d?.fixes.map((fix) => fix.id)).toEqual(['ADUXO', 'MD001', 'SIRGU', 'RUDBI']);
+    expect(aduxo3d?.fixes.find((fix) => fix.id === 'SIRGU')).toMatchObject({
+      minimumAltitudeFt: 10000,
+      maximumAltitudeFt: 14000,
+    });
+    expect(aduxo3d?.fixes.find((fix) => fix.id === 'RUDBI')).toMatchObject({
+      minimumAltitudeFt: 8000,
+      maximumSpeedKt: 220,
     });
   });
 
