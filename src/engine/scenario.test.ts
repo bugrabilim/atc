@@ -51,6 +51,14 @@ describe('airport scenario catalog', () => {
       dfw: ['BEREE3', 'BRDJE5', 'JOVEM6', 'SHMPP3'],
       ord: ['BENKY6', 'ERNNY8', 'ESSPO5', 'FYTTE7'],
       den: ['AALLE4', 'CLASH5', 'FLATI5', 'SSKII4'],
+      mco: ['ALYNA4', 'GRNCH5', 'JOKRS4', 'MUNGI1'],
+      mia: ['BNFSH3', 'FROGZ5', 'SNDBR3', 'VIICE2'],
+      las: ['CHOWW4', 'COKTL4', 'RKSTR4', 'RNDRZ4'],
+      sfo: ['ALWYS3', 'BDEGA4', 'PIRAT3', 'RISTI1'],
+      clt: ['BANKR7', 'CHSLY8', 'FILPZ6', 'MLLET5'],
+      sea: ['HAWKZ8', 'MARNR8'],
+      phx: ['DSERT2', 'EAGUL6', 'HYDRR1', 'PINNG1'],
+      iah: ['BAZBL1', 'GESNR2', 'HTOWN3', 'LINKK1'],
     } as const;
 
     for (const [airportId, procedureIds] of Object.entries(expected)) {

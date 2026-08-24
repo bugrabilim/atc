@@ -36,6 +36,76 @@ const SELECTED_AIRPORTS = [
       { id: 'SSKII4', transition: 'HAMIC' },
     ],
   },
+  {
+    airportId: 'mco', icao: 'KMCO',
+    arrivals: [
+      { id: 'ALYNA4', transition: 'GRDON' },
+      { id: 'GRNCH5', transition: 'COAXE' },
+      { id: 'JOKRS4', transition: 'FAZES' },
+      { id: 'MUNGI1', transition: 'SPIFF' },
+    ],
+  },
+  {
+    airportId: 'mia', icao: 'KMIA',
+    arrivals: [
+      { id: 'BNFSH3', transition: 'MUNRO' },
+      { id: 'FROGZ5', transition: 'MARCI' },
+      { id: 'SNDBR3', transition: 'PAMPR' },
+      { id: 'VIICE2', transition: 'ZEGEE' },
+    ],
+  },
+  {
+    airportId: 'las', icao: 'KLAS',
+    arrivals: [
+      { id: 'CHOWW4', transition: 'STEWW' },
+      { id: 'COKTL4', transition: 'GIINN' },
+      { id: 'RKSTR4', transition: 'ELLDA' },
+      { id: 'RNDRZ4', transition: 'MISEN' },
+    ],
+  },
+  {
+    airportId: 'sfo', icao: 'KSFO',
+    arrivals: [
+      { id: 'ALWYS3', transition: 'INYOE' },
+      { id: 'BDEGA4', transition: 'MLBEC' },
+      { id: 'PIRAT3', transition: 'PASIF' },
+      { id: 'RISTI1', transition: 'ORRCA' },
+    ],
+  },
+  {
+    airportId: 'clt', icao: 'KCLT',
+    arrivals: [
+      { id: 'BANKR7', transition: 'PONZE' },
+      { id: 'CHSLY8', transition: 'SDAIL' },
+      { id: 'FILPZ6', transition: 'COMDY' },
+      { id: 'MLLET5', transition: 'TORQD' },
+    ],
+  },
+  {
+    airportId: 'sea', icao: 'KSEA',
+    arrivals: [
+      { id: 'HAWKZ8', transition: 'KRIEG' },
+      { id: 'MARNR8', transition: 'BUHNR' },
+    ],
+  },
+  {
+    airportId: 'phx', icao: 'KPHX',
+    arrivals: [
+      { id: 'DSERT2', transition: 'FLG' },
+      { id: 'EAGUL6', transition: 'GUP' },
+      { id: 'HYDRR1', transition: 'SALOM' },
+      { id: 'PINNG1', transition: 'HOTTT' },
+    ],
+  },
+  {
+    airportId: 'iah', icao: 'KIAH',
+    arrivals: [
+      { id: 'BAZBL1', transition: 'HOMRN' },
+      { id: 'GESNR2', transition: 'CARPR' },
+      { id: 'HTOWN3', transition: 'LMEDA' },
+      { id: 'LINKK1', transition: 'MULLT' },
+    ],
+  },
 ];
 
 function usage() {
@@ -180,17 +250,19 @@ function buildProcedure(records, indexes, airport, selection) {
   const common = primary
     .filter((record) => record[19] === '5')
     .sort((first, second) => Number(first.slice(26, 29)) - Number(second.slice(26, 29)));
-  if (transition.length === 0 || common.length === 0) {
+  if (transition.length === 0) {
     throw new Error(`${airport.icao} ${selection.id}/${selection.transition}: route segment missing`);
   }
   const airportCoordinate = indexes.airports.get(airport.icao);
   if (!airportCoordinate) throw new Error(`${airport.icao}: airport coordinate missing`);
-  const route = uniqueRouteRecords([...transition, ...common]).map((record) => {
-    const id = record.slice(29, 34).trim();
-    const coordinate = indexes.terminalFixes.get(`${airport.icao}:${id}`) ?? indexes.globalFixes.get(id);
-    if (!coordinate) throw new Error(`${airport.icao} ${selection.id}: coordinate missing for ${id}`);
-    return { id, ...distanceAndBearing(airportCoordinate, coordinate), ...crossingConstraints(record) };
-  });
+  const route = uniqueRouteRecords([...transition, ...common])
+    .filter((record) => record.slice(29, 34).trim() !== airport.icao)
+    .map((record) => {
+      const id = record.slice(29, 34).trim();
+      const coordinate = indexes.terminalFixes.get(`${airport.icao}:${id}`) ?? indexes.globalFixes.get(id);
+      if (!coordinate) throw new Error(`${airport.icao} ${selection.id}: coordinate missing for ${id}`);
+      return { id, ...distanceAndBearing(airportCoordinate, coordinate), ...crossingConstraints(record) };
+    });
   if (route.length < 2) throw new Error(`${airport.icao} ${selection.id}: route is too short`);
   const distances = route.map((fix) => fix.distanceNm);
   const minimumDistance = Math.min(...distances);

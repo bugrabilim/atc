@@ -805,5 +805,1458 @@ export const FAA_CIFP_PROCEDURE_PACKS: PublishedProcedurePack[] = [
       }
     ],
     "gameOnlyNotice": "Published route order and represented constraints are retained; coordinates are projected into a compact tactical sector and are not for navigation."
+  },
+  {
+    "airportId": "mco",
+    "packVersion": "2026.08.3",
+    "referenceCycle": "FAA CIFP 2608 · 2026-08-06–2026-09-03",
+    "effectiveFrom": "2026-08-06",
+    "effectiveTo": "2026-09-03",
+    "generatedFrom": "FAA CIFP · ARINC 424-18",
+    "procedures": [
+      {
+        "id": "ALYNA4",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "17L",
+          "17R",
+          "18L",
+          "18R",
+          "35L",
+          "35R",
+          "36L",
+          "36R"
+        ],
+        "entryTransition": "GRDON",
+        "fixes": [
+          {
+            "id": "GRDON",
+            "bearing": 31.3,
+            "distanceNm": 40
+          },
+          {
+            "id": "TIMIE",
+            "bearing": 40.3,
+            "distanceNm": 23.8,
+            "minimumAltitudeFt": 12000,
+            "maximumAltitudeFt": 12000
+          },
+          {
+            "id": "BURNE",
+            "bearing": 45.5,
+            "distanceNm": 18.2
+          },
+          {
+            "id": "ALYNA",
+            "bearing": 34.5,
+            "distanceNm": 8
+          }
+        ]
+      },
+      {
+        "id": "GRNCH5",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "17L",
+          "17R",
+          "18L",
+          "18R",
+          "35L",
+          "35R",
+          "36L",
+          "36R"
+        ],
+        "entryTransition": "COAXE",
+        "fixes": [
+          {
+            "id": "COAXE",
+            "bearing": 327,
+            "distanceNm": 40,
+            "maximumAltitudeFt": 26000
+          },
+          {
+            "id": "GRTNG",
+            "bearing": 323.4,
+            "distanceNm": 32.8,
+            "minimumAltitudeFt": 17000,
+            "maximumSpeedKt": 290
+          },
+          {
+            "id": "GRNCH",
+            "bearing": 320.7,
+            "distanceNm": 20.7
+          },
+          {
+            "id": "BUGGZ",
+            "bearing": 321.3,
+            "distanceNm": 15.3,
+            "minimumAltitudeFt": 11000,
+            "maximumAltitudeFt": 16000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "BLAYK",
+            "bearing": 325.3,
+            "distanceNm": 8
+          }
+        ]
+      },
+      {
+        "id": "JOKRS4",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "17L",
+          "17R",
+          "18L",
+          "18R",
+          "35L",
+          "35R",
+          "36L",
+          "36R"
+        ],
+        "entryTransition": "FAZES",
+        "fixes": [
+          {
+            "id": "FAZES",
+            "bearing": 212.1,
+            "distanceNm": 40
+          },
+          {
+            "id": "MOANS",
+            "bearing": 217,
+            "distanceNm": 17.1
+          },
+          {
+            "id": "JOKRS",
+            "bearing": 222.8,
+            "distanceNm": 8
+          }
+        ]
+      },
+      {
+        "id": "MUNGI1",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "17L",
+          "17R",
+          "18L",
+          "18R",
+          "35L",
+          "35R",
+          "36L",
+          "36R"
+        ],
+        "entryTransition": "SPIFF",
+        "fixes": [
+          {
+            "id": "SPIFF",
+            "bearing": 124.3,
+            "distanceNm": 40
+          },
+          {
+            "id": "ZALUP",
+            "bearing": 144,
+            "distanceNm": 27.3
+          },
+          {
+            "id": "MUNGI",
+            "bearing": 154.2,
+            "distanceNm": 15.2
+          },
+          {
+            "id": "HIJON",
+            "bearing": 152.2,
+            "distanceNm": 8
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "publisher": "FAA",
+        "title": "Coded Instrument Flight Procedures, cycle 2608",
+        "url": "https://aeronav.faa.gov/Upload_313-d/cifp/CIFP_260806.zip",
+        "purpose": "Machine-readable STAR identifiers, transition order, runway compatibility and crossing constraints",
+        "accessedOn": "2026-08-24"
+      }
+    ],
+    "gameOnlyNotice": "Published route order and represented constraints are retained; coordinates are projected into a compact tactical sector and are not for navigation."
+  },
+  {
+    "airportId": "mia",
+    "packVersion": "2026.08.3",
+    "referenceCycle": "FAA CIFP 2608 · 2026-08-06–2026-09-03",
+    "effectiveFrom": "2026-08-06",
+    "effectiveTo": "2026-09-03",
+    "generatedFrom": "FAA CIFP · ARINC 424-18",
+    "procedures": [
+      {
+        "id": "BNFSH3",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "08L",
+          "08R",
+          "09",
+          "12",
+          "26L",
+          "26R",
+          "27",
+          "30"
+        ],
+        "entryTransition": "MUNRO",
+        "fixes": [
+          {
+            "id": "MUNRO",
+            "bearing": 56.7,
+            "distanceNm": 40
+          },
+          {
+            "id": "BICAP",
+            "bearing": 41.6,
+            "distanceNm": 26.1,
+            "minimumAltitudeFt": 19000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "ENRGY",
+            "bearing": 37.3,
+            "distanceNm": 19.9,
+            "maximumAltitudeFt": 16000
+          },
+          {
+            "id": "WOOSA",
+            "bearing": 35.9,
+            "distanceNm": 15.9
+          },
+          {
+            "id": "CASTT",
+            "bearing": 32.8,
+            "distanceNm": 12.3,
+            "minimumAltitudeFt": 12000,
+            "maximumSpeedKt": 250
+          },
+          {
+            "id": "BNFSH",
+            "bearing": 27.7,
+            "distanceNm": 8,
+            "minimumAltitudeFt": 11000
+          }
+        ]
+      },
+      {
+        "id": "FROGZ5",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "08L",
+          "08R",
+          "09",
+          "12",
+          "26L",
+          "26R",
+          "27",
+          "30"
+        ],
+        "entryTransition": "MARCI",
+        "fixes": [
+          {
+            "id": "MARCI",
+            "bearing": 274.4,
+            "distanceNm": 40,
+            "minimumAltitudeFt": 21000,
+            "maximumAltitudeFt": 28000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "SUMPS",
+            "bearing": 278.1,
+            "distanceNm": 15,
+            "minimumAltitudeFt": 11000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "FROGZ",
+            "bearing": 280.1,
+            "distanceNm": 8
+          }
+        ]
+      },
+      {
+        "id": "SNDBR3",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "08L",
+          "08R",
+          "09",
+          "12",
+          "26L",
+          "26R",
+          "27",
+          "30"
+        ],
+        "entryTransition": "PAMPR",
+        "fixes": [
+          {
+            "id": "PAMPR",
+            "bearing": 219,
+            "distanceNm": 40,
+            "minimumAltitudeFt": 23000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "SNDBR",
+            "bearing": 231.7,
+            "distanceNm": 8
+          }
+        ]
+      },
+      {
+        "id": "VIICE2",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "08L",
+          "08R",
+          "09",
+          "12",
+          "26L",
+          "26R",
+          "27",
+          "30"
+        ],
+        "entryTransition": "ZEGEE",
+        "fixes": [
+          {
+            "id": "ZEGEE",
+            "bearing": 138.4,
+            "distanceNm": 40,
+            "minimumAltitudeFt": 21000
+          },
+          {
+            "id": "KROKT",
+            "bearing": 135.2,
+            "distanceNm": 24.4,
+            "minimumAltitudeFt": 15000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "VIICE",
+            "bearing": 128.4,
+            "distanceNm": 8,
+            "maximumAltitudeFt": 16000
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "publisher": "FAA",
+        "title": "Coded Instrument Flight Procedures, cycle 2608",
+        "url": "https://aeronav.faa.gov/Upload_313-d/cifp/CIFP_260806.zip",
+        "purpose": "Machine-readable STAR identifiers, transition order, runway compatibility and crossing constraints",
+        "accessedOn": "2026-08-24"
+      }
+    ],
+    "gameOnlyNotice": "Published route order and represented constraints are retained; coordinates are projected into a compact tactical sector and are not for navigation."
+  },
+  {
+    "airportId": "las",
+    "packVersion": "2026.08.3",
+    "referenceCycle": "FAA CIFP 2608 · 2026-08-06–2026-09-03",
+    "effectiveFrom": "2026-08-06",
+    "effectiveTo": "2026-09-03",
+    "generatedFrom": "FAA CIFP · ARINC 424-18",
+    "procedures": [
+      {
+        "id": "CHOWW4",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "01L",
+          "01R",
+          "19L",
+          "19R",
+          "26L",
+          "26R"
+        ],
+        "entryTransition": "STEWW",
+        "fixes": [
+          {
+            "id": "STEWW",
+            "bearing": 47.6,
+            "distanceNm": 40
+          },
+          {
+            "id": "RIGLL",
+            "bearing": 52.7,
+            "distanceNm": 31.9,
+            "minimumAltitudeFt": 24000
+          },
+          {
+            "id": "AALAN",
+            "bearing": 62.6,
+            "distanceNm": 22.6,
+            "minimumAltitudeFt": 17000,
+            "maximumAltitudeFt": 23000
+          },
+          {
+            "id": "CHOWW",
+            "bearing": 66.8,
+            "distanceNm": 14,
+            "maximumAltitudeFt": 16000,
+            "maximumSpeedKt": 250
+          },
+          {
+            "id": "WOLPH",
+            "bearing": 72.7,
+            "distanceNm": 8
+          }
+        ]
+      },
+      {
+        "id": "COKTL4",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "01L",
+          "01R",
+          "08L",
+          "08R",
+          "19L",
+          "19R",
+          "26L",
+          "26R"
+        ],
+        "entryTransition": "GIINN",
+        "fixes": [
+          {
+            "id": "GIINN",
+            "bearing": 299.8,
+            "distanceNm": 40
+          },
+          {
+            "id": "TBRAN",
+            "bearing": 298.3,
+            "distanceNm": 31.8
+          },
+          {
+            "id": "ARYEL",
+            "bearing": 294,
+            "distanceNm": 22.5,
+            "minimumAltitudeFt": 21000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "COKTL",
+            "bearing": 285.5,
+            "distanceNm": 13.3,
+            "minimumAltitudeFt": 16000,
+            "maximumAltitudeFt": 19000,
+            "maximumSpeedKt": 250
+          },
+          {
+            "id": "ZLLDA",
+            "bearing": 277.1,
+            "distanceNm": 8,
+            "minimumAltitudeFt": 14000
+          }
+        ]
+      },
+      {
+        "id": "RKSTR4",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "01L",
+          "01R",
+          "08L",
+          "08R",
+          "19L",
+          "19R",
+          "26L",
+          "26R"
+        ],
+        "entryTransition": "ELLDA",
+        "fixes": [
+          {
+            "id": "ELLDA",
+            "bearing": 126.4,
+            "distanceNm": 40
+          },
+          {
+            "id": "JJEAN",
+            "bearing": 122.8,
+            "distanceNm": 28.9
+          },
+          {
+            "id": "PEHTY",
+            "bearing": 111.4,
+            "distanceNm": 12.8,
+            "minimumAltitudeFt": 14000,
+            "maximumAltitudeFt": 16000,
+            "maximumSpeedKt": 250
+          },
+          {
+            "id": "RKSTR",
+            "bearing": 109.8,
+            "distanceNm": 8
+          }
+        ]
+      },
+      {
+        "id": "RNDRZ4",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "01L",
+          "01R",
+          "08L",
+          "08R",
+          "19L",
+          "19R",
+          "26L",
+          "26R"
+        ],
+        "entryTransition": "MISEN",
+        "fixes": [
+          {
+            "id": "MISEN",
+            "bearing": 226.5,
+            "distanceNm": 40,
+            "minimumAltitudeFt": 24000
+          },
+          {
+            "id": "TEDDE",
+            "bearing": 226.4,
+            "distanceNm": 32.1
+          },
+          {
+            "id": "WATEV",
+            "bearing": 226.1,
+            "distanceNm": 25.8,
+            "minimumAltitudeFt": 19000
+          },
+          {
+            "id": "RNDRZ",
+            "bearing": 224.5,
+            "distanceNm": 8,
+            "minimumAltitudeFt": 13000,
+            "maximumAltitudeFt": 16000,
+            "maximumSpeedKt": 250
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "publisher": "FAA",
+        "title": "Coded Instrument Flight Procedures, cycle 2608",
+        "url": "https://aeronav.faa.gov/Upload_313-d/cifp/CIFP_260806.zip",
+        "purpose": "Machine-readable STAR identifiers, transition order, runway compatibility and crossing constraints",
+        "accessedOn": "2026-08-24"
+      }
+    ],
+    "gameOnlyNotice": "Published route order and represented constraints are retained; coordinates are projected into a compact tactical sector and are not for navigation."
+  },
+  {
+    "airportId": "sfo",
+    "packVersion": "2026.08.3",
+    "referenceCycle": "FAA CIFP 2608 · 2026-08-06–2026-09-03",
+    "effectiveFrom": "2026-08-06",
+    "effectiveTo": "2026-09-03",
+    "generatedFrom": "FAA CIFP · ARINC 424-18",
+    "procedures": [
+      {
+        "id": "ALWYS3",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "01L",
+          "01R",
+          "10L",
+          "10R",
+          "19L",
+          "19R",
+          "28L",
+          "28R"
+        ],
+        "entryTransition": "INYOE",
+        "fixes": [
+          {
+            "id": "INYOE",
+            "bearing": 83.4,
+            "distanceNm": 40
+          },
+          {
+            "id": "DYAMD",
+            "bearing": 86.5,
+            "distanceNm": 16.1,
+            "minimumAltitudeFt": 27000,
+            "maximumSpeedKt": 270
+          },
+          {
+            "id": "LAANE",
+            "bearing": 87.7,
+            "distanceNm": 11.1,
+            "minimumAltitudeFt": 22000,
+            "maximumAltitudeFt": 26000,
+            "maximumSpeedKt": 260
+          },
+          {
+            "id": "ALWYS",
+            "bearing": 88.8,
+            "distanceNm": 8
+          }
+        ]
+      },
+      {
+        "id": "BDEGA4",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "01R",
+          "28L",
+          "28R"
+        ],
+        "entryTransition": "MLBEC",
+        "fixes": [
+          {
+            "id": "MLBEC",
+            "bearing": 340.1,
+            "distanceNm": 40,
+            "minimumAltitudeFt": 29000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "JONNE",
+            "bearing": 338.4,
+            "distanceNm": 32.3,
+            "minimumAltitudeFt": 24000,
+            "maximumAltitudeFt": 28000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "BGGLO",
+            "bearing": 333.1,
+            "distanceNm": 20.4,
+            "minimumAltitudeFt": 19000,
+            "maximumAltitudeFt": 23000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "LOZIT",
+            "bearing": 320.1,
+            "distanceNm": 11,
+            "minimumAltitudeFt": 14000,
+            "maximumAltitudeFt": 16000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "BDEGA",
+            "bearing": 320,
+            "distanceNm": 8,
+            "maximumAltitudeFt": 13000
+          }
+        ]
+      },
+      {
+        "id": "PIRAT3",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "01L",
+          "01R",
+          "10L",
+          "10R",
+          "19L",
+          "19R",
+          "28L",
+          "28R"
+        ],
+        "entryTransition": "PASIF",
+        "fixes": [
+          {
+            "id": "PASIF",
+            "bearing": 235,
+            "distanceNm": 40,
+            "maximumAltitudeFt": 14000,
+            "maximumSpeedKt": 260
+          },
+          {
+            "id": "PIRAT",
+            "bearing": 227.2,
+            "distanceNm": 26.7,
+            "minimumAltitudeFt": 10000,
+            "maximumAltitudeFt": 10000
+          },
+          {
+            "id": "BRINY",
+            "bearing": 216,
+            "distanceNm": 17.6
+          },
+          {
+            "id": "ARGGG",
+            "bearing": 161.8,
+            "distanceNm": 8,
+            "minimumAltitudeFt": 8000,
+            "maximumAltitudeFt": 8000,
+            "maximumSpeedKt": 230
+          }
+        ]
+      },
+      {
+        "id": "RISTI1",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "01L",
+          "01R",
+          "10L",
+          "10R",
+          "19L",
+          "19R",
+          "28L",
+          "28R"
+        ],
+        "entryTransition": "ORRCA",
+        "fixes": [
+          {
+            "id": "ORRCA",
+            "bearing": 37.9,
+            "distanceNm": 40
+          },
+          {
+            "id": "HAIRE",
+            "bearing": 67.6,
+            "distanceNm": 19.7
+          },
+          {
+            "id": "BYRON",
+            "bearing": 73.8,
+            "distanceNm": 18.4
+          },
+          {
+            "id": "TRACY",
+            "bearing": 80.9,
+            "distanceNm": 17.6
+          },
+          {
+            "id": "MOVDD",
+            "bearing": 86.4,
+            "distanceNm": 17.7
+          },
+          {
+            "id": "RISTI",
+            "bearing": 90.7,
+            "distanceNm": 12.9
+          },
+          {
+            "id": "CEDES",
+            "bearing": 96.3,
+            "distanceNm": 8,
+            "minimumAltitudeFt": 9000,
+            "maximumAltitudeFt": 9000
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "publisher": "FAA",
+        "title": "Coded Instrument Flight Procedures, cycle 2608",
+        "url": "https://aeronav.faa.gov/Upload_313-d/cifp/CIFP_260806.zip",
+        "purpose": "Machine-readable STAR identifiers, transition order, runway compatibility and crossing constraints",
+        "accessedOn": "2026-08-24"
+      }
+    ],
+    "gameOnlyNotice": "Published route order and represented constraints are retained; coordinates are projected into a compact tactical sector and are not for navigation."
+  },
+  {
+    "airportId": "clt",
+    "packVersion": "2026.08.3",
+    "referenceCycle": "FAA CIFP 2608 · 2026-08-06–2026-09-03",
+    "effectiveFrom": "2026-08-06",
+    "effectiveTo": "2026-09-03",
+    "generatedFrom": "FAA CIFP · ARINC 424-18",
+    "procedures": [
+      {
+        "id": "BANKR7",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "01L",
+          "01R",
+          "18L",
+          "19L",
+          "19R",
+          "36R"
+        ],
+        "entryTransition": "PONZE",
+        "fixes": [
+          {
+            "id": "PONZE",
+            "bearing": 210.5,
+            "distanceNm": 40,
+            "minimumAltitudeFt": 27000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "NTRST",
+            "bearing": 211.6,
+            "distanceNm": 34,
+            "minimumAltitudeFt": 24000,
+            "maximumSpeedKt": 270
+          },
+          {
+            "id": "CHKNG",
+            "bearing": 212.3,
+            "distanceNm": 30.6
+          },
+          {
+            "id": "CRDET",
+            "bearing": 212.6,
+            "distanceNm": 19.9,
+            "minimumAltitudeFt": 17000
+          },
+          {
+            "id": "BANKR",
+            "bearing": 212.9,
+            "distanceNm": 12.5,
+            "minimumAltitudeFt": 13000,
+            "maximumAltitudeFt": 22000
+          },
+          {
+            "id": "DEBBT",
+            "bearing": 212.8,
+            "distanceNm": 8,
+            "minimumAltitudeFt": 12000,
+            "maximumAltitudeFt": 21000,
+            "maximumSpeedKt": 250
+          }
+        ]
+      },
+      {
+        "id": "CHSLY8",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "01L",
+          "01R",
+          "18L",
+          "19R",
+          "36R"
+        ],
+        "entryTransition": "SDAIL",
+        "fixes": [
+          {
+            "id": "SDAIL",
+            "bearing": 50.8,
+            "distanceNm": 40,
+            "minimumAltitudeFt": 17000,
+            "maximumAltitudeFt": 23000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "WLLSH",
+            "bearing": 41.8,
+            "distanceNm": 19.4,
+            "minimumAltitudeFt": 16000,
+            "maximumSpeedKt": 270
+          },
+          {
+            "id": "CHSLY",
+            "bearing": 34.8,
+            "distanceNm": 8,
+            "minimumAltitudeFt": 13000,
+            "maximumAltitudeFt": 22000,
+            "maximumSpeedKt": 250
+          }
+        ]
+      },
+      {
+        "id": "FILPZ6",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "01L",
+          "01R",
+          "18L",
+          "19L",
+          "19R",
+          "36R"
+        ],
+        "entryTransition": "COMDY",
+        "fixes": [
+          {
+            "id": "COMDY",
+            "bearing": 289.1,
+            "distanceNm": 40
+          },
+          {
+            "id": "BLAYQ",
+            "bearing": 289.4,
+            "distanceNm": 33.1
+          },
+          {
+            "id": "PHAYE",
+            "bearing": 290.2,
+            "distanceNm": 22.5,
+            "minimumAltitudeFt": 24000,
+            "maximumSpeedKt": 270
+          },
+          {
+            "id": "JJENY",
+            "bearing": 291.3,
+            "distanceNm": 13.1,
+            "minimumAltitudeFt": 19000,
+            "maximumAltitudeFt": 27000
+          },
+          {
+            "id": "FILPZ",
+            "bearing": 292.1,
+            "distanceNm": 8,
+            "minimumAltitudeFt": 16000,
+            "maximumSpeedKt": 270
+          }
+        ]
+      },
+      {
+        "id": "MLLET5",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "01L",
+          "01R",
+          "18L",
+          "19L",
+          "19R",
+          "36R"
+        ],
+        "entryTransition": "TORQD",
+        "fixes": [
+          {
+            "id": "TORQD",
+            "bearing": 105.3,
+            "distanceNm": 40
+          },
+          {
+            "id": "RYFLE",
+            "bearing": 123.5,
+            "distanceNm": 32.8
+          },
+          {
+            "id": "YELLS",
+            "bearing": 124.8,
+            "distanceNm": 20.6
+          },
+          {
+            "id": "MLLET",
+            "bearing": 125.5,
+            "distanceNm": 16.6
+          },
+          {
+            "id": "MANGY",
+            "bearing": 129.5,
+            "distanceNm": 8
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "publisher": "FAA",
+        "title": "Coded Instrument Flight Procedures, cycle 2608",
+        "url": "https://aeronav.faa.gov/Upload_313-d/cifp/CIFP_260806.zip",
+        "purpose": "Machine-readable STAR identifiers, transition order, runway compatibility and crossing constraints",
+        "accessedOn": "2026-08-24"
+      }
+    ],
+    "gameOnlyNotice": "Published route order and represented constraints are retained; coordinates are projected into a compact tactical sector and are not for navigation."
+  },
+  {
+    "airportId": "sea",
+    "packVersion": "2026.08.3",
+    "referenceCycle": "FAA CIFP 2608 · 2026-08-06–2026-09-03",
+    "effectiveFrom": "2026-08-06",
+    "effectiveTo": "2026-09-03",
+    "generatedFrom": "FAA CIFP · ARINC 424-18",
+    "procedures": [
+      {
+        "id": "HAWKZ8",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "16C",
+          "16L",
+          "16R",
+          "34C",
+          "34L",
+          "34R"
+        ],
+        "entryTransition": "KRIEG",
+        "fixes": [
+          {
+            "id": "KRIEG",
+            "bearing": 194.1,
+            "distanceNm": 40
+          },
+          {
+            "id": "HAWKZ",
+            "bearing": 203.8,
+            "distanceNm": 12.6,
+            "minimumAltitudeFt": 12000,
+            "maximumSpeedKt": 270
+          },
+          {
+            "id": "LIINE",
+            "bearing": 202,
+            "distanceNm": 8
+          }
+        ]
+      },
+      {
+        "id": "MARNR8",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "16C",
+          "16L",
+          "16R",
+          "34C",
+          "34L",
+          "34R"
+        ],
+        "entryTransition": "BUHNR",
+        "fixes": [
+          {
+            "id": "BUHNR",
+            "bearing": 331.9,
+            "distanceNm": 40,
+            "minimumAltitudeFt": 12000
+          },
+          {
+            "id": "MARNR",
+            "bearing": 328.6,
+            "distanceNm": 8,
+            "minimumAltitudeFt": 12000,
+            "maximumSpeedKt": 270
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "publisher": "FAA",
+        "title": "Coded Instrument Flight Procedures, cycle 2608",
+        "url": "https://aeronav.faa.gov/Upload_313-d/cifp/CIFP_260806.zip",
+        "purpose": "Machine-readable STAR identifiers, transition order, runway compatibility and crossing constraints",
+        "accessedOn": "2026-08-24"
+      }
+    ],
+    "gameOnlyNotice": "Published route order and represented constraints are retained; coordinates are projected into a compact tactical sector and are not for navigation."
+  },
+  {
+    "airportId": "phx",
+    "packVersion": "2026.08.3",
+    "referenceCycle": "FAA CIFP 2608 · 2026-08-06–2026-09-03",
+    "effectiveFrom": "2026-08-06",
+    "effectiveTo": "2026-09-03",
+    "generatedFrom": "FAA CIFP · ARINC 424-18",
+    "procedures": [
+      {
+        "id": "DSERT2",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "07L",
+          "07R",
+          "08",
+          "25L",
+          "25R",
+          "26"
+        ],
+        "entryTransition": "FLG",
+        "fixes": [
+          {
+            "id": "FLG",
+            "bearing": 9.1,
+            "distanceNm": 40
+          },
+          {
+            "id": "DSERT",
+            "bearing": 15.8,
+            "distanceNm": 26.6
+          },
+          {
+            "id": "SHOCK",
+            "bearing": 16.7,
+            "distanceNm": 19.6
+          },
+          {
+            "id": "BUSTD",
+            "bearing": 17.1,
+            "distanceNm": 17.8
+          },
+          {
+            "id": "YOLOW",
+            "bearing": 18.3,
+            "distanceNm": 14.8
+          },
+          {
+            "id": "CACTY",
+            "bearing": 11.3,
+            "distanceNm": 8
+          }
+        ]
+      },
+      {
+        "id": "EAGUL6",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "07L",
+          "07R",
+          "08",
+          "25L",
+          "25R",
+          "26"
+        ],
+        "entryTransition": "GUP",
+        "fixes": [
+          {
+            "id": "GUP",
+            "bearing": 50.9,
+            "distanceNm": 40
+          },
+          {
+            "id": "KIRKM",
+            "bearing": 53.2,
+            "distanceNm": 28.8
+          },
+          {
+            "id": "SLIDR",
+            "bearing": 53.9,
+            "distanceNm": 26.5
+          },
+          {
+            "id": "TINIZ",
+            "bearing": 50.7,
+            "distanceNm": 20.4,
+            "maximumAltitudeFt": 33000,
+            "maximumSpeedKt": 270
+          },
+          {
+            "id": "PAYSO",
+            "bearing": 47.3,
+            "distanceNm": 16.4,
+            "minimumAltitudeFt": 24000,
+            "maximumAltitudeFt": 30000,
+            "maximumSpeedKt": 270
+          },
+          {
+            "id": "EAGUL",
+            "bearing": 47.6,
+            "distanceNm": 12.5,
+            "minimumAltitudeFt": 18000,
+            "maximumSpeedKt": 260
+          },
+          {
+            "id": "HOMRR",
+            "bearing": 48.4,
+            "distanceNm": 8,
+            "maximumAltitudeFt": 17000,
+            "maximumSpeedKt": 250
+          }
+        ]
+      },
+      {
+        "id": "HYDRR1",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "07L",
+          "07R",
+          "08",
+          "25L",
+          "25R",
+          "26"
+        ],
+        "entryTransition": "SALOM",
+        "fixes": [
+          {
+            "id": "SALOM",
+            "bearing": 273.5,
+            "distanceNm": 40,
+            "maximumAltitudeFt": 23000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "MHAVI",
+            "bearing": 267.5,
+            "distanceNm": 26.6,
+            "maximumAltitudeFt": 22000
+          },
+          {
+            "id": "SWOON",
+            "bearing": 262.7,
+            "distanceNm": 20.2
+          },
+          {
+            "id": "HYDRR",
+            "bearing": 260,
+            "distanceNm": 15.5,
+            "minimumAltitudeFt": 15000,
+            "maximumAltitudeFt": 19000,
+            "maximumSpeedKt": 265
+          },
+          {
+            "id": "GEELA",
+            "bearing": 257.4,
+            "distanceNm": 8,
+            "minimumAltitudeFt": 11000,
+            "maximumAltitudeFt": 17000,
+            "maximumSpeedKt": 250
+          }
+        ]
+      },
+      {
+        "id": "PINNG1",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "07L",
+          "07R",
+          "08",
+          "25L",
+          "25R",
+          "26"
+        ],
+        "entryTransition": "HOTTT",
+        "fixes": [
+          {
+            "id": "HOTTT",
+            "bearing": 137.6,
+            "distanceNm": 40,
+            "minimumAltitudeFt": 22000,
+            "maximumAltitudeFt": 25000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "PINNG",
+            "bearing": 135,
+            "distanceNm": 24.9,
+            "minimumAltitudeFt": 17000,
+            "maximumSpeedKt": 270
+          },
+          {
+            "id": "BRDEY",
+            "bearing": 139.9,
+            "distanceNm": 8,
+            "minimumAltitudeFt": 13000,
+            "maximumSpeedKt": 250
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "publisher": "FAA",
+        "title": "Coded Instrument Flight Procedures, cycle 2608",
+        "url": "https://aeronav.faa.gov/Upload_313-d/cifp/CIFP_260806.zip",
+        "purpose": "Machine-readable STAR identifiers, transition order, runway compatibility and crossing constraints",
+        "accessedOn": "2026-08-24"
+      }
+    ],
+    "gameOnlyNotice": "Published route order and represented constraints are retained; coordinates are projected into a compact tactical sector and are not for navigation."
+  },
+  {
+    "airportId": "iah",
+    "packVersion": "2026.08.3",
+    "referenceCycle": "FAA CIFP 2608 · 2026-08-06–2026-09-03",
+    "effectiveFrom": "2026-08-06",
+    "effectiveTo": "2026-09-03",
+    "generatedFrom": "FAA CIFP · ARINC 424-18",
+    "procedures": [
+      {
+        "id": "BAZBL1",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "08L",
+          "08R",
+          "09",
+          "15L",
+          "15R",
+          "26L",
+          "26R",
+          "27",
+          "33L",
+          "33R"
+        ],
+        "entryTransition": "HOMRN",
+        "fixes": [
+          {
+            "id": "HOMRN",
+            "bearing": 317.1,
+            "distanceNm": 40
+          },
+          {
+            "id": "GOHAN",
+            "bearing": 316.9,
+            "distanceNm": 29.5
+          },
+          {
+            "id": "BAZBL",
+            "bearing": 316.8,
+            "distanceNm": 22.7
+          },
+          {
+            "id": "MPORT",
+            "bearing": 318.1,
+            "distanceNm": 8
+          }
+        ]
+      },
+      {
+        "id": "GESNR2",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "08L",
+          "08R",
+          "09"
+        ],
+        "entryTransition": "CARPR",
+        "fixes": [
+          {
+            "id": "CARPR",
+            "bearing": 43.8,
+            "distanceNm": 40
+          },
+          {
+            "id": "MURFF",
+            "bearing": 46.8,
+            "distanceNm": 28.7,
+            "minimumAltitudeFt": 22000,
+            "maximumAltitudeFt": 27000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "ZEEKK",
+            "bearing": 52.5,
+            "distanceNm": 16.4,
+            "minimumAltitudeFt": 17000,
+            "maximumAltitudeFt": 20000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "GESNR",
+            "bearing": 52.8,
+            "distanceNm": 8,
+            "minimumAltitudeFt": 13000,
+            "maximumAltitudeFt": 16000,
+            "maximumSpeedKt": 280
+          }
+        ]
+      },
+      {
+        "id": "HTOWN3",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "08L",
+          "08R",
+          "09",
+          "15L",
+          "15R",
+          "26L",
+          "26R",
+          "27",
+          "33L",
+          "33R"
+        ],
+        "entryTransition": "LMEDA",
+        "fixes": [
+          {
+            "id": "LMEDA",
+            "bearing": 223,
+            "distanceNm": 40
+          },
+          {
+            "id": "ALIEF",
+            "bearing": 223.5,
+            "distanceNm": 34.2,
+            "minimumAltitudeFt": 24000
+          },
+          {
+            "id": "BIGTX",
+            "bearing": 224,
+            "distanceNm": 30.7
+          },
+          {
+            "id": "ALVNN",
+            "bearing": 234,
+            "distanceNm": 21.5
+          },
+          {
+            "id": "CATTT",
+            "bearing": 238.8,
+            "distanceNm": 18.2,
+            "minimumAltitudeFt": 14000
+          },
+          {
+            "id": "GMANN",
+            "bearing": 239.7,
+            "distanceNm": 15.5,
+            "minimumAltitudeFt": 13000,
+            "maximumAltitudeFt": 16000,
+            "maximumSpeedKt": 250
+          },
+          {
+            "id": "HTOWN",
+            "bearing": 245.6,
+            "distanceNm": 11,
+            "minimumAltitudeFt": 9000,
+            "maximumAltitudeFt": 9000,
+            "maximumSpeedKt": 240
+          },
+          {
+            "id": "WDLNS",
+            "bearing": 256.6,
+            "distanceNm": 8,
+            "minimumAltitudeFt": 7000,
+            "maximumAltitudeFt": 7000,
+            "maximumSpeedKt": 210
+          }
+        ]
+      },
+      {
+        "id": "LINKK1",
+        "kind": "arrival",
+        "compatibleRunwayIds": [
+          "26L",
+          "26R",
+          "27"
+        ],
+        "entryTransition": "MULLT",
+        "fixes": [
+          {
+            "id": "MULLT",
+            "bearing": 124.5,
+            "distanceNm": 40
+          },
+          {
+            "id": "SKALE",
+            "bearing": 121,
+            "distanceNm": 27.4,
+            "maximumAltitudeFt": 21000,
+            "maximumSpeedKt": 280
+          },
+          {
+            "id": "LINKK",
+            "bearing": 116.4,
+            "distanceNm": 17.2,
+            "minimumAltitudeFt": 12000,
+            "maximumAltitudeFt": 15000,
+            "maximumSpeedKt": 250
+          },
+          {
+            "id": "GILLL",
+            "bearing": 114,
+            "distanceNm": 8,
+            "minimumAltitudeFt": 8000,
+            "maximumAltitudeFt": 10000,
+            "maximumSpeedKt": 240
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "publisher": "FAA",
+        "title": "Coded Instrument Flight Procedures, cycle 2608",
+        "url": "https://aeronav.faa.gov/Upload_313-d/cifp/CIFP_260806.zip",
+        "purpose": "Machine-readable STAR identifiers, transition order, runway compatibility and crossing constraints",
+        "accessedOn": "2026-08-24"
+      }
+    ],
+    "gameOnlyNotice": "Published route order and represented constraints are retained; coordinates are projected into a compact tactical sector and are not for navigation."
   }
 ];
