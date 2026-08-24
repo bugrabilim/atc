@@ -144,6 +144,28 @@ const reviewedFlowConfigurationsByAirportId = new Map<ScenarioId, FlowConfigurat
       windDirection: 150, windSpeedKt: 15, visibilityNm: 4, qnh: 1004,
     },
   ]],
+  ['bkk', [
+    {
+      id: 'bkk-primary', label: 'KUZEY · 01 KARIŞIK / 02L GELİŞ / 02R KALKIŞ',
+      arrivalRunwayIds: ['01', '02L'], departureRunwayIds: ['01', '02R'],
+      windDirection: 15, windSpeedKt: 8, visibilityNm: 12, qnh: 1012,
+    },
+    {
+      id: 'bkk-reverse', label: 'GÜNEY · 19 KARIŞIK / 20R GELİŞ / 20L KALKIŞ',
+      arrivalRunwayIds: ['19', '20R'], departureRunwayIds: ['19', '20L'],
+      windDirection: 195, windSpeedKt: 10, visibilityNm: 10, qnh: 1009,
+    },
+    {
+      id: 'bkk-lowvis', label: 'KUZEY · TEK GELİŞ',
+      arrivalRunwayIds: ['02L'], departureRunwayIds: ['02R'],
+      windDirection: 15, windSpeedKt: 14, visibilityNm: 4, qnh: 1005,
+    },
+    {
+      id: 'bkk-south-lowvis', label: 'GÜNEY · TEK GELİŞ',
+      arrivalRunwayIds: ['20R'], departureRunwayIds: ['20L'],
+      windDirection: 195, windSpeedKt: 15, visibilityNm: 4, qnh: 1004,
+    },
+  ]],
 ]);
 
 function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {

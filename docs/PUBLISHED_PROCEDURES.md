@@ -1,6 +1,6 @@
 # Published procedure runtime integration
 
-Updated: 2026-08-24 · runtime pack 2026.08.11
+Updated: 2026-08-24 · runtime pack 2026.08.12
 
 ## Product boundary
 
@@ -49,15 +49,18 @@ it is not navigation-grade data and must not be used for flight planning.
 | EHAM | BLUFA 1A / NORKU 2A to ARTIP, REDFA 1A to SUGOL and DENUT 3A to RIVER | LVNL eAIP AIRAC AMDT 08/2026, effective 06 AUG 2026 |
 | LEMD | RIDAV 3A / ADUXO 7B for RWY 18 and RIDAV 5C / ADUXO 3D for RWY 32 | ENAIRE AIP España 06 AUG 2026 / AIRAC AMDT 07/26; STAR source AMDT 16/22 and 04/26 |
 | WMKK | KAKAK 1G / SAROX 1G via PMS East for RWY 14L/14R/32L/32R and NIREN 1H / GUPTA 1H via PMS West for RWY 15/33 | CAAM eAIP Malaysia 11 AUG 2026 / permanent SUP 50/25 |
+| VTBS | EASTE / LEBIM / NORTA / TUMGA / WILLA 1D for RWY 01/02L/02R and 1C for RWY 19/20L/20R | CAAT eAIP Thailand 06 AUG 2026 / AIRAC AIP AMDT 08/26 |
 
 The authoritative URLs and access dates live beside each reviewed operations
-pack, in the generated FAA pack or in the reviewed international pack. Twenty-four
-of the 50 playable airports now have published runtime routes; the other 26 continue to be labeled and executed as
+pack, in the generated FAA pack or in the reviewed international pack. Twenty-five
+of the 50 playable airports now have published runtime routes; the other 25 continue to be labeled and executed as
 generated vector routes rather than being presented as real procedures.
 
 Cycle 2608 runway records also corrected the SFO 01/19 leading zero and magnetic
 bearings, plus the current CLT 01/19 and 18/36 runway designators used by the
-runtime catalog.
+runtime catalog. The VTBS pack corrects the published 8 ft aerodrome elevation,
+014.42° true bearings for RWY 01/19 and 02R/20L, and the operational split of
+mixed RWY 01/19, arrival RWY 02L/20R and departure RWY 02R/20L.
 
 ## Repeatable FAA CIFP import
 

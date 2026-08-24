@@ -105,6 +105,17 @@ describe('airport scenario catalog', () => {
     ]);
   });
 
+  it('uses Bangkok published three-runway arrival and departure assignments', () => {
+    const bangkok = scenarioCatalog.find((scenario) => scenario.id === 'bkk');
+    expect(bangkok?.world.environment?.elevationFt).toBe(8);
+    expect(bangkok?.world.flowConfigurations).toEqual([
+      expect.objectContaining({ id: 'bkk-primary', arrivalRunwayIds: ['01', '02L'], departureRunwayIds: ['01', '02R'] }),
+      expect.objectContaining({ id: 'bkk-reverse', arrivalRunwayIds: ['19', '20R'], departureRunwayIds: ['19', '20L'] }),
+      expect.objectContaining({ id: 'bkk-lowvis', arrivalRunwayIds: ['02L'], departureRunwayIds: ['02R'] }),
+      expect.objectContaining({ id: 'bkk-south-lowvis', arrivalRunwayIds: ['20R'], departureRunwayIds: ['20L'] }),
+    ]);
+  });
+
   it('can start directly in a non-primary flow without assigning inactive runways', () => {
     for (const scenario of scenarioCatalog.filter((item) => item.world.operations)) {
       const flow = scenario.world.flowConfigurations.at(-1)!;

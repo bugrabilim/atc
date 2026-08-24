@@ -1027,7 +1027,193 @@ const kualaLumpurInternational: PublishedProcedurePack = {
   gameOnlyNotice: 'Published RNAV STAR identities, point-merge arc order and represented restrictions are retained; WGS-84 geometry is projected into a compact tactical sector and is not for navigation.',
 };
 
+/*
+ * CAAT publishes one common RNAV 1 arrival family for each VTBS runway
+ * direction. The route tables below retain all ten current common STARs and
+ * their coded crossing restrictions. Bearings are calculated from the
+ * published VTBS ARP (134109N 1004456E). An 8 NM + 35% projection preserves
+ * the long feeder geometry and both radar-vectoring tails inside the compact
+ * tactical scope; transition legs before the named STAR entry are omitted.
+ */
+const bangkokEaste1DFixes: ProcedureFixTemplate[] = [
+  { id: 'EASTE', bearing: 39.8, distanceNm: 25.1, maximumAltitudeFt: 18000, maximumSpeedKt: 280 },
+  { id: 'BS417', bearing: 40.1, distanceNm: 20.1 },
+  { id: 'BS416', bearing: 40.6, distanceNm: 16.1, maximumAltitudeFt: 13000, maximumSpeedKt: 250 },
+  { id: 'MUMUP', bearing: 42, distanceNm: 12.2 },
+  { id: 'BS415', bearing: 60.7, distanceNm: 10.7, minimumAltitudeFt: 11000 },
+  { id: 'BS411', bearing: 105, distanceNm: 9.9, maximumSpeedKt: 220 },
+  { id: 'BS410', bearing: 170.7, distanceNm: 12.7 },
+  { id: 'ENKAA', bearing: 177.2, distanceNm: 14.3, minimumAltitudeFt: 3000 },
+];
+
+const bangkokLebim1DFixes: ProcedureFixTemplate[] = [
+  { id: 'LEBIM', bearing: 204.2, distanceNm: 21.8, maximumAltitudeFt: 18000, maximumSpeedKt: 280 },
+  { id: 'MENUT', bearing: 192.6, distanceNm: 18.1, maximumAltitudeFt: 14000 },
+  { id: 'ISRAM', bearing: 151.8, distanceNm: 14.4, maximumSpeedKt: 250 },
+  { id: 'BS412', bearing: 105.1, distanceNm: 12.4, minimumAltitudeFt: 11000 },
+  { id: 'BS411', bearing: 105, distanceNm: 9.9, maximumSpeedKt: 220 },
+  { id: 'BS410', bearing: 170.7, distanceNm: 12.7 },
+  { id: 'ENKAA', bearing: 177.2, distanceNm: 14.3, minimumAltitudeFt: 3000 },
+];
+
+const bangkokNorta1DFixes: ProcedureFixTemplate[] = [
+  { id: 'NORTA', bearing: 354.1, distanceNm: 29.8, maximumAltitudeFt: 22000, maximumSpeedKt: 280 },
+  { id: 'IRTIS', bearing: 358.3, distanceNm: 23.8 },
+  { id: 'LAVAT', bearing: 359.9, distanceNm: 19.5, minimumAltitudeFt: 16000 },
+  { id: 'BS421', bearing: 1.5, distanceNm: 17.1, maximumSpeedKt: 250 },
+  { id: 'BS420', bearing: 350.9, distanceNm: 13.1, minimumAltitudeFt: 11000 },
+  {
+    id: 'BS419', bearing: 285.1, distanceNm: 10,
+    minimumAltitudeFt: 7000, maximumAltitudeFt: 9000, maximumSpeedKt: 220,
+  },
+  { id: 'BS418', bearing: 219.9, distanceNm: 12.7 },
+  { id: 'BOGAS', bearing: 213.1, distanceNm: 14.4, minimumAltitudeFt: 4000 },
+];
+
+const bangkokTumga1DFixes: ProcedureFixTemplate[] = [
+  { id: 'TUMGA', bearing: 127, distanceNm: 19.6, maximumAltitudeFt: 18000, maximumSpeedKt: 280 },
+  { id: 'BS414', bearing: 105.1, distanceNm: 17.3, maximumSpeedKt: 250 },
+  { id: 'BS413', bearing: 105.1, distanceNm: 13.8 },
+  { id: 'BS412', bearing: 105.1, distanceNm: 12.4, minimumAltitudeFt: 11000 },
+  { id: 'BS411', bearing: 105, distanceNm: 9.9, maximumSpeedKt: 220 },
+  { id: 'BS410', bearing: 170.7, distanceNm: 12.7 },
+  { id: 'ENKAA', bearing: 177.2, distanceNm: 14.3, minimumAltitudeFt: 3000 },
+];
+
+const bangkokWilla1DFixes: ProcedureFixTemplate[] = [
+  { id: 'WILLA', bearing: 317.2, distanceNm: 28.6, maximumAltitudeFt: 22000, maximumSpeedKt: 280 },
+  { id: 'NIMEG', bearing: 324.3, distanceNm: 25.4 },
+  { id: 'ISDEX', bearing: 341.4, distanceNm: 21.3 },
+  { id: 'LAVAT', bearing: 359.9, distanceNm: 19.5, minimumAltitudeFt: 16000 },
+  { id: 'BS421', bearing: 1.5, distanceNm: 17.1, maximumSpeedKt: 250 },
+  { id: 'BS420', bearing: 350.9, distanceNm: 13.1, minimumAltitudeFt: 11000 },
+  {
+    id: 'BS419', bearing: 285.1, distanceNm: 10,
+    minimumAltitudeFt: 7000, maximumAltitudeFt: 9000, maximumSpeedKt: 220,
+  },
+  { id: 'BS418', bearing: 219.9, distanceNm: 12.7 },
+  { id: 'BOGAS', bearing: 213.1, distanceNm: 14.4, minimumAltitudeFt: 4000 },
+];
+
+const bangkokEaste1CFixes: ProcedureFixTemplate[] = [
+  { id: 'EASTE', bearing: 39.8, distanceNm: 25.1, maximumAltitudeFt: 18000, maximumSpeedKt: 280 },
+  {
+    id: 'SOVKI', bearing: 40.1, distanceNm: 18.2,
+    minimumAltitudeFt: 11000, maximumAltitudeFt: 14000, maximumSpeedKt: 250,
+  },
+  { id: 'TERIB', bearing: 45.9, distanceNm: 16.5 },
+  { id: 'BS507', bearing: 53.5, distanceNm: 15 },
+  { id: 'BS505', bearing: 64.4, distanceNm: 13.7 },
+  { id: 'MUMUP', bearing: 42, distanceNm: 12.2, maximumSpeedKt: 220 },
+  { id: 'BS501', bearing: 34.2, distanceNm: 13.8 },
+  { id: 'ESGEN', bearing: 29.7, distanceNm: 15.5, minimumAltitudeFt: 5000 },
+];
+
+const bangkokLebim1CFixes: ProcedureFixTemplate[] = [
+  { id: 'LEBIM', bearing: 204.2, distanceNm: 21.8, maximumAltitudeFt: 18000, maximumSpeedKt: 280 },
+  { id: 'SAGAP', bearing: 198.7, distanceNm: 17.3, maximumAltitudeFt: 14000 },
+  { id: 'BS521', bearing: 187, distanceNm: 13.6, minimumAltitudeFt: 11000 },
+  { id: 'DUDER', bearing: 156.4, distanceNm: 11.1, maximumSpeedKt: 250 },
+  { id: 'BS520', bearing: 127.8, distanceNm: 10.1, minimumAltitudeFt: 9000, maximumAltitudeFt: 11000 },
+  { id: 'MUMUP', bearing: 42, distanceNm: 12.2, maximumSpeedKt: 220 },
+  { id: 'BS501', bearing: 34.2, distanceNm: 13.8 },
+  { id: 'ESGEN', bearing: 29.7, distanceNm: 15.5, minimumAltitudeFt: 5000 },
+];
+
+const bangkokNorta1CFixes: ProcedureFixTemplate[] = [
+  { id: 'NORTA', bearing: 354.1, distanceNm: 29.8, maximumAltitudeFt: 18000, maximumSpeedKt: 280 },
+  { id: 'BS519', bearing: 355.9, distanceNm: 26.8, minimumAltitudeFt: 16000 },
+  { id: 'BS518', bearing: 358.1, distanceNm: 24, maximumSpeedKt: 250 },
+  { id: 'MEPIN', bearing: 352.4, distanceNm: 20, minimumAltitudeFt: 11000 },
+  { id: 'BS515', bearing: 335.4, distanceNm: 15.1, minimumAltitudeFt: 9000, maximumSpeedKt: 220 },
+  { id: 'BS514', bearing: 354.1, distanceNm: 13.9 },
+  { id: 'ATKIN', bearing: 358.7, distanceNm: 15.5, minimumAltitudeFt: 6000 },
+];
+
+const bangkokTumga1CFixes: ProcedureFixTemplate[] = [
+  { id: 'TUMGA', bearing: 127, distanceNm: 19.6, maximumAltitudeFt: 18000, maximumSpeedKt: 280 },
+  { id: 'ISRAM', bearing: 151.8, distanceNm: 14.4, minimumAltitudeFt: 11000 },
+  { id: 'DUDER', bearing: 156.4, distanceNm: 11.1, maximumSpeedKt: 250 },
+  { id: 'BS520', bearing: 127.8, distanceNm: 10.1, minimumAltitudeFt: 9000, maximumAltitudeFt: 11000 },
+  { id: 'MUMUP', bearing: 42, distanceNm: 12.2, maximumSpeedKt: 220 },
+  { id: 'BS501', bearing: 34.2, distanceNm: 13.8 },
+  { id: 'ESGEN', bearing: 29.7, distanceNm: 15.5, minimumAltitudeFt: 5000 },
+];
+
+const bangkokWilla1CFixes: ProcedureFixTemplate[] = [
+  { id: 'WILLA', bearing: 317.2, distanceNm: 28.6, maximumAltitudeFt: 18000, maximumSpeedKt: 280 },
+  { id: 'BAROK', bearing: 321.8, distanceNm: 26.4 },
+  { id: 'BS517', bearing: 328.6, distanceNm: 24, minimumAltitudeFt: 14000, maximumAltitudeFt: 15000 },
+  { id: 'BS516', bearing: 336.4, distanceNm: 22.1, maximumSpeedKt: 250 },
+  { id: 'MEPIN', bearing: 352.4, distanceNm: 20, minimumAltitudeFt: 11000 },
+  { id: 'BS515', bearing: 335.4, distanceNm: 15.1, minimumAltitudeFt: 9000, maximumSpeedKt: 220 },
+  { id: 'BS514', bearing: 354.1, distanceNm: 13.9 },
+  { id: 'ATKIN', bearing: 358.7, distanceNm: 15.5, minimumAltitudeFt: 6000 },
+];
+
+const bangkokSuvarnabhumi: PublishedProcedurePack = {
+  airportId: 'bkk',
+  packVersion: '2026.08.12',
+  referenceCycle: 'CAAT eAIP Thailand 06 AUG 2026 · AIRAC AIP AMDT 08/26',
+  effectiveFrom: '2026-08-06',
+  effectiveTo: '2026-09-02',
+  generatedFrom: 'CAAT eAIP Thailand · VTBS AD 2, RNAV 1 STAR tables and WGS-84 waypoint lists',
+  procedures: [
+    { id: 'EASTE1D', kind: 'arrival', compatibleRunwayIds: ['01', '02L', '02R'], entryTransition: 'EASTE', fixes: bangkokEaste1DFixes },
+    { id: 'LEBIM1D', kind: 'arrival', compatibleRunwayIds: ['01', '02L', '02R'], entryTransition: 'LEBIM', fixes: bangkokLebim1DFixes },
+    { id: 'NORTA1D', kind: 'arrival', compatibleRunwayIds: ['01', '02L', '02R'], entryTransition: 'NORTA', fixes: bangkokNorta1DFixes },
+    { id: 'TUMGA1D', kind: 'arrival', compatibleRunwayIds: ['01', '02L', '02R'], entryTransition: 'TUMGA', fixes: bangkokTumga1DFixes },
+    { id: 'WILLA1D', kind: 'arrival', compatibleRunwayIds: ['01', '02L', '02R'], entryTransition: 'WILLA', fixes: bangkokWilla1DFixes },
+    { id: 'EASTE1C', kind: 'arrival', compatibleRunwayIds: ['19', '20L', '20R'], entryTransition: 'EASTE', fixes: bangkokEaste1CFixes },
+    { id: 'LEBIM1C', kind: 'arrival', compatibleRunwayIds: ['19', '20L', '20R'], entryTransition: 'LEBIM', fixes: bangkokLebim1CFixes },
+    { id: 'NORTA1C', kind: 'arrival', compatibleRunwayIds: ['19', '20L', '20R'], entryTransition: 'NORTA', fixes: bangkokNorta1CFixes },
+    { id: 'TUMGA1C', kind: 'arrival', compatibleRunwayIds: ['19', '20L', '20R'], entryTransition: 'TUMGA', fixes: bangkokTumga1CFixes },
+    { id: 'WILLA1C', kind: 'arrival', compatibleRunwayIds: ['19', '20L', '20R'], entryTransition: 'WILLA', fixes: bangkokWilla1CFixes },
+  ],
+  sources: [
+    {
+      publisher: 'Civil Aviation Authority of Thailand',
+      title: 'Thailand eAIP — effective issue 06 AUG 2026',
+      url: 'https://aip.caat.or.th/2026-08-06-AIRAC/html/index-en-GB.html',
+      purpose: 'Current AIRAC issue and effective-date reference',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Authority of Thailand',
+      title: 'VTBS AD 2 — Bangkok/Suvarnabhumi International',
+      url: 'https://aip.caat.or.th/2026-08-06-AIRAC/html/eAIP/VT-AD-2.VTBS-en-GB.html',
+      purpose: 'ARP, elevation, runway geometry, three-runway use and official chart index',
+      accessedOn: ACCESSED_ON,
+    },
+    ...[
+      ['AD 2-VTBS-7-1 · RNAV RWY 01/02L/02R STAR chart', '299109', 'North-flow route geometry and chart restrictions'],
+      ['AD 2-VTBS-7-4 · EASTE 1D table', '287789', 'EASTE 1D waypoint order and coded restrictions'],
+      ['AD 2-VTBS-7-5 · LEBIM 1D table', '287790', 'LEBIM 1D waypoint order and coded restrictions'],
+      ['AD 2-VTBS-7-6 · NORTA 1D table', '287791', 'NORTA 1D waypoint order and coded restrictions'],
+      ['AD 2-VTBS-7-7/8 · TUMGA 1D table', '287792', 'TUMGA 1D transitions and route order'],
+      ['AD 2-VTBS-7-8 · TUMGA 1D continuation', '287793', 'TUMGA 1D common-route restrictions'],
+      ['AD 2-VTBS-7-9 · WILLA 1D table', '287794', 'WILLA 1D waypoint order and coded restrictions'],
+      ['AD 2-VTBS-7-10 · RWY 01/02 waypoint list', '280039', 'North-flow WGS-84 waypoint coordinates'],
+      ['AD 2-VTBS-7-11 · RNAV RWY 19/20L/20R STAR chart', '299110', 'South-flow route geometry and chart restrictions'],
+      ['AD 2-VTBS-7-14 · EASTE 1C table', '287796', 'EASTE 1C waypoint order and coded restrictions'],
+      ['AD 2-VTBS-7-15 · LEBIM 1C table', '287797', 'LEBIM 1C waypoint order and coded restrictions'],
+      ['AD 2-VTBS-7-16 · NORTA 1C table', '287799', 'NORTA 1C waypoint order and coded restrictions'],
+      ['AD 2-VTBS-7-17/18 · TUMGA 1C table', '287800', 'TUMGA 1C transitions and route order'],
+      ['AD 2-VTBS-7-18 · TUMGA 1C continuation', '287801', 'TUMGA 1C common-route restrictions'],
+      ['AD 2-VTBS-7-19 · WILLA 1C table', '287802', 'WILLA 1C waypoint order and coded restrictions'],
+      ['AD 2-VTBS-7-20 · RWY 19/20 waypoint list', '280050', 'South-flow WGS-84 waypoint coordinates'],
+    ].map(([title, graphicId, purpose]) => ({
+      publisher: 'Civil Aviation Authority of Thailand',
+      title,
+      url: `https://aip.caat.or.th/2026-08-06-AIRAC/graphics/${graphicId}.pdf`,
+      purpose,
+      accessedOn: ACCESSED_ON,
+    })),
+  ],
+  gameOnlyNotice: 'All ten current RNAV 1 STAR identities, common waypoint orders and represented coded restrictions are retained; feeder transitions and navigation-grade geometry are outside the compact game scope.',
+};
+
 export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [
   delhi, incheon, dubai, parisCharlesDeGaulle, singaporeChangi, amsterdamSchiphol, madridBarajas,
-  kualaLumpurInternational,
+  kualaLumpurInternational, bangkokSuvarnabhumi,
 ];

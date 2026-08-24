@@ -12,7 +12,7 @@ describe('published procedure catalog', () => {
     expect(PUBLISHED_PROCEDURE_PACKS.map((pack) => pack.airportId)).toEqual([
       'ist', 'lhr', 'lax', 'jfk', 'atl', 'dfw', 'ord', 'den',
       'mco', 'mia', 'las', 'sfo', 'clt', 'sea', 'phx', 'iah',
-      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams', 'mad', 'kul',
+      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams', 'mad', 'kul', 'bkk',
     ]);
     expect(publishedProcedurePackByAirportId.size).toBe(PUBLISHED_PROCEDURE_PACKS.length);
   });
@@ -348,6 +348,56 @@ describe('published procedure catalog', () => {
       minimumAltitudeFt: 8000,
       maximumSpeedKt: 230,
     });
+  });
+
+  it('ships all ten current Bangkok STARs for the published three-runway directions', () => {
+    const pack = INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS.find((item) => item.airportId === 'bkk');
+    expect(pack?.referenceCycle).toContain('AIRAC AIP AMDT 08/26');
+    expect(pack?.effectiveFrom).toBe('2026-08-06');
+    expect(pack?.effectiveTo).toBe('2026-09-02');
+    expect(pack?.procedures.map((procedure) => procedure.id)).toEqual([
+      'EASTE1D', 'LEBIM1D', 'NORTA1D', 'TUMGA1D', 'WILLA1D',
+      'EASTE1C', 'LEBIM1C', 'NORTA1C', 'TUMGA1C', 'WILLA1C',
+    ]);
+    expect(pack?.sources.every((source) => source.publisher === 'Civil Aviation Authority of Thailand')).toBe(true);
+
+    const easte1d = pack?.procedures.find((procedure) => procedure.id === 'EASTE1D');
+    expect(easte1d?.compatibleRunwayIds).toEqual(['01', '02L', '02R']);
+    expect(easte1d?.fixes.map((fix) => fix.id)).toEqual([
+      'EASTE', 'BS417', 'BS416', 'MUMUP', 'BS415', 'BS411', 'BS410', 'ENKAA',
+    ]);
+    expect(easte1d?.fixes.find((fix) => fix.id === 'BS416')).toMatchObject({
+      maximumAltitudeFt: 13000,
+      maximumSpeedKt: 250,
+    });
+
+    const norta1d = pack?.procedures.find((procedure) => procedure.id === 'NORTA1D');
+    expect(norta1d?.fixes.find((fix) => fix.id === 'BS419')).toMatchObject({
+      minimumAltitudeFt: 7000,
+      maximumAltitudeFt: 9000,
+      maximumSpeedKt: 220,
+    });
+
+    const easte1c = pack?.procedures.find((procedure) => procedure.id === 'EASTE1C');
+    expect(easte1c?.compatibleRunwayIds).toEqual(['19', '20L', '20R']);
+    expect(easte1c?.fixes.map((fix) => fix.id)).toEqual([
+      'EASTE', 'SOVKI', 'TERIB', 'BS507', 'BS505', 'MUMUP', 'BS501', 'ESGEN',
+    ]);
+    expect(easte1c?.fixes.find((fix) => fix.id === 'SOVKI')).toMatchObject({
+      minimumAltitudeFt: 11000,
+      maximumAltitudeFt: 14000,
+      maximumSpeedKt: 250,
+    });
+
+    const willa1c = pack?.procedures.find((procedure) => procedure.id === 'WILLA1C');
+    expect(willa1c?.fixes.map((fix) => fix.id)).toEqual([
+      'WILLA', 'BAROK', 'BS517', 'BS516', 'MEPIN', 'BS515', 'BS514', 'ATKIN',
+    ]);
+    expect(willa1c?.fixes.find((fix) => fix.id === 'BS517')).toMatchObject({
+      minimumAltitudeFt: 14000,
+      maximumAltitudeFt: 15000,
+    });
+    expect(willa1c?.fixes.find((fix) => fix.id === 'ATKIN')).toMatchObject({ minimumAltitudeFt: 6000 });
   });
 
   it('ships runway-specific Delhi STARs from the effective AIM India issue', () => {
