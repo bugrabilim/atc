@@ -96,11 +96,9 @@ function flowForDirection(
   };
 }
 
-/* ENAIRE publishes LEMD as two operational runway configurations: arrivals
- * use 18L/R with departures on 14L/R in the south configuration, while the
- * north configuration uses 32L/R for arrivals and 36L/R for departures. Keep
- * the existing first three flow ids so already-saved Madrid shifts remain
- * restorable while replacing the generic mixed-heading runway allocation. */
+/* Reviewed runway-use overrides keep traffic generation aligned with the
+ * published operating concepts instead of generic longest-runway selection.
+ * Existing first-three flow ids are retained for save compatibility. */
 const reviewedFlowConfigurationsByAirportId = new Map<ScenarioId, FlowConfiguration[]>([
   ['mad', [
     {
@@ -122,6 +120,28 @@ const reviewedFlowConfigurationsByAirportId = new Map<ScenarioId, FlowConfigurat
       id: 'mad-north-lowvis', label: 'KUZEY · TEK GELİŞ',
       arrivalRunwayIds: ['32L'], departureRunwayIds: ['36L'],
       windDirection: 335, windSpeedKt: 17, visibilityNm: 4, qnh: 1003,
+    },
+  ]],
+  ['kul', [
+    {
+      id: 'kul-primary', label: 'KUZEY · 32R GELİŞ / 32L KALKIŞ / 33 KARIŞIK',
+      arrivalRunwayIds: ['32R', '33'], departureRunwayIds: ['32L', '33'],
+      windDirection: 330, windSpeedKt: 8, visibilityNm: 12, qnh: 1013,
+    },
+    {
+      id: 'kul-reverse', label: 'GÜNEY · 14L GELİŞ / 14R KALKIŞ / 15 KARIŞIK',
+      arrivalRunwayIds: ['14L', '15'], departureRunwayIds: ['14R', '15'],
+      windDirection: 145, windSpeedKt: 10, visibilityNm: 10, qnh: 1010,
+    },
+    {
+      id: 'kul-lowvis', label: 'KUZEY · TEK GELİŞ',
+      arrivalRunwayIds: ['32R'], departureRunwayIds: ['32L'],
+      windDirection: 325, windSpeedKt: 14, visibilityNm: 4, qnh: 1005,
+    },
+    {
+      id: 'kul-south-lowvis', label: 'GÜNEY · TEK GELİŞ',
+      arrivalRunwayIds: ['14L'], departureRunwayIds: ['14R'],
+      windDirection: 150, windSpeedKt: 15, visibilityNm: 4, qnh: 1004,
     },
   ]],
 ]);

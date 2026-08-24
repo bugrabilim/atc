@@ -858,6 +858,176 @@ const madridBarajas: PublishedProcedurePack = {
   gameOnlyNotice: 'Published RNAV-1 STAR identifiers, complete represented waypoint order and coded restrictions are retained; WGS-84 geometry is projected into a compact tactical sector and is not for navigation.',
 };
 
+/*
+ * CAAM's permanent WMKK point-merge operation assigns KAKAK/PULIP/SAROX
+ * traffic to PMS East (STAR 1G) for RWY 14L/14R/32L/32R and
+ * NIREN/PUGER/SALAX/GUPTA traffic to PMS West (STAR 1H) for RWY 15/33.
+ * Bearings below are calculated from the published WMKK ARP (024436N
+ * 1014153E). The common 8 NM + 25% projection preserves both merge arcs and
+ * the relative entry geometry while keeping the 80+ NM feeds readable on a
+ * phone-sized tactical scope. Current CAAM charts remain the source of record;
+ * the open Endless ATC Lumpur sector is retained only as an independent
+ * coordinate/transcription cross-check.
+ */
+const kualaLumpurKakak1GFixes: ProcedureFixTemplate[] = [
+  { id: 'KAKAK', bearing: 335.5, distanceNm: 24.9 },
+  { id: 'LIBKI', bearing: 6.8, distanceNm: 16 },
+  { id: 'RITLO', bearing: 29.6, distanceNm: 14.8, minimumAltitudeFt: 19000, maximumSpeedKt: 250 },
+  { id: 'KK811', bearing: 38.4, distanceNm: 15.1 },
+  { id: 'KK812', bearing: 47.1, distanceNm: 15.3 },
+  { id: 'KK813', bearing: 55.8, distanceNm: 15.3 },
+  { id: 'KK814', bearing: 64.6, distanceNm: 15.3 },
+  { id: 'KK815', bearing: 73.3, distanceNm: 15.1 },
+  { id: 'KK816', bearing: 82.2, distanceNm: 14.8, maximumSpeedKt: 250 },
+  { id: 'EGURI', bearing: 55.8, distanceNm: 11.1, minimumAltitudeFt: 15000, maximumSpeedKt: 230 },
+];
+
+const kualaLumpurSarox1GFixes: ProcedureFixTemplate[] = [
+  { id: 'SAROX', bearing: 86.6, distanceNm: 22.6, minimumAltitudeFt: 23000 },
+  { id: 'VEKTO', bearing: 94.4, distanceNm: 16.4, minimumAltitudeFt: 17000 },
+  { id: 'NUKPA', bearing: 82.9, distanceNm: 15, minimumAltitudeFt: 17000, maximumSpeedKt: 250 },
+  { id: 'KK804', bearing: 73.8, distanceNm: 15.3 },
+  { id: 'KK805', bearing: 64.8, distanceNm: 15.5 },
+  { id: 'KK806', bearing: 55.8, distanceNm: 15.6 },
+  { id: 'KK807', bearing: 46.9, distanceNm: 15.5 },
+  { id: 'KK808', bearing: 38, distanceNm: 15.4 },
+  { id: 'KK809', bearing: 29, distanceNm: 15.1, maximumSpeedKt: 250 },
+  { id: 'EGURI', bearing: 55.8, distanceNm: 11.1, minimumAltitudeFt: 15000, maximumSpeedKt: 230 },
+];
+
+const kualaLumpurNiren1HFixes: ProcedureFixTemplate[] = [
+  { id: 'NIREN', bearing: 303.5, distanceNm: 28.6 },
+  { id: 'AKESO', bearing: 289.9, distanceNm: 24 },
+  { id: 'KK871', bearing: 284.8, distanceNm: 20.4 },
+  { id: 'KADKU', bearing: 277.6, distanceNm: 14.9, maximumSpeedKt: 230 },
+  { id: 'PAPGO', bearing: 268.3, distanceNm: 13.7, minimumAltitudeFt: 14000, maximumSpeedKt: 230 },
+  { id: 'KK872', bearing: 257.4, distanceNm: 14.1 },
+  { id: 'KK873', bearing: 246.6, distanceNm: 14.4 },
+  { id: 'KK874', bearing: 235.8, distanceNm: 14.6 },
+  { id: 'KK875', bearing: 225.1, distanceNm: 14.5 },
+  { id: 'KK876', bearing: 214.4, distanceNm: 14.2 },
+  { id: 'KK877', bearing: 203.6, distanceNm: 13.7, maximumSpeedKt: 230 },
+  { id: 'MESUP', bearing: 235.8, distanceNm: 11.1, minimumAltitudeFt: 8000, maximumSpeedKt: 230 },
+];
+
+const kualaLumpurGupta1HFixes: ProcedureFixTemplate[] = [
+  { id: 'GUPTA', bearing: 121.6, distanceNm: 24.6 },
+  { id: 'PANKA', bearing: 186.5, distanceNm: 15, minimumAltitudeFt: 11000, maximumSpeedKt: 230 },
+  { id: 'LULKI', bearing: 202.5, distanceNm: 13.9, minimumAltitudeFt: 11000, maximumSpeedKt: 230 },
+  { id: 'KK881', bearing: 213.7, distanceNm: 14.4 },
+  { id: 'KK882', bearing: 224.8, distanceNm: 14.7 },
+  { id: 'KK883', bearing: 235.8, distanceNm: 14.8 },
+  { id: 'KK884', bearing: 246.9, distanceNm: 14.7 },
+  { id: 'KK885', bearing: 258.1, distanceNm: 14.4 },
+  { id: 'KK886', bearing: 269.4, distanceNm: 13.9, maximumSpeedKt: 230 },
+  { id: 'MESUP', bearing: 235.8, distanceNm: 11.1, minimumAltitudeFt: 8000, maximumSpeedKt: 230 },
+];
+
+const kualaLumpurInternational: PublishedProcedurePack = {
+  airportId: 'kul',
+  packVersion: '2026.08.11',
+  referenceCycle: 'CAAM eAIP Malaysia 11 AUG 2026 · WMKK PMS STAR charts / SUP 50/25',
+  effectiveFrom: '2026-08-11',
+  generatedFrom: 'CAAM eAIP Malaysia · WMKK AD 2, PMS STAR charts and permanent three-runway operating supplement',
+  procedures: [
+    {
+      id: 'KAKAK1G',
+      kind: 'arrival',
+      compatibleRunwayIds: ['14L', '14R', '32L', '32R'],
+      entryTransition: 'KAKAK',
+      fixes: kualaLumpurKakak1GFixes,
+    },
+    {
+      id: 'SAROX1G',
+      kind: 'arrival',
+      compatibleRunwayIds: ['14L', '14R', '32L', '32R'],
+      entryTransition: 'SAROX',
+      fixes: kualaLumpurSarox1GFixes,
+    },
+    {
+      id: 'NIREN1H',
+      kind: 'arrival',
+      compatibleRunwayIds: ['15', '33'],
+      entryTransition: 'NIREN',
+      fixes: kualaLumpurNiren1HFixes,
+    },
+    {
+      id: 'GUPTA1H',
+      kind: 'arrival',
+      compatibleRunwayIds: ['15', '33'],
+      entryTransition: 'GUPTA',
+      fixes: kualaLumpurGupta1HFixes,
+    },
+  ],
+  sources: [
+    {
+      publisher: 'Civil Aviation Authority of Malaysia',
+      title: 'WMKK AD 2 — Kuala Lumpur International',
+      url: 'https://aip.caam.gov.my/aip/eAIP/2026-08-11/html/eAIP/WM-AD-2.WMKK-en-MS.html',
+      purpose: 'Current airport reference point, runway inventory, chart index and point-merge operating description',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Authority of Malaysia',
+      title: 'WMKK permanent three-runway and point-merge implementation — SUP 50/25',
+      url: 'https://aip.caam.gov.my/aip/eAIP/2025-10-02-AIRAC/html/eSUP/WM-eSUP-25-50-en-MS.html',
+      purpose: 'Operational assignment of STAR 1G to RWY 14L/14R/32L/32R and STAR 1H to RWY 15/33',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Authority of Malaysia',
+      title: 'WMKK AD 2-WMKK-7-1 — PMS East STAR chart',
+      url: 'https://aip.caam.gov.my/aip/eAIP/2026-08-11/graphics/305936.pdf',
+      purpose: 'Current PMS East route geometry and procedure identity',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Authority of Malaysia',
+      title: 'WMKK AD 2-WMKK-7-2 — PMS East tabular description 1',
+      url: 'https://aip.caam.gov.my/aip/eAIP/2026-08-11/graphics/208302.pdf',
+      purpose: 'PMS East waypoint order, WGS-84 positions and represented restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Authority of Malaysia',
+      title: 'WMKK AD 2-WMKK-7-3 — PMS East tabular description 2',
+      url: 'https://aip.caam.gov.my/aip/eAIP/2026-08-11/graphics/208304.pdf',
+      purpose: 'KAKAK 1G and SAROX 1G route-table continuation',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Authority of Malaysia',
+      title: 'WMKK AD 2-WMKK-7-7 — PMS West STAR chart',
+      url: 'https://aip.caam.gov.my/aip/eAIP/2026-08-11/graphics/306651.pdf',
+      purpose: 'Current PMS West route geometry and procedure identity',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Authority of Malaysia',
+      title: 'WMKK AD 2-WMKK-7-9 — PMS West tabular description 2',
+      url: 'https://aip.caam.gov.my/aip/eAIP/2026-08-11/graphics/208309.pdf',
+      purpose: 'NIREN 1H waypoint order, WGS-84 positions and represented restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'Civil Aviation Authority of Malaysia',
+      title: 'WMKK AD 2-WMKK-7-10 — PMS West tabular description 3',
+      url: 'https://aip.caam.gov.my/aip/eAIP/2026-08-11/graphics/208310.pdf',
+      purpose: 'GUPTA 1H waypoint order, WGS-84 positions and represented restrictions',
+      accessedOn: ACCESSED_ON,
+    },
+    {
+      publisher: 'BestBearrr / Endless ATC community',
+      title: 'Lumpur TMA v1.1 sector transcription',
+      url: 'https://github.com/BestBearrr/Airport-Sectors-for-Endless-ATC/blob/85d99c5e6816a494e715bd215cb711047476a6a5/WMKK/WMKK.txt',
+      purpose: 'Independent route-coordinate transcription cross-check only; CAAM remains the source of record',
+      accessedOn: ACCESSED_ON,
+    },
+  ],
+  gameOnlyNotice: 'Published RNAV STAR identities, point-merge arc order and represented restrictions are retained; WGS-84 geometry is projected into a compact tactical sector and is not for navigation.',
+};
+
 export const INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS: PublishedProcedurePack[] = [
   delhi, incheon, dubai, parisCharlesDeGaulle, singaporeChangi, amsterdamSchiphol, madridBarajas,
+  kualaLumpurInternational,
 ];

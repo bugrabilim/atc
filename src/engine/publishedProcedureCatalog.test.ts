@@ -12,7 +12,7 @@ describe('published procedure catalog', () => {
     expect(PUBLISHED_PROCEDURE_PACKS.map((pack) => pack.airportId)).toEqual([
       'ist', 'lhr', 'lax', 'jfk', 'atl', 'dfw', 'ord', 'den',
       'mco', 'mia', 'las', 'sfo', 'clt', 'sea', 'phx', 'iah',
-      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams', 'mad',
+      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams', 'mad', 'kul',
     ]);
     expect(publishedProcedurePackByAirportId.size).toBe(PUBLISHED_PROCEDURE_PACKS.length);
   });
@@ -291,6 +291,62 @@ describe('published procedure catalog', () => {
     expect(aduxo3d?.fixes.find((fix) => fix.id === 'RUDBI')).toMatchObject({
       minimumAltitudeFt: 8000,
       maximumSpeedKt: 220,
+    });
+  });
+
+  it('ships both Kuala Lumpur point-merge systems with their operational runway split', () => {
+    const pack = INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS.find((item) => item.airportId === 'kul');
+    expect(pack?.referenceCycle).toContain('CAAM eAIP Malaysia 11 AUG 2026');
+    expect(pack?.effectiveFrom).toBe('2026-08-11');
+    expect(pack?.procedures.map((procedure) => procedure.id)).toEqual([
+      'KAKAK1G', 'SAROX1G', 'NIREN1H', 'GUPTA1H',
+    ]);
+    expect(pack?.sources.some((source) => source.publisher === 'Civil Aviation Authority of Malaysia')).toBe(true);
+
+    const kakak1g = pack?.procedures.find((procedure) => procedure.id === 'KAKAK1G');
+    expect(kakak1g?.compatibleRunwayIds).toEqual(['14L', '14R', '32L', '32R']);
+    expect(kakak1g?.fixes.map((fix) => fix.id)).toEqual([
+      'KAKAK', 'LIBKI', 'RITLO', 'KK811', 'KK812',
+      'KK813', 'KK814', 'KK815', 'KK816', 'EGURI',
+    ]);
+    expect(kakak1g?.fixes.find((fix) => fix.id === 'RITLO')).toMatchObject({
+      minimumAltitudeFt: 19000,
+      maximumSpeedKt: 250,
+    });
+    expect(kakak1g?.fixes.find((fix) => fix.id === 'EGURI')).toMatchObject({
+      minimumAltitudeFt: 15000,
+      maximumSpeedKt: 230,
+    });
+
+    const sarox1g = pack?.procedures.find((procedure) => procedure.id === 'SAROX1G');
+    expect(sarox1g?.fixes.map((fix) => fix.id)).toEqual([
+      'SAROX', 'VEKTO', 'NUKPA', 'KK804', 'KK805',
+      'KK806', 'KK807', 'KK808', 'KK809', 'EGURI',
+    ]);
+    expect(sarox1g?.fixes.find((fix) => fix.id === 'NUKPA')).toMatchObject({
+      minimumAltitudeFt: 17000,
+      maximumSpeedKt: 250,
+    });
+
+    const niren1h = pack?.procedures.find((procedure) => procedure.id === 'NIREN1H');
+    expect(niren1h?.compatibleRunwayIds).toEqual(['15', '33']);
+    expect(niren1h?.fixes.map((fix) => fix.id)).toEqual([
+      'NIREN', 'AKESO', 'KK871', 'KADKU', 'PAPGO', 'KK872',
+      'KK873', 'KK874', 'KK875', 'KK876', 'KK877', 'MESUP',
+    ]);
+    expect(niren1h?.fixes.find((fix) => fix.id === 'PAPGO')).toMatchObject({
+      minimumAltitudeFt: 14000,
+      maximumSpeedKt: 230,
+    });
+
+    const gupta1h = pack?.procedures.find((procedure) => procedure.id === 'GUPTA1H');
+    expect(gupta1h?.fixes.map((fix) => fix.id)).toEqual([
+      'GUPTA', 'PANKA', 'LULKI', 'KK881', 'KK882',
+      'KK883', 'KK884', 'KK885', 'KK886', 'MESUP',
+    ]);
+    expect(gupta1h?.fixes.find((fix) => fix.id === 'MESUP')).toMatchObject({
+      minimumAltitudeFt: 8000,
+      maximumSpeedKt: 230,
     });
   });
 

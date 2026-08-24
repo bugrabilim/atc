@@ -95,6 +95,16 @@ describe('airport scenario catalog', () => {
     ]);
   });
 
+  it('uses Kuala Lumpur three-runway and point-merge assignments in every saved flow id', () => {
+    const kualaLumpur = scenarioCatalog.find((scenario) => scenario.id === 'kul');
+    expect(kualaLumpur?.world.flowConfigurations).toEqual([
+      expect.objectContaining({ id: 'kul-primary', arrivalRunwayIds: ['32R', '33'], departureRunwayIds: ['32L', '33'] }),
+      expect.objectContaining({ id: 'kul-reverse', arrivalRunwayIds: ['14L', '15'], departureRunwayIds: ['14R', '15'] }),
+      expect.objectContaining({ id: 'kul-lowvis', arrivalRunwayIds: ['32R'], departureRunwayIds: ['32L'] }),
+      expect.objectContaining({ id: 'kul-south-lowvis', arrivalRunwayIds: ['14L'], departureRunwayIds: ['14R'] }),
+    ]);
+  });
+
   it('can start directly in a non-primary flow without assigning inactive runways', () => {
     for (const scenario of scenarioCatalog.filter((item) => item.world.operations)) {
       const flow = scenario.world.flowConfigurations.at(-1)!;
