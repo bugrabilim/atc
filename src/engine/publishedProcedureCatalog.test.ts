@@ -12,7 +12,7 @@ describe('published procedure catalog', () => {
     expect(PUBLISHED_PROCEDURE_PACKS.map((pack) => pack.airportId)).toEqual([
       'ist', 'lhr', 'lax', 'jfk', 'atl', 'dfw', 'ord', 'den',
       'mco', 'mia', 'las', 'sfo', 'clt', 'sea', 'phx', 'iah',
-      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams', 'mad', 'kul', 'bkk', 'hkg', 'bcn',
+      'del', 'icn', 'dxb', 'cdg', 'sin', 'ams', 'mad', 'kul', 'bkk', 'hkg', 'bcn', 'bom',
     ]);
     expect(publishedProcedurePackByAirportId.size).toBe(PUBLISHED_PROCEDURE_PACKS.length);
   });
@@ -503,6 +503,58 @@ describe('published procedure catalog', () => {
     expect(puma2w?.fixes.find((fix) => fix.id === 'BL465')).toMatchObject({
       maximumAltitudeFt: 10000,
       maximumSpeedKt: 250,
+    });
+  });
+
+  it('ships all 52 Mumbai STARs from AIP Supplement 121/2026', () => {
+    const pack = INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS.find((item) => item.airportId === 'bom');
+    expect(pack?.referenceCycle).toContain('AIP Supplement 121/2026');
+    expect(pack?.effectiveFrom).toBe('2026-08-06');
+    expect(pack?.procedures).toHaveLength(52);
+    expect(pack?.sources.every((source) => source.publisher === 'Airports Authority of India')).toBe(true);
+
+    const entries = [
+      'AGELA', 'BEDOL', 'EPKOS', 'AKTIV', 'EXOLU', 'IPNIB', 'OPAKA',
+      'BISET', 'DARMI', 'ERVIS', 'GUNDI', 'KABSO', 'SUGID',
+    ];
+    for (const [suffix, runwayId] of [['3L', '09'], ['3K', '27'], ['3M', '14'], ['3N', '32']] as const) {
+      const family = pack?.procedures.filter((procedure) => procedure.id.endsWith(suffix));
+      expect(family, suffix).toHaveLength(13);
+      expect(family?.map((procedure) => procedure.id).sort()).toEqual(entries.map((entry) => `${entry}${suffix}`).sort());
+      expect(family?.every((procedure) => procedure.compatibleRunwayIds[0] === runwayId)).toBe(true);
+    }
+
+    const agela3l = pack?.procedures.find((procedure) => procedure.id === 'AGELA3L');
+    expect(agela3l?.fixes.map((fix) => fix.id)).toEqual([
+      'AGELA', 'NM601', 'BEDOL', 'UKETU', 'NM504', 'NM603', 'NM604', 'NM605', 'NM623', 'UPRES',
+    ]);
+    expect(agela3l?.fixes.find((fix) => fix.id === 'NM603')).toMatchObject({
+      minimumAltitudeFt: 17000,
+      maximumAltitudeFt: 17000,
+    });
+    expect(agela3l?.fixes.find((fix) => fix.id === 'NM623')).toMatchObject({
+      minimumAltitudeFt: 10000,
+      maximumAltitudeFt: 10000,
+      maximumSpeedKt: 200,
+    });
+
+    const exolu3k = pack?.procedures.find((procedure) => procedure.id === 'EXOLU3K');
+    expect(exolu3k?.fixes.map((fix) => fix.id)).toEqual([
+      'EXOLU', 'NM624', 'GUTMU', 'NM665', 'NM667', 'NM668', 'BB264', 'BB257',
+    ]);
+    expect(exolu3k?.fixes.find((fix) => fix.id === 'NM668')).toMatchObject({
+      minimumAltitudeFt: 14000,
+      maximumSpeedKt: 230,
+    });
+
+    const sugid3n = pack?.procedures.find((procedure) => procedure.id === 'SUGID3N');
+    expect(sugid3n?.fixes.map((fix) => fix.id)).toEqual([
+      'SUGID', 'NM620', 'NM621', 'AKTOD', 'NM660', 'NM661', 'NM662', 'NM663', 'NM664',
+    ]);
+    expect(sugid3n?.fixes.find((fix) => fix.id === 'NM662')).toMatchObject({
+      minimumAltitudeFt: 12000,
+      maximumAltitudeFt: 12000,
+      maximumSpeedKt: 210,
     });
   });
 

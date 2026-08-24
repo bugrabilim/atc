@@ -142,6 +142,20 @@ describe('airport scenario catalog', () => {
     ]);
   });
 
+  it('uses Mumbai current intersecting-runway geometry and all four STAR flows', () => {
+    const mumbai = scenarioCatalog.find((scenario) => scenario.id === 'bom');
+    const mumbaiDefinition = AIRPORT_DEFINITIONS.find((airport) => airport.id === 'bom');
+    expect(mumbai?.world.environment?.elevationFt).toBe(40);
+    expect(mumbaiDefinition?.runways.map((runway) => runway.heading)).toEqual([89.52, 134.52]);
+    expect(mumbai?.world.runways.map((runway) => Number(runway.heading.toFixed(2)))).toEqual([269.52, 134.52]);
+    expect(mumbai?.world.flowConfigurations).toEqual([
+      expect.objectContaining({ id: 'bom-primary', arrivalRunwayIds: ['27'], departureRunwayIds: ['27'] }),
+      expect.objectContaining({ id: 'bom-reverse', arrivalRunwayIds: ['09'], departureRunwayIds: ['09'] }),
+      expect.objectContaining({ id: 'bom-cross-14', arrivalRunwayIds: ['14'], departureRunwayIds: ['14'] }),
+      expect.objectContaining({ id: 'bom-cross-32', arrivalRunwayIds: ['32'], departureRunwayIds: ['32'] }),
+    ]);
+  });
+
   it('can start directly in a non-primary flow without assigning inactive runways', () => {
     for (const scenario of scenarioCatalog.filter((item) => item.world.operations)) {
       const flow = scenario.world.flowConfigurations.at(-1)!;

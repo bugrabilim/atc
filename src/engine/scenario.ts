@@ -210,6 +210,28 @@ const reviewedFlowConfigurationsByAirportId = new Map<ScenarioId, FlowConfigurat
       windDirection: 246, windSpeedKt: 7, visibilityNm: 8, qnh: 1009,
     },
   ]],
+  ['bom', [
+    {
+      id: 'bom-primary', label: 'BATI · 27 TEK PİST',
+      arrivalRunwayIds: ['27'], departureRunwayIds: ['27'],
+      windDirection: 270, windSpeedKt: 11, visibilityNm: 10, qnh: 1009,
+    },
+    {
+      id: 'bom-reverse', label: 'DOĞU · 09 TEK PİST',
+      arrivalRunwayIds: ['09'], departureRunwayIds: ['09'],
+      windDirection: 90, windSpeedKt: 8, visibilityNm: 9, qnh: 1011,
+    },
+    {
+      id: 'bom-cross-14', label: 'GÜNEYDOĞU · 14 TEK PİST',
+      arrivalRunwayIds: ['14'], departureRunwayIds: ['14'],
+      windDirection: 135, windSpeedKt: 9, visibilityNm: 8, qnh: 1010,
+    },
+    {
+      id: 'bom-cross-32', label: 'KUZEYBATI · 32 TEK PİST',
+      arrivalRunwayIds: ['32'], departureRunwayIds: ['32'],
+      windDirection: 315, windSpeedKt: 10, visibilityNm: 7, qnh: 1007,
+    },
+  ]],
 ]);
 
 function makeRealAirportWorld(definition: AirportDefinition): RadarWorld {
