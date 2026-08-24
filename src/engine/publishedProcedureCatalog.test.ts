@@ -1,18 +1,51 @@
 import { describe, expect, it } from 'vitest';
 import { airportDefinitionById } from './airportCatalog';
 import { FAA_CIFP_PROCEDURE_PACKS } from './generated/faaCifpProcedures';
+import { INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS } from './internationalPublishedProcedures';
 import { PUBLISHED_PROCEDURE_PACKS, publishedProcedurePackByAirportId } from './publishedProcedureCatalog';
 import { scenarioCatalog, worldWithFlow } from './scenario';
 import { planTraffic } from './trafficDirector';
 import type { ScenarioId } from './types';
 
 describe('published procedure catalog', () => {
-  it('combines the five reviewed packs with every generated FAA group', () => {
+  it('combines the reviewed, FAA and international procedure groups', () => {
     expect(PUBLISHED_PROCEDURE_PACKS.map((pack) => pack.airportId)).toEqual([
       'ist', 'lhr', 'lax', 'jfk', 'atl', 'dfw', 'ord', 'den',
       'mco', 'mia', 'las', 'sfo', 'clt', 'sea', 'phx', 'iah',
+      'del',
     ]);
     expect(publishedProcedurePackByAirportId.size).toBe(PUBLISHED_PROCEDURE_PACKS.length);
+  });
+
+  it('ships runway-specific Delhi STARs from the effective AIM India issue', () => {
+    const [pack] = INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS;
+    expect(pack?.airportId).toBe('del');
+    expect(pack?.referenceCycle).toContain('AIP AMDT 07/2026');
+    expect(pack?.effectiveFrom).toBe('2026-08-06');
+    expect(pack?.effectiveTo).toBe('2026-09-02');
+    expect(pack?.sources.every((source) => source.publisher === 'Airports Authority of India')).toBe(true);
+    expect(pack?.procedures.map((procedure) => procedure.id)).toEqual([
+      'SP6E', 'SP6F', 'SP6G', 'SP6H',
+      'ELKUX6E', 'ELKUX6F', 'ELKUX6G', 'ELKUX6H',
+      'BAVOX6A', 'BAVOX6B', 'BAVOX6C', 'BAVOX6D',
+      'POSIG6A', 'POSIG6B', 'POSIG6C', 'POSIG6D',
+    ]);
+
+    const sp6h = pack?.procedures.find((procedure) => procedure.id === 'SP6H');
+    expect(sp6h?.compatibleRunwayIds).toEqual(['11R']);
+    expect(sp6h?.fixes.map((fix) => fix.id)).toEqual(['SP', 'ISREL', 'VILUT', 'SAM', 'FN911']);
+    expect(sp6h?.fixes.find((fix) => fix.id === 'SAM')).toMatchObject({
+      maximumAltitudeFt: 6000,
+      maximumSpeedKt: 210,
+    });
+
+    const bavox6d = pack?.procedures.find((procedure) => procedure.id === 'BAVOX6D');
+    expect(bavox6d?.compatibleRunwayIds).toEqual(['29L']);
+    expect(bavox6d?.fixes.map((fix) => fix.id)).toEqual(['BAVOX', 'SURGO', 'SAPLO', 'DP505', 'FS711']);
+    expect(bavox6d?.fixes.find((fix) => fix.id === 'DP505')).toMatchObject({
+      maximumAltitudeFt: 10000,
+      maximumSpeedKt: 230,
+    });
   });
 
   it('ships selected STAR feeds for every catalogued U.S. airport from cycle 2608', () => {
@@ -79,6 +112,21 @@ describe('published procedure catalog', () => {
         expect(plan.aircraft.phase, `${pack.airportId}/${flow.id}`).toBe('arrival');
         expect(procedure?.source, `${pack.airportId}/${flow.id}`).toBe('published');
         expect(pack.procedures.map((item) => item.id), `${pack.airportId}/${flow.id}`).toContain(procedure?.id);
+      }
+    }
+  });
+
+  it('can spawn a runway-compatible published arrival in every international airport flow', () => {
+    for (const pack of INTERNATIONAL_PUBLISHED_PROCEDURE_PACKS) {
+      const scenario = scenarioCatalog.find((item) => item.id === pack.airportId);
+      if (!scenario) throw new Error(`Missing scenario for ${pack.airportId}`);
+      for (const flow of scenario.world.flowConfigurations) {
+        const activeWorld = worldWithFlow(scenario.world, flow.id, 10);
+        const plan = planTraffic(0, [], activeWorld, 73);
+        const procedure = activeWorld.procedures.find((item) => item.id === plan.aircraft.navigation?.procedure);
+        expect(plan.aircraft.phase, `${pack.airportId}/${flow.id}`).toBe('arrival');
+        expect(procedure?.source, `${pack.airportId}/${flow.id}`).toBe('published');
+        expect(procedure?.compatibleRunwayIds, `${pack.airportId}/${flow.id}`).toContain(plan.aircraft.assignedRunway);
       }
     }
   });
