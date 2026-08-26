@@ -78,7 +78,13 @@ npm run dev
 npm run typecheck
 npm test
 npm run build
+npm run verify
 ```
+
+`npm run verify` typecheck, tüm motor/ürün testlerini, production derlemesini ve
+dağıtım artefaktı kontrolünü tek kapıda çalıştırır. Canlı yayında hangi commit'in
+çalıştığı `/build-info.json` üzerinden doğrulanabilir. Ayrıntılı yayın adımları
+[`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md) dosyasındadır.
 
 ## Teknik yapı
 
