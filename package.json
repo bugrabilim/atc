@@ -6,20 +6,27 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
+    "postbuild": "node scripts/write-build-info.mjs",
     "import:cifp": "node scripts/import-faa-cifp.mjs",
     "test": "vitest run",
-    "typecheck": "tsc -b --pretty false"
+    "typecheck": "tsc -b --pretty false",
+    "verify:dist": "node scripts/verify-build.mjs",
+    "verify:live": "node scripts/verify-live.mjs",
+    "verify": "npm run typecheck && npm test && npm run build && npm run verify:dist"
   },
   "dependencies": {
-    "react": "latest",
-    "react-dom": "latest"
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "latest",
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "typescript": "latest",
-    "vite": "latest",
-    "vitest": "latest"
+    "@vitejs/plugin-react": "6.0.5",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "typescript": "7.0.2",
+    "vite": "8.2.1",
+    "vitest": "4.1.10"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }

@@ -28,6 +28,9 @@ Mobil ve masaüstü tarayıcılarda çalışan, klasik radar görünümüne sahi
 
 ## Ürün araştırması ve yol haritası
 
+- [Güncel proje devri, doğrulanmış kapsam ve açık işler](docs/PROJECT_HANDOFF.md)
+- [Kaynak ve toplanan dosya envanteri](docs/SOURCE_INVENTORY.md)
+- [Tarihsel prototipler, QA kanıtları ve teslim arşivi](docs/archive/README.md)
 - [Flatout ATC derin araştırma ve işlevsel eşleşme planı](docs/flatout-atc-research-tr.md)
 - [Endless ATC eşleşme raporu](docs/endless-atc-parity-report-tr.md)
 - [Havaalanı veri politikası](docs/AIRPORT_DATA.md)
@@ -68,7 +71,7 @@ komutu otomatik olarak tam çağrı koduna çözülür.
 ## Kurulum
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -78,7 +81,13 @@ npm run dev
 npm run typecheck
 npm test
 npm run build
+npm run verify
 ```
+
+`npm run verify` typecheck, tüm motor/ürün testlerini, production derlemesini ve
+dağıtım artefaktı kontrolünü tek kapıda çalıştırır. Canlı yayında hangi commit'in
+çalıştığı `/build-info.json` üzerinden doğrulanabilir. Ayrıntılı yayın adımları
+[`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md) dosyasındadır.
 
 ## Teknik yapı
 
